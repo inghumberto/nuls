@@ -1,18 +1,18 @@
 /**
  * MIT License
- * <p>
+ *
  * Copyright (c) 2017-2018 nuls.io
- * <p>
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * <p>
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * <p>
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -23,19 +23,22 @@
  */
 package io.nuls.contract.entity.txdata;
 
+
 import io.nuls.kernel.exception.NulsException;
-import io.nuls.kernel.model.BaseNulsData;
+import io.nuls.kernel.model.TransactionLogicData;
 import io.nuls.kernel.utils.NulsByteBuffer;
 import io.nuls.kernel.utils.NulsOutputStreamBuffer;
+import io.nuls.kernel.utils.SerializeUtils;
 
 import java.io.IOException;
+import java.util.Set;
 
 /**
- * @desription:
- * @author: PierreLuo
- * @date: 2018/4/21
+ * @Desription:
+ * @Author: PierreLuo
+ * @Date: 2018/4/21
  */
-public class DeleteContractData extends BaseNulsData {
+public class DeleteContractData extends TransactionLogicData {
 
     private byte[] address;
     private byte[] contractAddress;
@@ -43,6 +46,58 @@ public class DeleteContractData extends BaseNulsData {
     private byte price;
     private byte argsCount;
     private Object[] args;
+
+    @Override
+    public int size() {
+        int size = 0;
+        size += SerializeUtils.sizeOfBytes(address);
+        size += SerializeUtils.sizeOfBytes(contractAddress);
+        size += SerializeUtils.sizeOfBytes(naLimit);
+        size += 1;
+        size += 1;
+        if(args != null) {
+            for(Object arg : args) {
+                if(arg instanceof Integer) {
+                    size += SerializeUtils.sizeOfVarInt((Integer) arg);
+                } else if(arg instanceof Long) {
+                    size += SerializeUtils.sizeOfVarInt((Long) arg);
+                }
+            }
+        }
+        return size;
+    }
+
+    @Override
+    protected void serializeToStream(NulsOutputStreamBuffer stream) throws IOException {
+        stream.writeBytesWithLength(address);
+        stream.writeBytesWithLength(contractAddress);
+        stream.writeBytesWithLength(naLimit);
+        stream.write(price);
+        stream.write(argsCount);
+        if(args != null) {
+            for(Object arg : args) {
+                if(arg instanceof Integer) {
+                    stream.writeVarInt((Integer) arg);
+                } else if(arg instanceof Long) {
+                    stream.writeVarInt((Long) arg);
+                }
+            }
+        }
+    }
+
+    @Override
+    protected void parse(NulsByteBuffer byteBuffer) throws NulsException {
+        this.address = byteBuffer.readByLengthByte();
+        this.contractAddress = byteBuffer.readByLengthByte();
+        this.naLimit = byteBuffer.readByLengthByte();
+        this.price = byteBuffer.readByte();
+        this.argsCount = byteBuffer.readByte();
+        int length = this.argsCount;
+        this.args = new Object[length];
+        for(int i = 0; i < length; i++) {
+            args[i] = byteBuffer.readVarInt();
+        }
+    }
 
     public byte[] getAddress() {
         return address;
@@ -92,24 +147,9 @@ public class DeleteContractData extends BaseNulsData {
         this.args = args;
     }
 
-    /**
-     * serialize important field
-     */
     @Override
-    protected void serializeToStream(NulsOutputStreamBuffer stream) throws IOException {
-        // todo auto-generated method stub
-
-    }
-
-    @Override
-    protected void parse(NulsByteBuffer byteBuffer) throws NulsException {
-        // todo auto-generated method stub
-
-    }
-
-    @Override
-    public int size() {
-        // todo auto-generated method stub
-        return 0;
+    public Set<byte[]> getAddresses() {
+        //TODO auto-generated method stub
+        return null;
     }
 }

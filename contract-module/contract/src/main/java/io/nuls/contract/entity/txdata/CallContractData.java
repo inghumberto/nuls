@@ -25,18 +25,20 @@ package io.nuls.contract.entity.txdata;
 
 
 import io.nuls.kernel.exception.NulsException;
-import io.nuls.kernel.model.BaseNulsData;
+import io.nuls.kernel.model.TransactionLogicData;
 import io.nuls.kernel.utils.NulsByteBuffer;
 import io.nuls.kernel.utils.NulsOutputStreamBuffer;
+import io.nuls.kernel.utils.SerializeUtils;
 
 import java.io.IOException;
+import java.util.Set;
 
 /**
- * @desription:
- * @author: PierreLuo
- * @date: 2018/4/21
+ * @Desription:
+ * @Author: PierreLuo
+ * @Date: 2018/4/21
  */
-public class CallContractData extends BaseNulsData {
+public class CallContractData extends TransactionLogicData {
 
     private byte[] address;
     private byte[] contractAddress;
@@ -44,6 +46,58 @@ public class CallContractData extends BaseNulsData {
     private byte price;
     private byte argsCount;
     private Object[] args;
+
+    @Override
+    public int size() {
+        int size = 0;
+        size += SerializeUtils.sizeOfBytes(address);
+        size += SerializeUtils.sizeOfBytes(contractAddress);
+        size += SerializeUtils.sizeOfBytes(naLimit);
+        size += 1;
+        size += 1;
+        if(args != null) {
+            for(Object arg : args) {
+                if(arg instanceof Integer) {
+                    size += SerializeUtils.sizeOfVarInt((Integer) arg);
+                } else if(arg instanceof Long) {
+                    size += SerializeUtils.sizeOfVarInt((Long) arg);
+                }
+            }
+        }
+        return size;
+    }
+
+    @Override
+    protected void serializeToStream(NulsOutputStreamBuffer stream) throws IOException {
+        stream.writeBytesWithLength(address);
+        stream.writeBytesWithLength(contractAddress);
+        stream.writeBytesWithLength(naLimit);
+        stream.write(price);
+        stream.write(argsCount);
+        if(args != null) {
+            for(Object arg : args) {
+                if(arg instanceof Integer) {
+                    stream.writeVarInt((Integer) arg);
+                } else if(arg instanceof Long) {
+                    stream.writeVarInt((Long) arg);
+                }
+            }
+        }
+    }
+
+    @Override
+    protected void parse(NulsByteBuffer byteBuffer) throws NulsException {
+        this.address = byteBuffer.readByLengthByte();
+        this.contractAddress = byteBuffer.readByLengthByte();
+        this.naLimit = byteBuffer.readByLengthByte();
+        this.price = byteBuffer.readByte();
+        this.argsCount = byteBuffer.readByte();
+        int length = this.argsCount;
+        this.args = new Object[length];
+        for(int i = 0; i < length; i++) {
+            args[i] = byteBuffer.readVarInt();
+        }
+    }
 
     public byte[] getAddress() {
         return address;
@@ -93,24 +147,9 @@ public class CallContractData extends BaseNulsData {
         this.args = args;
     }
 
-    /**
-     * serialize important field
-     */
     @Override
-    protected void serializeToStream(NulsOutputStreamBuffer stream) throws IOException {
-        // todo auto-generated method stub
-
-    }
-
-    @Override
-    protected void parse(NulsByteBuffer byteBuffer) throws NulsException {
-        // todo auto-generated method stub
-
-    }
-
-    @Override
-    public int size() {
-        // todo auto-generated method stub
-        return 0;
+    public Set<byte[]> getAddresses() {
+        //TODO auto-generated method stub
+        return null;
     }
 }
