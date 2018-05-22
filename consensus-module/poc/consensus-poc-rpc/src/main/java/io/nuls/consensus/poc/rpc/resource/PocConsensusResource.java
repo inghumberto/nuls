@@ -130,6 +130,11 @@ public class PocConsensusResource {
         if (!Address.validAddress(StringUtils.formatStringPara(address))) {
             return Result.getFailed(AccountErrorCode.ADDRESS_ERROR);
         }
+        Result accountResult = accountService.getAccount(address);
+        if(accountResult.isFailed()){
+            return accountResult;
+        }
+        Account account = (Account) accountResult.getData();
         Result result = Result.getSuccess();
         AccountConsensusInfoDTO dto = new AccountConsensusInfoDTO();
         List<Agent> allAgentList = PocConsensusContext.getChainManager().getMasterChain().getChain().getAgentList();
@@ -654,9 +659,17 @@ public class PocConsensusResource {
             result.setData(page);
             return result;
         }
+        Map<NulsDigestData, Integer> map = new HashMap<>();
+        for (MeetingMember member : PocConsensusContext.getChainManager().getMasterChain().getCurrentRound().getMemberList()) {
+            if (null != member.getAgent()) {
+                map.put(member.getAgent().getTxHash(), 1);
+            }
+        }
         List<DepositDTO> resultList = new ArrayList<>();
         for (int i = start; i < depositList.size() && i < (start + pageSize); i++) {
-            resultList.add(new DepositDTO(depositList.get(i)));
+            Deposit deposit = depositList.get(i);
+            deposit.setStatus(map.get(deposit.getAgentHash()) == null ? 0 : 1);
+            resultList.add(new DepositDTO(deposit));
         }
         page.setList(resultList);
         result.setData(page);
@@ -710,9 +723,18 @@ public class PocConsensusResource {
             result.setData(page);
             return result;
         }
+        Map<NulsDigestData, Integer> map = new HashMap<>();
+        for (MeetingMember member : PocConsensusContext.getChainManager().getMasterChain().getCurrentRound().getMemberList()) {
+            if (null != member.getAgent()) {
+                map.put(member.getAgent().getTxHash(), 1);
+            }
+        }
+
         List<DepositDTO> resultList = new ArrayList<>();
         for (int i = start; i < depositList.size() && i < (start + pageSize); i++) {
-            resultList.add(new DepositDTO(depositList.get(i)));
+            Deposit deposit = depositList.get(i);
+            deposit.setStatus(map.get(deposit.getAgentHash()) == null ? 0 : 1);
+            resultList.add(new DepositDTO(deposit));
         }
         page.setList(resultList);
         result.setData(page);

@@ -22,22 +22,23 @@
  * SOFTWARE.
  *
  */
-package io.nuls.protocol.base.handler;
+package io.nuls.account.ledger.storage.service;
 
-import io.nuls.message.bus.handler.AbstractMessageHandler;
-import io.nuls.network.model.Node;
-import io.nuls.protocol.base.utils.BlockSendThread;
-import io.nuls.protocol.message.GetBlockRequest;
+import io.nuls.account.ledger.storage.po.TransactionInfoPo;
+import io.nuls.kernel.exception.NulsException;
+import io.nuls.kernel.model.Result;
+
+import java.util.List;
 
 /**
- * @author facjas
- * @date 2017/11/16
+ * author Facjas
+ * date 2018/5/22.
  */
-public class GetBlockHandler extends AbstractMessageHandler<GetBlockRequest> {
+public interface TransactionInfoStorageService {
 
+    Result saveTransactionInfo(TransactionInfoPo tx, List<byte[]> addresses);
 
-    @Override
-    public void onMessage(GetBlockRequest message, Node fromNode) {
-        BlockSendThread.offer(message, fromNode);
-    }
+    Result deleteTransactionInfo(TransactionInfoPo tx);
+
+    List<TransactionInfoPo> getTransactionInfoListByAddress(byte[] address) throws NulsException;
 }

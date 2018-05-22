@@ -11,6 +11,7 @@ import io.nuls.account.storage.po.AliasPo;
 import io.nuls.account.storage.service.AliasStorageService;
 import io.nuls.account.tx.AliasTransaction;
 import io.nuls.account.ledger.service.AccountLedgerService;
+import io.nuls.core.tools.crypto.Base58;
 import io.nuls.core.tools.log.Log;
 import io.nuls.core.tools.str.StringUtils;
 import io.nuls.kernel.constant.SeverityLevelEnum;
@@ -28,6 +29,7 @@ import io.nuls.kernel.validate.NulsDataValidator;
 import io.nuls.kernel.validate.ValidateResult;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author: Charlie
@@ -37,10 +39,10 @@ import java.util.Arrays;
 public class AliasTransactionValidator implements NulsDataValidator<AliasTransaction> {
 
     @Autowired
-    private AliasService accountBaseService;
+    private AliasService aliasService;
 
     @Autowired
-    private AliasStorageService alisaStorageService;
+    private AliasStorageService aliasStorageService;
 
     @Autowired
     private AccountLedgerService accountledgerService;
@@ -51,21 +53,23 @@ public class AliasTransactionValidator implements NulsDataValidator<AliasTransac
     @Override
     public ValidateResult validate(AliasTransaction tx) {
         Alias alias = tx.getTxData();
-        Account account = accountService.getAccount(alias.getAddress()).getData();
-        if(null == account){
-            return ValidateResult.getFailedResult(this.getClass().getName(), AccountErrorCode.ACCOUNT_NOT_EXIST);
-        }
-        if(alias.getAlias().equals(account.getAlias())){
+        Alias aliasDb = aliasService.getAlias(alias.getAlias());
+        if(null != aliasDb){
             return ValidateResult.getFailedResult(this.getClass().getName(), AccountErrorCode.ALIAS_EXIST);
         }
-
+        List<AliasPo> list = aliasStorageService.getAliasList().getData();
+        for (AliasPo aliasPo : list) {
+            if (Base58.encode(aliasPo.getAddress()).equals(Base58.encode(alias.getAddress()))) {
+                return ValidateResult.getFailedResult(this.getClass().getName(), AccountErrorCode.ALIAS_EXIST);
+            }
+        }
         if (!Address.validAddress(alias.getAddress())) {
             return ValidateResult.getFailedResult(this.getClass().getName(), AccountErrorCode.ADDRESS_ERROR);
         }
         if (!StringUtils.validAlias(alias.getAlias())) {
             return ValidateResult.getFailedResult(this.getClass().getName(), AccountErrorCode.ALIAS_ERROR);
         }
-        AliasPo aliasPo = alisaStorageService.getAlias(alias.getAlias()).getData();
+        AliasPo aliasPo = aliasStorageService.getAlias(alias.getAlias()).getData();
         if (aliasPo != null) {
             return ValidateResult.getFailedResult(this.getClass().getName(), AccountErrorCode.ALIAS_EXIST);
         }

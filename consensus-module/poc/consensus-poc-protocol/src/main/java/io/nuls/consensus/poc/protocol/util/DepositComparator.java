@@ -22,22 +22,24 @@
  * SOFTWARE.
  *
  */
-package io.nuls.protocol.base.handler;
 
-import io.nuls.message.bus.handler.AbstractMessageHandler;
-import io.nuls.network.model.Node;
-import io.nuls.protocol.base.utils.BlockSendThread;
-import io.nuls.protocol.message.GetBlockRequest;
+package io.nuls.consensus.poc.protocol.util;
+
+import io.nuls.consensus.poc.protocol.entity.Deposit;
+
+import java.util.Comparator;
 
 /**
- * @author facjas
- * @date 2017/11/16
+ * @author: Niels Wang
+ * @date: 2018/5/22
  */
-public class GetBlockHandler extends AbstractMessageHandler<GetBlockRequest> {
-
+public class DepositComparator implements Comparator<Deposit> {
 
     @Override
-    public void onMessage(GetBlockRequest message, Node fromNode) {
-        BlockSendThread.offer(message, fromNode);
+    public int compare(Deposit o1, Deposit o2) {
+        if (o1.getBlockHeight() == o2.getBlockHeight()) {
+            return (int) (o1.getTime() - o2.getTime());
+        }
+        return (int) (o1.getBlockHeight() - o2.getBlockHeight());
     }
 }

@@ -67,10 +67,6 @@ public class UtxoLedgerServiceImpl implements LedgerService {
             return Result.getFailed(LedgerErrorCode.NULL_PARAMETER);
         }
         try {
-            //TestLog+
-            if("io.nuls.protocol.model.tx.TransferTransaction".equals(tx.getClass().getName())) {
-                Log.info("==============转账交易开始");
-            }
             //TestLog-
             // 保存CoinData
             Result result = saveCoinData(tx);
@@ -212,7 +208,24 @@ public class UtxoLedgerServiceImpl implements LedgerService {
 
     @Override
     public Transaction getTx(NulsDigestData hash) {
+        if(hash == null) {
+            return null;
+        }
         return utxoLedgerTransactionStorageService.getTx(hash);
+    }
+
+    @Override
+    public Transaction getTx(byte[] txHashBytes) {
+        if(txHashBytes == null) {
+            return null;
+        }
+        NulsDigestData digestData = new NulsDigestData();
+        try {
+            digestData.parse(txHashBytes);
+        }catch (Exception e){
+            return null;
+        }
+        return getTx(digestData);
     }
 
     private boolean checkPublicKeyHash(byte[] address, byte[] pubKeyHash) {

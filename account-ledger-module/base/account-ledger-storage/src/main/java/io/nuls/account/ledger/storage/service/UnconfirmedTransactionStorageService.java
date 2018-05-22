@@ -22,22 +22,25 @@
  * SOFTWARE.
  *
  */
-package io.nuls.protocol.base.handler;
+package io.nuls.account.ledger.storage.service;
 
-import io.nuls.message.bus.handler.AbstractMessageHandler;
-import io.nuls.network.model.Node;
-import io.nuls.protocol.base.utils.BlockSendThread;
-import io.nuls.protocol.message.GetBlockRequest;
+import io.nuls.kernel.model.NulsDigestData;
+import io.nuls.kernel.model.Result;
+import io.nuls.kernel.model.Transaction;
+
+import java.util.List;
 
 /**
- * @author facjas
- * @date 2017/11/16
+ * author Facjas
+ * date 2018/5/22.
  */
-public class GetBlockHandler extends AbstractMessageHandler<GetBlockRequest> {
+public interface UnconfirmedTransactionStorageService {
 
+    Result saveUnconfirmedTx(NulsDigestData hash, Transaction tx);
 
-    @Override
-    public void onMessage(GetBlockRequest message, Node fromNode) {
-        BlockSendThread.offer(message, fromNode);
-    }
+    Result deleteUnconfirmedTx(NulsDigestData hash);
+
+    Result<Transaction> getUnconfirmedTx(NulsDigestData hash);
+
+    Result<List<Transaction>> loadAllUnconfirmedList();
 }

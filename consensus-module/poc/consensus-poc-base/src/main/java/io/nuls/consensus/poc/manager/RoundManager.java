@@ -42,7 +42,6 @@ import io.nuls.core.tools.calc.DoubleUtils;
 import io.nuls.core.tools.log.ConsensusLog;
 import io.nuls.core.tools.log.Log;
 import io.nuls.kernel.context.NulsContext;
-import io.nuls.kernel.exception.NulsRuntimeException;
 import io.nuls.kernel.func.TimeService;
 import io.nuls.kernel.model.Block;
 import io.nuls.kernel.model.BlockHeader;
@@ -58,7 +57,7 @@ import java.util.*;
  */
 public class RoundManager {
 
-    private AccountService accountService = NulsContext.getServiceBean(AccountService.class);
+    private AccountService accountService;
 
     private List<MeetingRound> roundList = new ArrayList<>();
 
@@ -257,17 +256,14 @@ public class RoundManager {
 
         setMemberList(round, startBlockHeader);
 
-        round.calcLocalPacker(accountService.getAccountList().getData());
+        round.calcLocalPacker(getAccountService().getAccountList().getData());
 
-        ConsensusLog.debug("calculation||index:{},startTime:{},startHeight:{},hash:{}\n" + round.toString() + "\n\n" + sb.toString(), index, startTime, startBlockHeader.getHeight(), startBlockHeader.getHash());
+        ConsensusLog.debug("calculation||index:{},startTime:{},startHeight:{},hash:{}\n" + round.toString() + "\n\n", index, startTime, startBlockHeader.getHeight(), startBlockHeader.getHash());
         return round;
     }
 
-    StringBuilder sb = null;
 
     private void setMemberList(MeetingRound round, BlockHeader startBlockHeader) {
-
-        sb = new StringBuilder();
 
         List<MeetingMember> memberList = new ArrayList<>();
         double totalWeight = 0;
@@ -277,13 +273,11 @@ public class RoundManager {
             member.setAgentAddress(address);
             member.setPackingAddress(address);
             member.setRewardAddress(address);
-            member.setCreditVal(1);
+            member.setCreditVal(0);
             member.setRoundStartTime(round.getStartTime());
-
             memberList.add(member);
         }
 
-        //TODO removeSmallBlock the test code in future
         List<Deposit> depositTempList = new ArrayList<>();
 
         List<Agent> agentList = getAliveAgentList(startBlockHeader.getHeight());
@@ -304,17 +298,14 @@ public class RoundManager {
                 member.setTotalDeposit(member.getTotalDeposit().add(dtx.getDeposit()));
                 depositTempList.add(dtx);
             }
-
             member.setDepositList(cdlist);
-            member.setCreditVal(calcCreditVal(member, startBlockHeader));
-            agent.setCreditVal(member.getRealCreditVal());
             agent.setTotalDeposit(member.getTotalDeposit().getValue());
-
             boolean isItIn = member.getTotalDeposit().isGreaterOrEquals(PocConsensusProtocolConstant.SUM_OF_DEPOSIT_OF_AGENT_LOWER_LIMIT);
             if (isItIn) {
+                member.setCreditVal(calcCreditVal(member, startBlockHeader));
+                agent.setCreditVal(member.getRealCreditVal());
                 totalWeight = DoubleUtils.sum(totalWeight, DoubleUtils.mul(agent.getDeposit().getValue(), member.getCalcCreditVal()));
                 totalWeight = DoubleUtils.sum(totalWeight, DoubleUtils.mul(member.getTotalDeposit().getValue(), member.getCalcCreditVal()));
-
                 memberList.add(member);
             }
         }
@@ -335,16 +326,6 @@ public class RoundManager {
                 return o1.getTxHash().getDigestHex().compareTo(o2.getTxHash().getDigestHex());
             }
         });
-
-        for (Deposit deposit : depositTempList) {
-            sb.append("------------------------ agent hash : " + deposit.getAgentHash());
-            sb.append("dep address : " + deposit.getAddress());
-            sb.append(" , amount : " + deposit.getDeposit());
-            sb.append(" , hash : " + deposit.getTxHash());
-            sb.append(" , height : " + deposit.getBlockHeight());
-            sb.append(" , del height : " + deposit.getDelHeight());
-            sb.append("\n");
-        }
     }
 
     private List<Deposit> getDepositListByAgentId(NulsDigestData agentHash, long startBlockHeight) {
@@ -398,9 +379,6 @@ public class RoundManager {
 
         double penalty = DoubleUtils.div(DoubleUtils.mul(PocConsensusProtocolConstant.CREDIT_MAGIC_NUM, sumRoundVal),
                 DoubleUtils.mul(PocConsensusProtocolConstant.RANGE_OF_CAPACITY_COEFFICIENT, PocConsensusProtocolConstant.RANGE_OF_CAPACITY_COEFFICIENT));
-
-//        BlockLog.debug(")))))))))))))creditVal:" + DoubleUtils.sub(ability, penalty) + ",member:" + member.getAgentAddress());
-//        BlockLog.debug(")))))))))))))blockCount:" + blockCount + ", start:" + roundStart + ",end:" + calcRoundIndex + ", yellowCount:" + sumRoundVal);
 
         return DoubleUtils.round(DoubleUtils.sub(ability, penalty), 4);
     }
@@ -463,6 +441,10 @@ public class RoundManager {
                 }
                 if (currentRoundIndex < startRoundIndex) {
                     firstBlockHeader = blockHeaderList.get(i + 1);
+                    BlockRoundData roundData = new BlockRoundData(firstBlockHeader.getExtend());
+                    if (roundData.getPackingIndexOfRound() > 1) {
+                        firstBlockHeader = blockHeader;
+                    }
                     break;
                 }
             }
@@ -480,5 +462,12 @@ public class RoundManager {
 
     public List<MeetingRound> getRoundList() {
         return roundList;
+    }
+
+    public AccountService getAccountService() {
+        if(accountService == null) {
+            accountService = NulsContext.getServiceBean(AccountService.class);
+        }
+        return accountService;
     }
 }

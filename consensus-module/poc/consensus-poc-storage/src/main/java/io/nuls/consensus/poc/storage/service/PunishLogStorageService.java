@@ -27,6 +27,8 @@ package io.nuls.consensus.poc.storage.service;
 
 import io.nuls.consensus.poc.storage.po.PunishLogPo;
 
+import java.util.List;
+
 /**
  * @author: Niels Wang
  * @date: 2018/5/10
@@ -36,4 +38,6 @@ public interface PunishLogStorageService {
     boolean save(PunishLogPo po);
 
     boolean delete(byte[] key);
+
+    List<PunishLogPo> getPunishList();
 }
