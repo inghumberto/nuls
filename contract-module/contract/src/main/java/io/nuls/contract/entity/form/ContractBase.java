@@ -8,9 +8,19 @@ package io.nuls.contract.entity.form;
 public class ContractBase {
     private String sender;
     private long naLimit;
+    private long value;
     private int price;
     private transient String password;
     private String remark;
+    private String contractAddress;
+
+    public String getContractAddress() {
+        return contractAddress;
+    }
+
+    public void setContractAddress(String contractAddress) {
+        this.contractAddress = contractAddress;
+    }
 
     //todo world status
 
@@ -28,6 +38,14 @@ public class ContractBase {
 
     public void setNaLimit(long naLimit) {
         this.naLimit = naLimit;
+    }
+
+    public long getValue() {
+        return value;
+    }
+
+    public void setValue(long value) {
+        this.value = value;
     }
 
     public int getPrice() {

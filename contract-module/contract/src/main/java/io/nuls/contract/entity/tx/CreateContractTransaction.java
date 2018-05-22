@@ -23,6 +23,7 @@
  */
 package io.nuls.contract.entity.tx;
 
+import io.nuls.contract.constant.ContractConstant;
 import io.nuls.contract.entity.txdata.CreateContractData;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.model.Transaction;
@@ -36,13 +37,12 @@ import io.nuls.kernel.utils.NulsByteBuffer;
 public class CreateContractTransaction extends Transaction<CreateContractData> {
 
     public CreateContractTransaction(int type) {
-        super(type);
+        super(ContractConstant.TX_TYPE_CREATE_CONTRACT);
     }
 
     @Override
     protected CreateContractData parseTxData(NulsByteBuffer byteBuffer) throws NulsException {
-        //TODO auto-generated method stub
-        return null;
+        return byteBuffer.readNulsData(new CreateContractData());
     }
 
     @Override

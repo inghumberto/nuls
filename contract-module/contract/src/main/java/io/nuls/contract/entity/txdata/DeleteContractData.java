@@ -40,71 +40,35 @@ import java.util.Set;
  */
 public class DeleteContractData extends TransactionLogicData {
 
-    private byte[] address;
+    private byte[] sender;
     private byte[] contractAddress;
-    private byte[] naLimit;
-    private byte price;
-    private byte argsCount;
-    private Object[] args;
 
     @Override
     public int size() {
         int size = 0;
-        size += SerializeUtils.sizeOfBytes(address);
+        size += SerializeUtils.sizeOfBytes(sender);
         size += SerializeUtils.sizeOfBytes(contractAddress);
-        size += SerializeUtils.sizeOfBytes(naLimit);
-        size += 1;
-        size += 1;
-        if(args != null) {
-            for(Object arg : args) {
-                if(arg instanceof Integer) {
-                    size += SerializeUtils.sizeOfVarInt((Integer) arg);
-                } else if(arg instanceof Long) {
-                    size += SerializeUtils.sizeOfVarInt((Long) arg);
-                }
-            }
-        }
         return size;
     }
 
     @Override
     protected void serializeToStream(NulsOutputStreamBuffer stream) throws IOException {
-        stream.writeBytesWithLength(address);
+        stream.writeBytesWithLength(sender);
         stream.writeBytesWithLength(contractAddress);
-        stream.writeBytesWithLength(naLimit);
-        stream.write(price);
-        stream.write(argsCount);
-        if(args != null) {
-            for(Object arg : args) {
-                if(arg instanceof Integer) {
-                    stream.writeVarInt((Integer) arg);
-                } else if(arg instanceof Long) {
-                    stream.writeVarInt((Long) arg);
-                }
-            }
-        }
     }
 
     @Override
     protected void parse(NulsByteBuffer byteBuffer) throws NulsException {
-        this.address = byteBuffer.readByLengthByte();
+        this.sender = byteBuffer.readByLengthByte();
         this.contractAddress = byteBuffer.readByLengthByte();
-        this.naLimit = byteBuffer.readByLengthByte();
-        this.price = byteBuffer.readByte();
-        this.argsCount = byteBuffer.readByte();
-        int length = this.argsCount;
-        this.args = new Object[length];
-        for(int i = 0; i < length; i++) {
-            args[i] = byteBuffer.readVarInt();
-        }
     }
 
-    public byte[] getAddress() {
-        return address;
+    public byte[] getSender() {
+        return sender;
     }
 
-    public void setAddress(byte[] address) {
-        this.address = address;
+    public void setSender(byte[] sender) {
+        this.sender = sender;
     }
 
     public byte[] getContractAddress() {
@@ -113,38 +77,6 @@ public class DeleteContractData extends TransactionLogicData {
 
     public void setContractAddress(byte[] contractAddress) {
         this.contractAddress = contractAddress;
-    }
-
-    public byte[] getNaLimit() {
-        return naLimit;
-    }
-
-    public void setNaLimit(byte[] naLimit) {
-        this.naLimit = naLimit;
-    }
-
-    public byte getPrice() {
-        return price;
-    }
-
-    public void setPrice(byte price) {
-        this.price = price;
-    }
-
-    public byte getArgsCount() {
-        return argsCount;
-    }
-
-    public void setArgsCount(byte argsCount) {
-        this.argsCount = argsCount;
-    }
-
-    public Object[] getArgs() {
-        return args;
-    }
-
-    public void setArgs(Object[] args) {
-        this.args = args;
     }
 
     @Override

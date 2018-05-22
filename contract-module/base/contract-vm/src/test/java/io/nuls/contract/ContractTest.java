@@ -77,7 +77,7 @@ public class ContractTest {
         track.commit();
 
         System.out.println(programResult);
-        System.out.println("stateRoot: " + Hex.toHexString(track.getRoot()));
+        System.out.println("pierre - stateRoot: " + Hex.toHexString(track.getRoot()));
         System.out.println();
 
         programCall.setMethodName("balanceOf");
@@ -90,7 +90,7 @@ public class ContractTest {
         track.commit();
 
         System.out.println(programResult);
-        System.out.println("stateRoot: " + Hex.toHexString(track.getRoot()));
+        System.out.println("pierre - stateRoot: " + Hex.toHexString(track.getRoot()));
         System.out.println();
     }
 

@@ -24,10 +24,9 @@
 package io.nuls.contract.service;
 
 import io.nuls.contract.dto.ContractResult;
-import io.nuls.contract.entity.form.ContractCall;
-import io.nuls.contract.entity.form.ContractCreate;
-import io.nuls.contract.entity.form.ContractDelete;
-import io.nuls.contract.entity.form.ContractUpdate;
+import io.nuls.contract.entity.txdata.CallContractData;
+import io.nuls.contract.entity.txdata.CreateContractData;
+import io.nuls.contract.entity.txdata.DeleteContractData;
 import io.nuls.kernel.model.Result;
 
 /**
@@ -37,15 +36,38 @@ import io.nuls.kernel.model.Result;
  */
 public interface ContractService {
 
-    Result<ContractResult> createContract(ContractCreate create);
+    /**
+     * @param number 当前块编号
+     * @param prevStateRoot 上一区块状态根
+     * @param create 创建智能合约的参数
+     * @return
+     */
+    Result<ContractResult> createContract(long number, byte[] prevStateRoot, CreateContractData create);
 
-    Result<ContractResult> callContract(ContractCall call);
+    /**
+     * @param number 当前块编号
+     * @param prevStateRoot 上一区块状态根
+     * @param call 调用智能合约的参数
+     * @return
+     */
+    Result<ContractResult> callContract(long number, byte[] prevStateRoot, CallContractData call);
 
-    Result<ContractResult> deleteContract(ContractDelete delete);
+    /**
+     * @param number 当前块编号
+     * @param prevStateRoot 上一区块状态根
+     * @param delete 删除智能合约的参数
+     * @return
+     */
+    Result<ContractResult> deleteContract(long number, byte[] prevStateRoot, DeleteContractData delete);
 
-    Result<ContractResult> updateContract(ContractUpdate update);
-
+    /**
+     * @param address
+     * @return
+     */
     Result<Object> getContractInfo(String address);
 
+    /**
+     * @return
+     */
     Result<Object> getVmStatus();
 }

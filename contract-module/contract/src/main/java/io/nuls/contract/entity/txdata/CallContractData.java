@@ -42,26 +42,28 @@ public class CallContractData extends TransactionLogicData {
 
     private byte[] address;
     private byte[] contractAddress;
-    private byte[] naLimit;
+    private long value;
+    private long naLimit;
     private byte price;
+    private String methodName;
+    private String methodDesc;
     private byte argsCount;
-    private Object[] args;
+    private String[] args;
 
     @Override
     public int size() {
         int size = 0;
         size += SerializeUtils.sizeOfBytes(address);
         size += SerializeUtils.sizeOfBytes(contractAddress);
-        size += SerializeUtils.sizeOfBytes(naLimit);
+        size += SerializeUtils.sizeOfVarInt(value);
+        size += SerializeUtils.sizeOfVarInt(naLimit);
         size += 1;
+        size += SerializeUtils.sizeOfString(methodName);
+        size += SerializeUtils.sizeOfString(methodDesc);
         size += 1;
         if(args != null) {
-            for(Object arg : args) {
-                if(arg instanceof Integer) {
-                    size += SerializeUtils.sizeOfVarInt((Integer) arg);
-                } else if(arg instanceof Long) {
-                    size += SerializeUtils.sizeOfVarInt((Long) arg);
-                }
+            for(String arg : args) {
+                size += SerializeUtils.sizeOfString(arg);
             }
         }
         return size;
@@ -71,16 +73,15 @@ public class CallContractData extends TransactionLogicData {
     protected void serializeToStream(NulsOutputStreamBuffer stream) throws IOException {
         stream.writeBytesWithLength(address);
         stream.writeBytesWithLength(contractAddress);
-        stream.writeBytesWithLength(naLimit);
+        stream.writeVarInt(value);
+        stream.writeVarInt(naLimit);
         stream.write(price);
+        stream.writeString(methodName);
+        stream.writeString(methodDesc);
         stream.write(argsCount);
         if(args != null) {
-            for(Object arg : args) {
-                if(arg instanceof Integer) {
-                    stream.writeVarInt((Integer) arg);
-                } else if(arg instanceof Long) {
-                    stream.writeVarInt((Long) arg);
-                }
+            for(String arg : args) {
+                stream.writeString(arg);
             }
         }
     }
@@ -89,13 +90,16 @@ public class CallContractData extends TransactionLogicData {
     protected void parse(NulsByteBuffer byteBuffer) throws NulsException {
         this.address = byteBuffer.readByLengthByte();
         this.contractAddress = byteBuffer.readByLengthByte();
-        this.naLimit = byteBuffer.readByLengthByte();
+        this.value = byteBuffer.readVarInt();
+        this.naLimit = byteBuffer.readVarInt();
         this.price = byteBuffer.readByte();
+        this.methodName = byteBuffer.readString();
+        this.methodDesc = byteBuffer.readString();
         this.argsCount = byteBuffer.readByte();
         int length = this.argsCount;
-        this.args = new Object[length];
+        this.args = new String[length];
         for(int i = 0; i < length; i++) {
-            args[i] = byteBuffer.readVarInt();
+            args[i] = byteBuffer.readString();
         }
     }
 
@@ -115,11 +119,19 @@ public class CallContractData extends TransactionLogicData {
         this.contractAddress = contractAddress;
     }
 
-    public byte[] getNaLimit() {
+    public long getValue() {
+        return value;
+    }
+
+    public void setValue(long value) {
+        this.value = value;
+    }
+
+    public long getNaLimit() {
         return naLimit;
     }
 
-    public void setNaLimit(byte[] naLimit) {
+    public void setNaLimit(long naLimit) {
         this.naLimit = naLimit;
     }
 
@@ -131,6 +143,22 @@ public class CallContractData extends TransactionLogicData {
         this.price = price;
     }
 
+    public String getMethodName() {
+        return methodName;
+    }
+
+    public void setMethodName(String methodName) {
+        this.methodName = methodName;
+    }
+
+    public String getMethodDesc() {
+        return methodDesc;
+    }
+
+    public void setMethodDesc(String methodDesc) {
+        this.methodDesc = methodDesc;
+    }
+
     public byte getArgsCount() {
         return argsCount;
     }
@@ -139,11 +167,15 @@ public class CallContractData extends TransactionLogicData {
         this.argsCount = argsCount;
     }
 
-    public Object[] getArgs() {
+    public String[] getArgs() {
         return args;
     }
 
-    public void setArgs(Object[] args) {
+    public void setArgs(String[] args) {
+        this.args = args;
+    }
+
+    public void args(String... args) {
         this.args = args;
     }
 

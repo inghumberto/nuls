@@ -32,6 +32,13 @@ import io.nuls.kernel.constant.NulsConstant;
  */
 public interface ContractConstant extends NulsConstant {
 
-    short MODULE_ID_CONTRACT = 4;
+    short MODULE_ID_CONTRACT = 10;
+
+    /**
+     * CONTRACT
+     */
+    int TX_TYPE_CREATE_CONTRACT = 100;
+    int TX_TYPE_CALL_CONTRACT = 101;
+    int TX_TYPE_DELETE_CONTRACT = 102;
 
 }

@@ -8,7 +8,7 @@ package io.nuls.contract.entity.form;
 public class ContractCreate extends ContractBase {
 
     private byte[] contractCode;
-    private Object[] args;
+    private String[] args;
 
     public byte[] getContractCode() {
         return contractCode;
@@ -18,11 +18,15 @@ public class ContractCreate extends ContractBase {
         this.contractCode = contractCode;
     }
 
-    public Object[] getArgs() {
+    public String[] getArgs() {
         return args;
     }
 
-    public void setArgs(Object... args) {
+    public void setArgs(String[] args) {
+        this.args = args;
+    }
+
+    public void args(String... args) {
         this.args = args;
     }
 

@@ -42,30 +42,28 @@ public class CreateContractData extends TransactionLogicData {
 
     private byte[] address;
     private byte[] contractAddress;
+    private long value;
     private int codeLen;
     private byte[] code;
-    private byte[] naLimit;
+    private long naLimit;
     private byte price;
     private byte argsCount;
-    private Object[] args;
+    private String[] args;
 
     @Override
     public int size() {
         int size = 0;
         size += SerializeUtils.sizeOfBytes(address);
         size += SerializeUtils.sizeOfBytes(contractAddress);
+        size += SerializeUtils.sizeOfVarInt(value);
         size += SerializeUtils.sizeOfVarInt(codeLen);
         size += SerializeUtils.sizeOfBytes(code);
-        size += SerializeUtils.sizeOfBytes(naLimit);
+        size += SerializeUtils.sizeOfVarInt(naLimit);
         size += 1;
         size += 1;
         if(args != null) {
-            for(Object arg : args) {
-                if(arg instanceof Integer) {
-                    size += SerializeUtils.sizeOfVarInt((Integer) arg);
-                } else if(arg instanceof Long) {
-                    size += SerializeUtils.sizeOfVarInt((Long) arg);
-                }
+            for(String arg : args) {
+                size += SerializeUtils.sizeOfString(arg);
             }
         }
         return size;
@@ -75,18 +73,15 @@ public class CreateContractData extends TransactionLogicData {
     protected void serializeToStream(NulsOutputStreamBuffer stream) throws IOException {
         stream.writeBytesWithLength(address);
         stream.writeBytesWithLength(contractAddress);
+        stream.writeVarInt(value);
         stream.writeVarInt(codeLen);
         stream.writeBytesWithLength(code);
-        stream.writeBytesWithLength(naLimit);
+        stream.writeVarInt(naLimit);
         stream.write(price);
         stream.write(argsCount);
         if(args != null) {
-            for(Object arg : args) {
-                if(arg instanceof Integer) {
-                    stream.writeVarInt((Integer) arg);
-                } else if(arg instanceof Long) {
-                    stream.writeVarInt((Long) arg);
-                }
+            for(String arg : args) {
+                stream.writeString(arg);
             }
         }
     }
@@ -95,16 +90,25 @@ public class CreateContractData extends TransactionLogicData {
     protected void parse(NulsByteBuffer byteBuffer) throws NulsException {
         this.address = byteBuffer.readByLengthByte();
         this.contractAddress = byteBuffer.readByLengthByte();
+        this.value = (long) byteBuffer.readVarInt();
         this.codeLen = (int) byteBuffer.readVarInt();
         this.code = byteBuffer.readByLengthByte();
-        this.naLimit = byteBuffer.readByLengthByte();
+        this.naLimit = (long) byteBuffer.readVarInt();
         this.price = byteBuffer.readByte();
         this.argsCount = byteBuffer.readByte();
         int length = this.argsCount;
-        this.args = new Object[length];
+        this.args = new String[length];
         for(int i = 0; i < length; i++) {
-            args[i] = byteBuffer.readVarInt();
+            args[i] = byteBuffer.readString();
         }
+    }
+
+    public long getValue() {
+        return value;
+    }
+
+    public void setValue(long value) {
+        this.value = value;
     }
 
     public byte[] getAddress() {
@@ -139,11 +143,11 @@ public class CreateContractData extends TransactionLogicData {
         this.code = code;
     }
 
-    public byte[] getNaLimit() {
+    public long getNaLimit() {
         return naLimit;
     }
 
-    public void setNaLimit(byte[] naLimit) {
+    public void setNaLimit(long naLimit) {
         this.naLimit = naLimit;
     }
 
@@ -163,11 +167,15 @@ public class CreateContractData extends TransactionLogicData {
         this.argsCount = argsCount;
     }
 
-    public Object[] getArgs() {
+    public String[] getArgs() {
         return args;
     }
 
-    public void setArgs(Object[] args) {
+    public void setArgs(String[] args) {
+        this.args = args;
+    }
+
+    public void args(String... args) {
         this.args = args;
     }
 
