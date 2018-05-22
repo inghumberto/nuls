@@ -112,8 +112,8 @@ public class ByteArrayMap<V> implements Map<byte[], V> {
         return delegate.toString();
     }
 
-    private class MapEntrySet implements Set<Entry<byte[], V>> {
-        private final Set<Entry<ByteArrayWrapper, V>> delegate;
+    private class MapEntrySet implements Set<Map.Entry<byte[], V>> {
+        private final Set<Map.Entry<ByteArrayWrapper, V>> delegate;
 
         private MapEntrySet(Set<Entry<ByteArrayWrapper, V>> delegate) {
             this.delegate = delegate;

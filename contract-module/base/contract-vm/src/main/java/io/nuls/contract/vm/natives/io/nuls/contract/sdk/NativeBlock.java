@@ -7,7 +7,7 @@ import io.nuls.contract.vm.ObjectRef;
 import io.nuls.contract.vm.Result;
 import io.nuls.contract.vm.code.MethodCode;
 import io.nuls.contract.vm.natives.NativeMethod;
-import io.nuls.core.tools.crypto.Hex;
+import org.spongycastle.util.encoders.Hex;
 
 public class NativeBlock {
 

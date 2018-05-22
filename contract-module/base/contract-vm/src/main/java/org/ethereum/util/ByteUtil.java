@@ -45,7 +45,7 @@ public class ByteUtil {
     }
 
     /**
-     * The regular {@link BigInteger#toByteArray()} method isn't quite what we often need:
+     * The regular {@link java.math.BigInteger#toByteArray()} method isn't quite what we often need:
      * it appends a leading zero to indicate that the number is positive and may need padding.
      *
      * @param b        the integer to format into a byte array

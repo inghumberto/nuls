@@ -5,8 +5,6 @@ import io.nuls.contract.vm.program.*;
 import io.nuls.contract.vm.program.impl.ProgramExecutorImpl;
 import io.nuls.db.service.DBService;
 import io.nuls.db.service.impl.LevelDBServiceImpl;
-import io.nuls.kernel.MicroKernelBootstrap;
-import io.nuls.kernel.lite.core.SpringLiteContext;
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;

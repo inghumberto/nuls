@@ -10,7 +10,7 @@ import io.nuls.contract.vm.program.ProgramCall;
 import io.nuls.contract.vm.program.ProgramResult;
 import io.nuls.contract.vm.program.ProgramTransfer;
 import io.nuls.contract.vm.program.impl.ProgramInvoke;
-import io.nuls.core.tools.crypto.Hex;
+import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 

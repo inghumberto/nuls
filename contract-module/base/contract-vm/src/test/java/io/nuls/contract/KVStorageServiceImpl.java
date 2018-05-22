@@ -17,28 +17,23 @@ public class KVStorageServiceImpl implements DBService {
 
     private String dir = "/tmp/";
 
-
     @Override
     public Result createArea(String areaName) {
-        
         return null;
     }
 
     @Override
     public Result createArea(String areaName, Long cacheSize) {
-        
         return null;
     }
 
     @Override
     public Result createArea(String areaName, Comparator<byte[]> comparator) {
-        
         return null;
     }
 
     @Override
     public Result createArea(String areaName, Long cacheSize, Comparator<byte[]> comparator) {
-        
         return null;
     }
 
@@ -59,13 +54,11 @@ public class KVStorageServiceImpl implements DBService {
 
     @Override
     public <T> Result putModel(String area, byte[] key, T value) {
-        
         return null;
     }
 
     @Override
     public Result delete(String area, byte[] key) {
-        
         return null;
     }
 
@@ -81,55 +74,46 @@ public class KVStorageServiceImpl implements DBService {
 
     @Override
     public <T> T getModel(String area, byte[] key, Class<T> clazz) {
-        
         return null;
     }
 
     @Override
     public Object getModel(String area, byte[] key) {
-        
         return null;
     }
 
     @Override
     public Set<byte[]> keySet(String area) {
-        
         return null;
     }
 
     @Override
     public List<byte[]> keyList(String area) {
-        
         return null;
     }
 
     @Override
     public Set<Entry<byte[], byte[]>> entrySet(String area) {
-        
         return null;
     }
 
     @Override
     public List<Entry<byte[], byte[]>> entryList(String area) {
-        
         return null;
     }
 
     @Override
     public <T> List<Entry<byte[], T>> entryList(String area, Class<T> clazz) {
-        
         return null;
     }
 
     @Override
     public <T> List<T> values(String area, Class<T> clazz) {
-        
         return null;
     }
 
     @Override
     public BatchOperation createWriteBatch(String area) {
-        
         return null;
     }
 
