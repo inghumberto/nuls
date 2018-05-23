@@ -52,6 +52,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             ProgramCreate programCreate = new ProgramCreate();
             programCreate.setContractAddress(create.getContractAddress());
             programCreate.setSender(create.getSender());
+            programCreate.setValue(BigInteger.valueOf(create.getValue()));
             programCreate.setPrice(create.getPrice());
             programCreate.setNaLimit(create.getNaLimit());
             programCreate.setNumber(number);

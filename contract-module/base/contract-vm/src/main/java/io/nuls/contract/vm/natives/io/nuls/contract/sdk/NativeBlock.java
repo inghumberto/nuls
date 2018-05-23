@@ -1,6 +1,6 @@
 package io.nuls.contract.vm.natives.io.nuls.contract.sdk;
 
-import io.nuls.contract.entity.BlockHeader;
+import io.nuls.contract.entity.BlockHeaderDto;
 import io.nuls.contract.vm.Frame;
 import io.nuls.contract.vm.MethodArgs;
 import io.nuls.contract.vm.ObjectRef;
@@ -37,7 +37,7 @@ public class NativeBlock {
 
     private static Result blockhash(MethodCode methodCode, MethodArgs methodArgs, Frame frame) {
         long blockNumber = (long) methodArgs.getInvokeArgs()[0];
-        BlockHeader blockHeader = frame.getVm().getBlockHeader(blockNumber);
+        BlockHeaderDto blockHeader = frame.getVm().getBlockHeader(blockNumber);
         ObjectRef objectRef = null;
         if (blockHeader != null) {
             byte[] blockhash = Hex.decode(blockHeader.getHash());

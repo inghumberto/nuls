@@ -2,6 +2,7 @@ package io.nuls.contract.entity;
 
 
 import io.nuls.core.tools.crypto.Hex;
+import io.nuls.kernel.model.BlockHeader;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -11,7 +12,7 @@ import java.io.Serializable;
  * @Author: PierreLuo
  * @Date: 2018/5/2
  */
-public class BlockHeader implements Serializable {
+public class BlockHeaderDto implements Serializable {
 
     private String hash;
     private String preHash;
@@ -22,9 +23,9 @@ public class BlockHeader implements Serializable {
     private byte[] packingAddress;//23 bytes
     private String signature ;
 
-    public BlockHeader() {}
+    public BlockHeaderDto() {}
 
-    public BlockHeader(io.nuls.kernel.model.BlockHeader header) throws IOException {
+    public BlockHeaderDto(BlockHeader header) throws IOException {
         this.hash = header.getHash().getDigestHex();
         this.preHash = header.getPreHash().getDigestHex();
         this.merkleHash = header.getMerkleHash().getDigestHex();

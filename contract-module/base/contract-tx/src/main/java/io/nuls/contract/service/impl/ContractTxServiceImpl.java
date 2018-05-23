@@ -28,10 +28,15 @@ import io.nuls.account.ledger.service.AccountLedgerService;
 import io.nuls.account.model.Account;
 import io.nuls.account.service.AccountService;
 import io.nuls.contract.constant.ContractErrorCode;
+import io.nuls.contract.entity.tx.CallContractTransaction;
 import io.nuls.contract.entity.tx.CreateContractTransaction;
+import io.nuls.contract.entity.tx.DeleteContractTransaction;
+import io.nuls.contract.entity.txdata.CallContractData;
 import io.nuls.contract.entity.txdata.CreateContractData;
+import io.nuls.contract.entity.txdata.DeleteContractData;
 import io.nuls.contract.helper.VMHelper;
 import io.nuls.contract.service.ContractTxService;
+import io.nuls.contract.vm.program.ProgramCall;
 import io.nuls.contract.vm.program.ProgramCreate;
 import io.nuls.contract.vm.program.ProgramExecutor;
 import io.nuls.contract.vm.program.ProgramResult;
@@ -45,14 +50,13 @@ import io.nuls.kernel.func.TimeService;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Service;
 import io.nuls.kernel.lite.core.bean.InitializingBean;
-import io.nuls.kernel.model.CoinData;
-import io.nuls.kernel.model.Na;
-import io.nuls.kernel.model.NulsDigestData;
-import io.nuls.kernel.model.Result;
+import io.nuls.kernel.model.*;
 import io.nuls.kernel.script.P2PKHScriptSig;
+import io.nuls.protocol.service.TransactionService;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 
 /**
  * @desription:
@@ -66,6 +70,8 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
     private AccountService accountService;
     @Autowired
     private AccountLedgerService accountLedgerService;
+    @Autowired
+    private TransactionService transactionService;
 
     private ProgramExecutor programExecutor;
 
@@ -137,6 +143,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             CreateContractData createContractData = new CreateContractData();
             createContractData.setSender(senderBytes);
             createContractData.setContractAddress(contractAddressBytes);
+            createContractData.setValue(value.getValue());
             createContractData.setNaLimit(naLimit.getValue());
             createContractData.setPrice(price);
             createContractData.setCodeLen(contractCode.length);
@@ -147,14 +154,20 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             }
             tx.setTxData(createContractData);
 
-            //计算CoinData
+            // 计算CoinData
             /*
-            智能合约计算手续费以消耗的Gas*Price为根据，然而创建交易时并不执行智能合约，
-            所以此时交易的CoinData是不固定的，比实际要多，
-            打包时执行智能合约，真实的手续费已算出，然而tx的手续费已扣除，
-            多扣除的费用会以CoinBase交易还给Sender
+             * 智能合约计算手续费以消耗的Gas*Price为根据，然而创建交易时并不执行智能合约，
+             * 所以此时交易的CoinData是不固定的，比实际要多，
+             * 打包时执行智能合约，真实的手续费已算出，然而tx的手续费已扣除，
+             * 多扣除的费用会以CoinBase交易还给Sender
              */
             CoinData coinData = new CoinData();
+            // 向智能合约地址转账
+            if(!Na.ZERO.equals(value)) {
+                Coin toCoin = new Coin(contractAddressBytes, value);
+                coinData.getTo().add(toCoin);
+            }
+
             // 当前区块高度//TODO pierre 不提交执行创建智能合约是否可以不用传入区块高度和状态根
             long blockHeight = -1;
             // 前一区块状态根//TODO pierre
@@ -163,6 +176,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             ProgramCreate programCreate = new ProgramCreate();
             programCreate.setContractAddress(createContractData.getContractAddress());
             programCreate.setSender(createContractData.getSender());
+            programCreate.setValue(BigInteger.valueOf(value.getValue()));
             programCreate.setPrice(createContractData.getPrice());
             programCreate.setNaLimit(createContractData.getNaLimit());
             programCreate.setNumber(blockHeight);
@@ -181,21 +195,34 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             // 预估1.5倍Gas
             gasUsed += gasUsed >> 1;
             Na imputedNa = Na.valueOf(gasUsed * price);
-            CoinDataResult coinDataResult = accountLedgerService.getCoinData(senderBytes, imputedNa, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH);
+            // 总花费
+            Na totalNa = imputedNa.add(value);
+            CoinDataResult coinDataResult = accountLedgerService.getCoinData(senderBytes, totalNa, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH);
             if (!coinDataResult.isEnough()) {
                 return Result.getFailed(ContractErrorCode.BALANCE_NOT_ENOUGH);
             }
             coinData.setFrom(coinDataResult.getCoinList());
+            // 找零的UTXO
+            if (coinDataResult.getChange() != null) {
+                coinData.getTo().add(coinDataResult.getChange());
+            }
             tx.setCoinData(coinData);
-
-
-
             tx.setHash(NulsDigestData.calcDigestData(tx.serialize()));
             // 交易签名
             P2PKHScriptSig sig = new P2PKHScriptSig();
             sig.setPublicKey(account.getPubKey());
             sig.setSignData(accountService.signData(tx.getHash().serialize(), account, password));
             tx.setScriptSig(sig.serialize());
+
+            // 保存
+            Result saveResult = accountLedgerService.saveUnconfirmedTransaction(tx);
+            if (saveResult.isFailed()) {
+                return saveResult;
+            }
+            Result sendResult = transactionService.broadcastTx(tx);
+            if (sendResult.isFailed()) {
+                return sendResult;
+            }
 
             return Result.getSuccess().setData(tx.getHash().getDigestHex());
         } catch (IOException e) {
@@ -229,8 +256,144 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
     public Result contractCallTx(String sender, Na value, Na naLimit, byte price, String contractAddress,
                                  String methodName, String methodDesc, String[] args,
                                  String password, String remark) {
-        //TODO pierre auto-generated method stub
-        return null;
+        try {
+            AssertUtil.canNotEmpty(sender, "the sender address can not be empty");
+            AssertUtil.canNotEmpty(contractAddress, "the contractAddress can not be empty");
+            AssertUtil.canNotEmpty(methodName, "the methodName can not be empty");
+            if (value == null) {
+                value = Na.ZERO;
+            }
+
+            Result<Account> accountResult = accountService.getAccount(sender);
+            if (accountResult.isFailed()) {
+                return accountResult;
+            }
+
+            //TODO pierre 校验合约地址
+            // coding
+
+            Account account = accountResult.getData();
+            // 验证钱包密码
+            if (accountService.isEncrypted(account).isSuccess()) {
+                AssertUtil.canNotEmpty(password, "the password can not be empty");
+
+                Result passwordResult = accountService.validPassword(account, password);
+                if (passwordResult.isFailed()) {
+                    return passwordResult;
+                }
+            }
+
+            CallContractTransaction tx = new CallContractTransaction();
+            if (StringUtils.isNotBlank(remark)) {
+                try {
+                    tx.setRemark(remark.getBytes(NulsConfig.DEFAULT_ENCODING));
+                } catch (UnsupportedEncodingException e) {
+                    Log.error(e);
+                    throw new RuntimeException(e);
+                }
+            }
+            tx.setTime(TimeService.currentTimeMillis());
+
+            byte[] senderBytes = Base58.decode(sender);
+            byte[] contractAddressBytes = Base58.decode(contractAddress);
+
+            // 组装txData
+            CallContractData callContractData = new CallContractData();
+            callContractData.setContractAddress(contractAddressBytes);
+            callContractData.setSender(senderBytes);
+            callContractData.setValue(value.getValue());
+            callContractData.setPrice(price);
+            callContractData.setNaLimit(naLimit.getValue());
+            callContractData.setMethodName(methodName);
+            callContractData.setMethodDesc(methodDesc);
+            if(args != null) {
+                callContractData.setArgsCount((byte) args.length);
+                callContractData.setArgs(args);
+            }
+            tx.setTxData(callContractData);
+
+            // 计算CoinData
+            /*
+             * 智能合约计算手续费以消耗的Gas*Price为根据，然而创建交易时并不执行智能合约，
+             * 所以此时交易的CoinData是不固定的，比实际要多，
+             * 打包时执行智能合约，真实的手续费已算出，然而tx的手续费已扣除，
+             * 多扣除的费用会以CoinBase交易还给Sender
+             */
+            CoinData coinData = new CoinData();
+            // 向智能合约地址转账
+            if(!Na.ZERO.equals(value)) {
+                Coin toCoin = new Coin(contractAddressBytes, value);
+                coinData.getTo().add(toCoin);
+            }
+
+            // 当前区块高度//TODO pierre 不提交执行创建智能合约是否可以不用传入区块高度和状态根
+            long blockHeight = -1;
+            // 前一区块状态根//TODO pierre
+            byte[] prevStateRoot = null;
+            // 执行VM估算Gas消耗
+            ProgramCall programCall = new ProgramCall();
+            programCall.setContractAddress(callContractData.getContractAddress());
+            programCall.setSender(callContractData.getSender());
+            programCall.setValue(BigInteger.valueOf(callContractData.getValue()));
+            programCall.setPrice(callContractData.getPrice());
+            programCall.setNaLimit(callContractData.getNaLimit());
+            programCall.setNumber(blockHeight);
+            programCall.setMethodName(callContractData.getMethodName());
+            programCall.setMethodDesc(callContractData.getMethodDesc());
+            programCall.setArgs(callContractData.getArgs());
+
+            ProgramExecutor track = programExecutor.begin(prevStateRoot);
+            ProgramResult programResult = track.call(programCall);
+
+            if(programResult.isError()) {
+                Result result = Result.getFailed(programResult.getErrorMessage());
+                result.setErrorCode(ContractErrorCode.DATA_ERROR);
+                return result;
+            }
+            long gasUsed = programResult.getGasUsed();
+            // 预估1.5倍Gas
+            gasUsed += gasUsed >> 1;
+            Na imputedNa = Na.valueOf(gasUsed * price);
+            // 总花费
+            Na totalNa = imputedNa.add(value);
+            CoinDataResult coinDataResult = accountLedgerService.getCoinData(senderBytes, totalNa, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH);
+            if (!coinDataResult.isEnough()) {
+                return Result.getFailed(ContractErrorCode.BALANCE_NOT_ENOUGH);
+            }
+            coinData.setFrom(coinDataResult.getCoinList());
+            // 找零的UTXO
+            if (coinDataResult.getChange() != null) {
+                coinData.getTo().add(coinDataResult.getChange());
+            }
+            tx.setCoinData(coinData);
+            tx.setHash(NulsDigestData.calcDigestData(tx.serialize()));
+            // 交易签名
+            P2PKHScriptSig sig = new P2PKHScriptSig();
+            sig.setPublicKey(account.getPubKey());
+            sig.setSignData(accountService.signData(tx.getHash().serialize(), account, password));
+            tx.setScriptSig(sig.serialize());
+
+            // 保存
+            Result saveResult = accountLedgerService.saveUnconfirmedTransaction(tx);
+            if (saveResult.isFailed()) {
+                return saveResult;
+            }
+            Result sendResult = transactionService.broadcastTx(tx);
+            if (sendResult.isFailed()) {
+                return sendResult;
+            }
+
+            return Result.getSuccess().setData(tx.getHash().getDigestHex());
+        } catch (IOException e) {
+            Log.error(e);
+            return Result.getFailed(e.getMessage());
+        } catch (NulsException e) {
+            Log.error(e);
+            return Result.getFailed(e.getErrorCode());
+        } catch (Exception e) {
+            Log.error(e);
+            return Result.getFailed(e.getMessage());
+        }
     }
 
     /**
@@ -245,8 +408,96 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
     @Override
     public Result contractDeleteTx(String sender, String contractAddress,
                                    String password, String remark) {
-        //TODO pierre auto-generated method stub
-        return null;
+        try {
+            AssertUtil.canNotEmpty(sender, "the sender address can not be empty");
+            AssertUtil.canNotEmpty(contractAddress, "the contractAddress can not be empty");
+
+            Result<Account> accountResult = accountService.getAccount(sender);
+            if (accountResult.isFailed()) {
+                return accountResult;
+            }
+
+            //TODO pierre 校验合约地址
+            // coding
+
+            Account account = accountResult.getData();
+            // 验证钱包密码
+            if (accountService.isEncrypted(account).isSuccess()) {
+                AssertUtil.canNotEmpty(password, "the password can not be empty");
+
+                Result passwordResult = accountService.validPassword(account, password);
+                if (passwordResult.isFailed()) {
+                    return passwordResult;
+                }
+            }
+
+            DeleteContractTransaction tx = new DeleteContractTransaction();
+            if (StringUtils.isNotBlank(remark)) {
+                try {
+                    tx.setRemark(remark.getBytes(NulsConfig.DEFAULT_ENCODING));
+                } catch (UnsupportedEncodingException e) {
+                    Log.error(e);
+                    throw new RuntimeException(e);
+                }
+            }
+            tx.setTime(TimeService.currentTimeMillis());
+
+            byte[] senderBytes = Base58.decode(sender);
+            byte[] contractAddressBytes = Base58.decode(contractAddress);
+
+            // 组装txData
+            DeleteContractData deleteContractData = new DeleteContractData();
+            deleteContractData.setContractAddress(contractAddressBytes);
+            deleteContractData.setSender(senderBytes);
+
+            tx.setTxData(deleteContractData);
+
+            // 计算CoinData
+            /*
+             * 没有Gas消耗，在终止智能合约里
+             */
+            CoinData coinData = new CoinData();
+
+            //TODO pierre 终止智能合约的交易手续费如何计算
+            // 总花费
+            CoinDataResult coinDataResult = accountLedgerService.getCoinData(senderBytes, Na.ZERO, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH);
+            if (!coinDataResult.isEnough()) {
+                return Result.getFailed(ContractErrorCode.BALANCE_NOT_ENOUGH);
+            }
+            coinData.setFrom(coinDataResult.getCoinList());
+            // 找零的UTXO
+            if (coinDataResult.getChange() != null) {
+                coinData.getTo().add(coinDataResult.getChange());
+            }
+            tx.setCoinData(coinData);
+            tx.setHash(NulsDigestData.calcDigestData(tx.serialize()));
+            // 交易签名
+            P2PKHScriptSig sig = new P2PKHScriptSig();
+            sig.setPublicKey(account.getPubKey());
+            sig.setSignData(accountService.signData(tx.getHash().serialize(), account, password));
+            tx.setScriptSig(sig.serialize());
+
+            // 保存
+            Result saveResult = accountLedgerService.saveUnconfirmedTransaction(tx);
+            if (saveResult.isFailed()) {
+                return saveResult;
+            }
+            Result sendResult = transactionService.broadcastTx(tx);
+            if (sendResult.isFailed()) {
+                return sendResult;
+            }
+
+            return Result.getSuccess().setData(tx.getHash().getDigestHex());
+        } catch (IOException e) {
+            Log.error(e);
+            return Result.getFailed(e.getMessage());
+        } catch (NulsException e) {
+            Log.error(e);
+            return Result.getFailed(e.getErrorCode());
+        } catch (Exception e) {
+            Log.error(e);
+            return Result.getFailed(e.getMessage());
+        }
     }
 
 }

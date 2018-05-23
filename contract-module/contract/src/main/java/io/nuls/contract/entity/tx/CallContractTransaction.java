@@ -36,7 +36,7 @@ import io.nuls.kernel.utils.NulsByteBuffer;
  */
 public class CallContractTransaction extends Transaction<CallContractData> {
 
-    public CallContractTransaction(int type) {
+    public CallContractTransaction() {
         super(ContractConstant.TX_TYPE_CALL_CONTRACT);
     }
 

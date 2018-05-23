@@ -1,11 +1,12 @@
 package io.nuls.contract.util;
 
 
-import io.nuls.contract.entity.BlockHeader;
+import io.nuls.contract.entity.BlockHeaderDto;
 import io.nuls.core.tools.str.StringUtils;
 import io.nuls.kernel.context.NulsContext;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.lite.core.SpringLiteContext;
+import io.nuls.kernel.model.BlockHeader;
 import io.nuls.kernel.model.NulsDigestData;
 import io.nuls.kernel.model.Result;
 import io.nuls.protocol.service.BlockService;
@@ -28,18 +29,17 @@ public enum VMContext {
      * @throws NulsException
      * @throws IOException
      */
-    public BlockHeader getBlockHeader(String hash) throws NulsException, IOException {
+    public BlockHeaderDto getBlockHeader(String hash) throws NulsException, IOException {
         if(StringUtils.isBlank(hash)) {
             return null;
         }
         NulsDigestData nulsDigestData = NulsDigestData.fromDigestHex(hash);
-        Result<io.nuls.kernel.model.BlockHeader> blockHeaderResult = blockService.getBlockHeader(nulsDigestData);
+        Result<BlockHeader> blockHeaderResult = blockService.getBlockHeader(nulsDigestData);
         if(blockHeaderResult == null || blockHeaderResult.getData() == null) {
             return null;
         }
-        BlockHeader header = new BlockHeader(blockHeaderResult.getData());
+        BlockHeaderDto header = new BlockHeaderDto(blockHeaderResult.getData());
         return header;
-
     }
 
     /**
@@ -48,15 +48,15 @@ public enum VMContext {
      * @throws NulsException
      * @throws IOException
      */
-    public BlockHeader getBlockHeader(long height) throws NulsException, IOException {
+    public BlockHeaderDto getBlockHeader(long height) throws NulsException, IOException {
         if(height < 0 || NulsContext.getInstance().getBestHeight() < height) {
             return null;
         }
-        Result<io.nuls.kernel.model.BlockHeader> blockHeaderResult = blockService.getBlockHeader(height);
+        Result<BlockHeader> blockHeaderResult = blockService.getBlockHeader(height);
         if(blockHeaderResult == null || blockHeaderResult.getData() == null) {
             return null;
         }
-        BlockHeader header = new BlockHeader(blockHeaderResult.getData());
+        BlockHeaderDto header = new BlockHeaderDto(blockHeaderResult.getData());
         return header;
     }
 
@@ -65,7 +65,7 @@ public enum VMContext {
      * @return
      * @throws IOException
      */
-    public BlockHeader getBlockHeader() throws IOException {
-        return new BlockHeader(NulsContext.getInstance().getBestBlock().getHeader());
+    public BlockHeaderDto getBlockHeader() throws IOException {
+        return new BlockHeaderDto(NulsContext.getInstance().getBestBlock().getHeader());
     }
 }

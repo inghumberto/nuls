@@ -1,6 +1,5 @@
 
-jar -cvf ./contract-impl/target/contract.jar -C ./contract-impl/target/test-classes ./contracts/
-
+jar -cvf ./contract-module/base/contract-vm/target/contract.jar -C ./contract-module/base/contract-vm/target/test-classes ./contracts/
 jar -cvf /tmp/classes.jar -C /tmp ./
 
 

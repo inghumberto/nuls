@@ -1,6 +1,6 @@
 package io.nuls.contract.vm;
 
-import io.nuls.contract.entity.BlockHeader;
+import io.nuls.contract.entity.BlockHeaderDto;
 import io.nuls.contract.util.VMContext;
 import io.nuls.contract.vm.code.MethodCode;
 import io.nuls.contract.vm.code.VariableType;
@@ -113,7 +113,7 @@ public class VM {
         this.programInvoke = programInvoke;
         ObjectRef coinbase = null;
         long timestamp = 0;
-        BlockHeader blockHeader = getBlockHeader(programInvoke.getNumber());
+        BlockHeaderDto blockHeader = getBlockHeader(programInvoke.getNumber());
         if (blockHeader != null) {
             coinbase = this.heap.newAddress(blockHeader.getPackingAddress());
             timestamp = blockHeader.getTime();
@@ -930,10 +930,10 @@ public class VM {
         return gasCost;
     }
 
-    public BlockHeader getBlockHeader(long number) {
+    public BlockHeaderDto getBlockHeader(long number) {
         try {
             if (this.vmContext != null) {
-                BlockHeader blockHeader = this.vmContext.getBlockHeader(number);
+                BlockHeaderDto blockHeader = this.vmContext.getBlockHeader(number);
                 return blockHeader;
             } else {
                 return null;

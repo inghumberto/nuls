@@ -1,4 +1,4 @@
-package io.nuls.contract.entity.form;
+package io.nuls.contract.rpc.form;
 
 /**
  * @desription:

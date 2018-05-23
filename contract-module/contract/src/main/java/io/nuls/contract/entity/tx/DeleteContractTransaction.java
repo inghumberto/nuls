@@ -36,7 +36,7 @@ import io.nuls.kernel.utils.NulsByteBuffer;
  */
 public class DeleteContractTransaction extends Transaction<DeleteContractData> {
 
-    public DeleteContractTransaction(int type) {
+    public DeleteContractTransaction() {
         super(ContractConstant.TX_TYPE_DELETE_CONTRACT);
     }
 
