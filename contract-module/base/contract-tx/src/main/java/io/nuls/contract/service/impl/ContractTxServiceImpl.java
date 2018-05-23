@@ -36,6 +36,7 @@ import io.nuls.contract.entity.txdata.CreateContractData;
 import io.nuls.contract.entity.txdata.DeleteContractData;
 import io.nuls.contract.helper.VMHelper;
 import io.nuls.contract.service.ContractTxService;
+import io.nuls.contract.util.VMContext;
 import io.nuls.contract.vm.program.ProgramCall;
 import io.nuls.contract.vm.program.ProgramCreate;
 import io.nuls.contract.vm.program.ProgramExecutor;
@@ -72,12 +73,16 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
     private AccountLedgerService accountLedgerService;
     @Autowired
     private TransactionService transactionService;
+    @Autowired
+    private VMHelper vmHelper;
+    @Autowired
+    private VMContext vmContext;
 
     private ProgramExecutor programExecutor;
 
     @Override
     public void afterPropertiesSet() throws NulsException {
-        programExecutor = VMHelper.HELPER.getProgramExecutor();
+        programExecutor = vmHelper.getProgramExecutor();
     }
 
     /**
@@ -110,9 +115,6 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             if (accountResult.isFailed()) {
                 return accountResult;
             }
-
-            //TODO pierre 校验合约地址
-            // coding
 
             Account account = accountResult.getData();
             // 验证钱包密码
@@ -269,9 +271,6 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
                 return accountResult;
             }
 
-            //TODO pierre 校验合约地址
-            // coding
-
             Account account = accountResult.getData();
             // 验证钱包密码
             if (accountService.isEncrypted(account).isSuccess()) {
@@ -416,9 +415,6 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             if (accountResult.isFailed()) {
                 return accountResult;
             }
-
-            //TODO pierre 校验合约地址
-            // coding
 
             Account account = accountResult.getData();
             // 验证钱包密码

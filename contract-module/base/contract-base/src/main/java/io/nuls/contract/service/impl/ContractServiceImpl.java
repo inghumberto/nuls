@@ -13,6 +13,7 @@ import io.nuls.contract.vm.program.ProgramExecutor;
 import io.nuls.contract.vm.program.ProgramResult;
 import io.nuls.core.tools.log.Log;
 import io.nuls.kernel.exception.NulsException;
+import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Service;
 import io.nuls.kernel.lite.core.bean.InitializingBean;
 import io.nuls.kernel.model.Result;
@@ -27,11 +28,14 @@ import java.math.BigInteger;
 @Service
 public class ContractServiceImpl implements ContractService, InitializingBean {
 
+    @Autowired
+    private VMHelper vmHelper;
+
     private ProgramExecutor programExecutor;
 
     @Override
     public void afterPropertiesSet() throws NulsException {
-        programExecutor = VMHelper.HELPER.getProgramExecutor();
+        programExecutor = vmHelper.getProgramExecutor();
     }
 
     /**
