@@ -36,7 +36,7 @@ import io.nuls.kernel.utils.NulsByteBuffer;
  */
 public class CreateContractTransaction extends Transaction<CreateContractData> {
 
-    public CreateContractTransaction(int type) {
+    public CreateContractTransaction() {
         super(ContractConstant.TX_TYPE_CREATE_CONTRACT);
     }
 

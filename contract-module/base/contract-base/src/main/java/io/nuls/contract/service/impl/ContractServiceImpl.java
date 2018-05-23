@@ -51,7 +51,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
         try {
             ProgramCreate programCreate = new ProgramCreate();
             programCreate.setContractAddress(create.getContractAddress());
-            programCreate.setSender(create.getAddress());
+            programCreate.setSender(create.getSender());
             programCreate.setPrice(create.getPrice());
             programCreate.setNaLimit(create.getNaLimit());
             programCreate.setNumber(number);
@@ -99,7 +99,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
         try {
             ProgramCall programCall = new ProgramCall();
             programCall.setContractAddress(call.getContractAddress());
-            programCall.setSender(call.getAddress());
+            programCall.setSender(call.getSender());
             programCall.setValue(BigInteger.valueOf(call.getValue()));
             programCall.setPrice(call.getPrice());
             programCall.setNaLimit(call.getNaLimit());

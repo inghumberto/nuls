@@ -40,7 +40,7 @@ import java.util.Set;
  */
 public class CreateContractData extends TransactionLogicData {
 
-    private byte[] address;
+    private byte[] sender;
     private byte[] contractAddress;
     private long value;
     private int codeLen;
@@ -53,7 +53,7 @@ public class CreateContractData extends TransactionLogicData {
     @Override
     public int size() {
         int size = 0;
-        size += SerializeUtils.sizeOfBytes(address);
+        size += SerializeUtils.sizeOfBytes(sender);
         size += SerializeUtils.sizeOfBytes(contractAddress);
         size += SerializeUtils.sizeOfVarInt(value);
         size += SerializeUtils.sizeOfVarInt(codeLen);
@@ -71,7 +71,7 @@ public class CreateContractData extends TransactionLogicData {
 
     @Override
     protected void serializeToStream(NulsOutputStreamBuffer stream) throws IOException {
-        stream.writeBytesWithLength(address);
+        stream.writeBytesWithLength(sender);
         stream.writeBytesWithLength(contractAddress);
         stream.writeVarInt(value);
         stream.writeVarInt(codeLen);
@@ -88,7 +88,7 @@ public class CreateContractData extends TransactionLogicData {
 
     @Override
     protected void parse(NulsByteBuffer byteBuffer) throws NulsException {
-        this.address = byteBuffer.readByLengthByte();
+        this.sender = byteBuffer.readByLengthByte();
         this.contractAddress = byteBuffer.readByLengthByte();
         this.value = (long) byteBuffer.readVarInt();
         this.codeLen = (int) byteBuffer.readVarInt();
@@ -111,12 +111,12 @@ public class CreateContractData extends TransactionLogicData {
         this.value = value;
     }
 
-    public byte[] getAddress() {
-        return address;
+    public byte[] getSender() {
+        return sender;
     }
 
-    public void setAddress(byte[] address) {
-        this.address = address;
+    public void setSender(byte[] sender) {
+        this.sender = sender;
     }
 
     public byte[] getContractAddress() {

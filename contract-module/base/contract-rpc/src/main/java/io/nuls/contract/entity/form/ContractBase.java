@@ -9,7 +9,7 @@ public class ContractBase {
     private String sender;
     private long naLimit;
     private long value;
-    private int price;
+    private byte price;
     private transient String password;
     private String remark;
     private String contractAddress;
@@ -48,11 +48,11 @@ public class ContractBase {
         this.value = value;
     }
 
-    public int getPrice() {
+    public byte getPrice() {
         return price;
     }
 
-    public void setPrice(int price) {
+    public void setPrice(byte price) {
         this.price = price;
     }
 
