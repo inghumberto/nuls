@@ -23,19 +23,25 @@
  */
 package io.nuls.contract.rpc.resource;
 
+import io.nuls.account.ledger.constant.AccountLedgerErrorCode;
+import io.nuls.account.model.Address;
 import io.nuls.contract.constant.ContractErrorCode;
+import io.nuls.contract.rpc.form.ContractCall;
+import io.nuls.contract.rpc.form.ContractCreate;
+import io.nuls.contract.rpc.form.ContractDelete;
+import io.nuls.contract.service.ContractTxService;
 import io.nuls.core.tools.log.Log;
 import io.nuls.core.tools.str.StringUtils;
 import io.nuls.kernel.exception.NulsRuntimeException;
+import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Component;
+import io.nuls.kernel.model.Na;
 import io.nuls.kernel.model.Result;
 import io.swagger.annotations.*;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import java.util.Base64;
 
 /**
  * @desription:
@@ -47,30 +53,103 @@ import javax.ws.rs.core.MediaType;
 @Component
 public class ContractResource {
 
+    @Autowired
+    private ContractTxService contractTxService;
 
-    @GET
+    @POST
     @Path("/create")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "根据hash查询交易")
+    @ApiOperation(value = "创建智能合约")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "success")
     })
-    public Result createContract(@ApiParam(name="hash", value="交易hash", required = true)
-                          @PathParam("hash") String hash) {
-        if (StringUtils.isBlank(hash)) {
+    public Result createContract(@ApiParam(name = "createForm", value = "创建智能合约", required = true) ContractCreate create) {
+        if (create == null || create.getValue() < 0 || create.getNaLimit() < 0 || create.getPrice() < 0) {
+            return Result.getFailed(ContractErrorCode.PARAMETER_ERROR);
+        }
+
+        if (!Address.validAddress(create.getSender())) {
+            return Result.getFailed(AccountLedgerErrorCode.ADDRESS_ERROR);
+        }
+
+        if (!Address.validAddress(create.getContractAddress())) {
+            return Result.getFailed(AccountLedgerErrorCode.ADDRESS_ERROR);
+        }
+
+        String contractCode = create.getContractCode();
+        if(StringUtils.isBlank(contractCode)) {
             return Result.getFailed(ContractErrorCode.NULL_PARAMETER);
         }
-        Result result = null;
-        try {
 
-        } catch (NulsRuntimeException re) {
-            Log.error(re);
-            result = new Result(false, re.getCode(), re.getMessage());
-        } catch (Exception e) {
-            Log.error(e);
-            result = Result.getFailed(ContractErrorCode.SYS_UNKOWN_EXCEPTION);
+        byte[] contractCodeBytes = Base64.getDecoder().decode(contractCode);
+
+        return contractTxService.contractCreateTx(create.getSender(),
+                Na.valueOf(create.getValue()),
+                Na.valueOf(create.getNaLimit()),
+                create.getPrice(),
+                create.getContractAddress(),
+                contractCodeBytes,
+                create.getArgs(),
+                create.getPassword(),
+                create.getRemark());
+    }
+
+    @POST
+    @Path("/call")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "调用智能合约")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "success")
+    })
+    public Result callContract(@ApiParam(name = "callFrom", value = "调用智能合约", required = true) ContractCall call) {
+        if (call == null || call.getValue() < 0 || call.getNaLimit() < 0 || call.getPrice() < 0) {
+            return Result.getFailed(ContractErrorCode.PARAMETER_ERROR);
         }
-        return result;
+
+        if (!Address.validAddress(call.getSender())) {
+            return Result.getFailed(AccountLedgerErrorCode.ADDRESS_ERROR);
+        }
+
+        if (!Address.validAddress(call.getContractAddress())) {
+            return Result.getFailed(AccountLedgerErrorCode.ADDRESS_ERROR);
+        }
+
+        return contractTxService.contractCallTx(call.getSender(),
+                Na.valueOf(call.getValue()),
+                Na.valueOf(call.getNaLimit()),
+                call.getPrice(),
+                call.getContractAddress(),
+                call.getMethodName(),
+                call.getMethodDesc(),
+                call.getArgs(),
+                call.getPassword(),
+                call.getRemark());
+    }
+
+    @POST
+    @Path("/delete")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "删除智能合约")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "success")
+    })
+    public Result deleteContract(@ApiParam(name = "deleteFrom", value = "删除智能合约", required = true) ContractDelete delete) {
+        if (delete == null) {
+            return Result.getFailed(ContractErrorCode.PARAMETER_ERROR);
+        }
+
+        if (!Address.validAddress(delete.getSender())) {
+            return Result.getFailed(AccountLedgerErrorCode.ADDRESS_ERROR);
+        }
+
+        if (!Address.validAddress(delete.getContractAddress())) {
+            return Result.getFailed(AccountLedgerErrorCode.ADDRESS_ERROR);
+        }
+
+        return contractTxService.contractDeleteTx(delete.getSender(),
+                delete.getContractAddress(),
+                delete.getPassword(),
+                delete.getRemark());
     }
 
 

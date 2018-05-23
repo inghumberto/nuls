@@ -1,17 +1,28 @@
 package io.nuls.contract.rpc.form;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * @desription:
  * @author: PierreLuo
  * @date: 2018/4/21
  */
+@ApiModel(value = "智能合约表单数据")
 public class ContractBase {
+    @ApiModelProperty(name = "sender", value = "交易创建者", required = true)
     private String sender;
+    @ApiModelProperty(name = "naLimit", value = "最大Na消耗", required = true)
     private long naLimit;
+    @ApiModelProperty(name = "value", value = "交易附带的货币量", required = false)
     private long value;
+    @ApiModelProperty(name = "price", value = "执行合约单价", required = true)
     private byte price;
-    private transient String password;
+    @ApiModelProperty(name = "password", value = "钱包密码", required = true)
+    private String password;
+    @ApiModelProperty(name = "remark", value = "备注", required = false)
     private String remark;
+    @ApiModelProperty(name = "contractAddress", value = "智能合约地址", required = true)
     private String contractAddress;
 
     public String getContractAddress() {
@@ -21,8 +32,6 @@ public class ContractBase {
     public void setContractAddress(String contractAddress) {
         this.contractAddress = contractAddress;
     }
-
-    //todo world status
 
     public String getSender() {
         return sender;
