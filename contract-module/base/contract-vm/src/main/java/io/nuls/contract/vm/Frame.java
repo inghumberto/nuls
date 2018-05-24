@@ -2,10 +2,8 @@ package io.nuls.contract.vm;
 
 import io.nuls.contract.vm.code.MethodCode;
 import io.nuls.contract.vm.instructions.references.Athrow;
-import lombok.Getter;
 import org.objectweb.asm.tree.*;
 
-@Getter
 public class Frame {
 
     private final VM vm;
@@ -200,6 +198,50 @@ public class Frame {
 
     public LineNumberNode lineNumberNode() {
         return (LineNumberNode) this.currentInsnNode;
+    }
+
+    public VM getVm() {
+        return vm;
+    }
+
+    public Heap getHeap() {
+        return heap;
+    }
+
+    public MethodArea getMethodArea() {
+        return methodArea;
+    }
+
+    public MethodCode getMethodCode() {
+        return methodCode;
+    }
+
+    public int getMaxStack() {
+        return maxStack;
+    }
+
+    public int getMaxLocals() {
+        return maxLocals;
+    }
+
+    public OperandStack getOperandStack() {
+        return operandStack;
+    }
+
+    public LocalVariables getLocalVariables() {
+        return localVariables;
+    }
+
+    public Result getResult() {
+        return result;
+    }
+
+    public AbstractInsnNode getCurrentInsnNode() {
+        return currentInsnNode;
+    }
+
+    public OpCode getCurrentOpCode() {
+        return currentOpCode;
     }
 
 }

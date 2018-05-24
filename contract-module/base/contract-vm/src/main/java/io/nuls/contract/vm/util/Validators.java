@@ -2,7 +2,6 @@ package io.nuls.contract.vm.util;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
-import lombok.experimental.UtilityClass;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
@@ -13,8 +12,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@UtilityClass
-public class Validators {
+public abstract class Validators {
 
     private static final Validator VALIDATOR = Validation.buildDefaultValidatorFactory().getValidator();
 

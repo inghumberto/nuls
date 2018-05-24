@@ -1,14 +1,9 @@
 package io.nuls.contract.vm.program.impl;
 
-import lombok.Builder;
-import lombok.Getter;
-
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import java.math.BigInteger;
 
-@Getter
-@Builder
 public class ProgramInvoke {
 
     /**
@@ -117,6 +112,86 @@ public class ProgramInvoke {
     private String[] args;
 
     public void args(String... args) {
+        this.args = args;
+    }
+
+    public byte[] getAddress() {
+        return address;
+    }
+
+    public void setAddress(byte[] address) {
+        this.address = address;
+    }
+
+    public byte[] getSender() {
+        return sender;
+    }
+
+    public void setSender(byte[] sender) {
+        this.sender = sender;
+    }
+
+    public long getGasPrice() {
+        return gasPrice;
+    }
+
+    public void setGasPrice(long gasPrice) {
+        this.gasPrice = gasPrice;
+    }
+
+    public long getGas() {
+        return gas;
+    }
+
+    public void setGas(long gas) {
+        this.gas = gas;
+    }
+
+    public BigInteger getValue() {
+        return value;
+    }
+
+    public void setValue(BigInteger value) {
+        this.value = value;
+    }
+
+    public long getNumber() {
+        return number;
+    }
+
+    public void setNumber(long number) {
+        this.number = number;
+    }
+
+    public byte[] getData() {
+        return data;
+    }
+
+    public void setData(byte[] data) {
+        this.data = data;
+    }
+
+    public String getMethodName() {
+        return methodName;
+    }
+
+    public void setMethodName(String methodName) {
+        this.methodName = methodName;
+    }
+
+    public String getMethodDesc() {
+        return methodDesc;
+    }
+
+    public void setMethodDesc(String methodDesc) {
+        this.methodDesc = methodDesc;
+    }
+
+    public String[] getArgs() {
+        return args;
+    }
+
+    public void setArgs(String[] args) {
         this.args = args;
     }
 

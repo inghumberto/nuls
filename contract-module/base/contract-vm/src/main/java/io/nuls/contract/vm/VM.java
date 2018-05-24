@@ -26,8 +26,6 @@ import io.nuls.contract.vm.program.ProgramTransfer;
 import io.nuls.contract.vm.program.impl.ProgramContext;
 import io.nuls.contract.vm.program.impl.ProgramInvoke;
 import io.nuls.contract.vm.util.Log;
-import lombok.Getter;
-import lombok.Setter;
 import org.objectweb.asm.tree.LookupSwitchInsnNode;
 import org.objectweb.asm.tree.MultiANewArrayInsnNode;
 import org.objectweb.asm.tree.TableSwitchInsnNode;
@@ -36,7 +34,6 @@ import org.spongycastle.util.encoders.Hex;
 import java.util.ArrayList;
 import java.util.List;
 
-@Getter
 public class VM {
 
     private static final int VM_STACK_MAX_SIZE = 512;
@@ -47,7 +44,6 @@ public class VM {
 
     private final MethodArea methodArea;
 
-    @Setter
     private Result result;
 
     private Object resultValue;
@@ -58,10 +54,8 @@ public class VM {
 
     private ProgramContext programContext;
 
-    @Setter
     private ProgramExecutor programExecutor;
 
-    @Setter
     private long gasUsed;
 
     private long gas;
@@ -119,16 +113,15 @@ public class VM {
             timestamp = blockHeader.getTime();
         }
 
-        this.programContext = ProgramContext.builder()
-                .address(this.heap.newAddress(Hex.toHexString(programInvoke.getAddress())))
-                .sender(this.heap.newAddress(Hex.toHexString(programInvoke.getSender())))
-                .gasPrice(programInvoke.getGasPrice())
-                .gas(programInvoke.getGas())
-                .value(this.heap.newBigInteger(programInvoke.getValue().toString()))
-                .coinbase(coinbase)
-                .timestamp(timestamp)
-                .number(programInvoke.getNumber())
-                .build();
+        programContext = new ProgramContext();
+        programContext.setAddress(this.heap.newAddress(Hex.toHexString(programInvoke.getAddress())));
+        programContext.setSender(this.heap.newAddress(Hex.toHexString(programInvoke.getSender())));
+        programContext.setGasPrice(programInvoke.getGasPrice());
+        programContext.setGas(programInvoke.getGas());
+        programContext.setValue(this.heap.newBigInteger(programInvoke.getValue().toString()));
+        programContext.setCoinbase(coinbase);
+        programContext.setTimestamp(timestamp);
+        programContext.setNumber(programInvoke.getNumber());
     }
 
     public void run(MethodCode methodCode, Object[] args) {
@@ -941,6 +934,82 @@ public class VM {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static int getVmStackMaxSize() {
+        return VM_STACK_MAX_SIZE;
+    }
+
+    public VMStack getVmStack() {
+        return vmStack;
+    }
+
+    public Heap getHeap() {
+        return heap;
+    }
+
+    public MethodArea getMethodArea() {
+        return methodArea;
+    }
+
+    public Result getResult() {
+        return result;
+    }
+
+    public Object getResultValue() {
+        return resultValue;
+    }
+
+    public VMContext getVmContext() {
+        return vmContext;
+    }
+
+    public ProgramInvoke getProgramInvoke() {
+        return programInvoke;
+    }
+
+    public ProgramContext getProgramContext() {
+        return programContext;
+    }
+
+    public ProgramExecutor getProgramExecutor() {
+        return programExecutor;
+    }
+
+    public long getGasUsed() {
+        return gasUsed;
+    }
+
+    public long getGas() {
+        return gas;
+    }
+
+    public long getStartTime() {
+        return startTime;
+    }
+
+    public long getEndTime() {
+        return endTime;
+    }
+
+    public long getElapsedTime() {
+        return elapsedTime;
+    }
+
+    public List<ProgramTransfer> getTransfers() {
+        return transfers;
+    }
+
+    public void setResult(Result result) {
+        this.result = result;
+    }
+
+    public void setProgramExecutor(ProgramExecutor programExecutor) {
+        this.programExecutor = programExecutor;
+    }
+
+    public void setGasUsed(long gasUsed) {
+        this.gasUsed = gasUsed;
     }
 
 }

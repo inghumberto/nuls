@@ -11,19 +11,21 @@ import io.nuls.contract.vm.code.MethodCode;
 import io.nuls.contract.vm.program.*;
 import io.nuls.contract.vm.util.Validators;
 import io.nuls.db.service.DBService;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.db.RepositoryRoot;
 import org.ethereum.util.FastByteComparisons;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.validation.ConstraintViolation;
 import java.math.BigInteger;
 import java.util.*;
 
-@Slf4j
 public class ProgramExecutorImpl implements ProgramExecutor {
+
+    private static final Logger log = LoggerFactory.getLogger(ProgramExecutorImpl.class);
 
     private VMContext vmContext;
 
@@ -65,33 +67,31 @@ public class ProgramExecutorImpl implements ProgramExecutor {
 
     @Override
     public ProgramResult create(ProgramCreate programCreate) {
-        ProgramInvoke programInvoke = ProgramInvoke.builder()
-                .address(programCreate.getContractAddress())
-                .sender(programCreate.getSender())
-                .gasPrice(programCreate.getPrice())
-                .gas(programCreate.getNaLimit())
-                .value(programCreate.getValue() != null ? programCreate.getValue() : BigInteger.ZERO)
-                .number(programCreate.getNumber())
-                .data(programCreate.getContractCode())
-                .methodName("<init>")
-                .args(programCreate.getArgs() != null ? programCreate.getArgs() : new String[0])
-                .build();
+        ProgramInvoke programInvoke = new ProgramInvoke();
+        programInvoke.setAddress(programCreate.getContractAddress());
+        programInvoke.setSender(programCreate.getSender());
+        programInvoke.setGasPrice(programCreate.getPrice());
+        programInvoke.setGas(programCreate.getNaLimit());
+        programInvoke.setValue(programCreate.getValue() != null ? programCreate.getValue() : BigInteger.ZERO);
+        programInvoke.setNumber(programCreate.getNumber());
+        programInvoke.setData(programCreate.getContractCode());
+        programInvoke.setMethodName("<init>");
+        programInvoke.args(programCreate.getArgs() != null ? programCreate.getArgs() : new String[0]);
         return execute(programInvoke);
     }
 
     @Override
     public ProgramResult call(ProgramCall programCall) {
-        ProgramInvoke programInvoke = ProgramInvoke.builder()
-                .address(programCall.getContractAddress())
-                .sender(programCall.getSender())
-                .gasPrice(programCall.getPrice())
-                .gas(programCall.getNaLimit())
-                .value(programCall.getValue() != null ? programCall.getValue() : BigInteger.ZERO)
-                .number(programCall.getNumber())
-                .methodName(programCall.getMethodName())
-                .methodDesc(programCall.getMethodDesc())
-                .args(programCall.getArgs() != null ? programCall.getArgs() : new String[0])
-                .build();
+        ProgramInvoke programInvoke = new ProgramInvoke();
+        programInvoke.setAddress(programCall.getContractAddress());
+        programInvoke.setSender(programCall.getSender());
+        programInvoke.setGasPrice(programCall.getPrice());
+        programInvoke.setGas(programCall.getNaLimit());
+        programInvoke.setValue(programCall.getValue() != null ? programCall.getValue() : BigInteger.ZERO);
+        programInvoke.setNumber(programCall.getNumber());
+        programInvoke.setMethodName(programCall.getMethodName());
+        programInvoke.setMethodDesc(programCall.getMethodDesc());
+        programInvoke.args(programCall.getArgs() != null ? programCall.getArgs() : new String[0]);
         return execute(programInvoke);
     }
 

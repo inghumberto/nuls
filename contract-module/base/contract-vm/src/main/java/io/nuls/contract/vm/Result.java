@@ -1,11 +1,7 @@
 package io.nuls.contract.vm;
 
 import io.nuls.contract.vm.code.VariableType;
-import lombok.Getter;
-import lombok.ToString;
 
-@Getter
-@ToString
 public class Result {
 
     private VariableType variableType;
@@ -40,6 +36,37 @@ public class Result {
         this.value(error);
         this.variableType = error.getVariableType();
         this.error = true;
+    }
+
+    public VariableType getVariableType() {
+        return variableType;
+    }
+
+    public Object getValue() {
+        return value;
+    }
+
+    public boolean isEnded() {
+        return ended;
+    }
+
+    public boolean isException() {
+        return exception;
+    }
+
+    public boolean isError() {
+        return error;
+    }
+
+    @Override
+    public String toString() {
+        return "Result{" +
+                "variableType=" + variableType +
+                ", value=" + value +
+                ", ended=" + ended +
+                ", exception=" + exception +
+                ", error=" + error +
+                '}';
     }
 
 }

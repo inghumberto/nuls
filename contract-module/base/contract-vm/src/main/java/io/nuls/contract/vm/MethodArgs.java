@@ -1,13 +1,11 @@
 package io.nuls.contract.vm;
 
 import io.nuls.contract.vm.code.VariableType;
-import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-@Getter
 public class MethodArgs {
 
     private Object[] frameArgs;
@@ -37,6 +35,18 @@ public class MethodArgs {
         Collections.reverse(invokeList);
         this.frameArgs = frameList.toArray();
         this.invokeArgs = invokeList.toArray();
+    }
+
+    public Object[] getFrameArgs() {
+        return frameArgs;
+    }
+
+    public Object[] getInvokeArgs() {
+        return invokeArgs;
+    }
+
+    public ObjectRef getObjectRef() {
+        return objectRef;
     }
 
 }

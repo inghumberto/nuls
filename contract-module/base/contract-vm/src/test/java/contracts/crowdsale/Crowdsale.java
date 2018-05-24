@@ -3,8 +3,6 @@ package contracts.crowdsale;
 import io.nuls.contract.sdk.Address;
 import io.nuls.contract.sdk.Event;
 import io.nuls.contract.sdk.Msg;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 
 import java.math.BigInteger;
 
@@ -37,8 +35,6 @@ public class Crowdsale {
         return weiRaised;
     }
 
-    @Data
-    @AllArgsConstructor
     class TokenPurchaseEvent implements Event {
 
         private Address purchaser;
@@ -48,6 +44,77 @@ public class Crowdsale {
         private BigInteger value;
 
         private BigInteger amount;
+
+        public TokenPurchaseEvent(Address purchaser, Address beneficiary, BigInteger value, BigInteger amount) {
+            this.purchaser = purchaser;
+            this.beneficiary = beneficiary;
+            this.value = value;
+            this.amount = amount;
+        }
+
+        public Address getPurchaser() {
+            return purchaser;
+        }
+
+        public void setPurchaser(Address purchaser) {
+            this.purchaser = purchaser;
+        }
+
+        public Address getBeneficiary() {
+            return beneficiary;
+        }
+
+        public void setBeneficiary(Address beneficiary) {
+            this.beneficiary = beneficiary;
+        }
+
+        public BigInteger getValue() {
+            return value;
+        }
+
+        public void setValue(BigInteger value) {
+            this.value = value;
+        }
+
+        public BigInteger getAmount() {
+            return amount;
+        }
+
+        public void setAmount(BigInteger amount) {
+            this.amount = amount;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            TokenPurchaseEvent that = (TokenPurchaseEvent) o;
+
+            if (purchaser != null ? !purchaser.equals(that.purchaser) : that.purchaser != null) return false;
+            if (beneficiary != null ? !beneficiary.equals(that.beneficiary) : that.beneficiary != null) return false;
+            if (value != null ? !value.equals(that.value) : that.value != null) return false;
+            return amount != null ? amount.equals(that.amount) : that.amount == null;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = purchaser != null ? purchaser.hashCode() : 0;
+            result = 31 * result + (beneficiary != null ? beneficiary.hashCode() : 0);
+            result = 31 * result + (value != null ? value.hashCode() : 0);
+            result = 31 * result + (amount != null ? amount.hashCode() : 0);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "TokenPurchaseEvent{" +
+                    "purchaser=" + purchaser +
+                    ", beneficiary=" + beneficiary +
+                    ", value=" + value +
+                    ", amount=" + amount +
+                    '}';
+        }
 
     }
 

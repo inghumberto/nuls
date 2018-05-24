@@ -2,19 +2,21 @@ package io.nuls.contract.vm.program.impl;
 
 import io.nuls.contract.vm.OpCode;
 import io.nuls.contract.vm.code.*;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InnerClassNode;
 import org.objectweb.asm.tree.LineNumberNode;
 import org.objectweb.asm.tree.MethodInsnNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Slf4j
 public class ProgramChecker {
+
+    private static final Logger log = LoggerFactory.getLogger(ProgramExecutorImpl.class);
 
     public static void check(List<ClassCode> classCodes) {
         checkJdkVersion(classCodes);

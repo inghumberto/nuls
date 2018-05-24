@@ -1,11 +1,7 @@
 package io.nuls.contract.vm.program.impl;
 
 import io.nuls.contract.vm.ObjectRef;
-import lombok.Builder;
-import lombok.Getter;
 
-@Builder
-@Getter
 public class ProgramContext {
 
     private ObjectRef address;
@@ -31,5 +27,70 @@ public class ProgramContext {
     //private long difficulty;
 
     //private ObjectRef data;
+
+
+    public ObjectRef getAddress() {
+        return address;
+    }
+
+    public void setAddress(ObjectRef address) {
+        this.address = address;
+    }
+
+    public ObjectRef getSender() {
+        return sender;
+    }
+
+    public void setSender(ObjectRef sender) {
+        this.sender = sender;
+    }
+
+    public long getGasPrice() {
+        return gasPrice;
+    }
+
+    public void setGasPrice(long gasPrice) {
+        this.gasPrice = gasPrice;
+    }
+
+    public long getGas() {
+        return gas;
+    }
+
+    public void setGas(long gas) {
+        this.gas = gas;
+    }
+
+    public ObjectRef getValue() {
+        return value;
+    }
+
+    public void setValue(ObjectRef value) {
+        this.value = value;
+    }
+
+    public ObjectRef getCoinbase() {
+        return coinbase;
+    }
+
+    public void setCoinbase(ObjectRef coinbase) {
+        this.coinbase = coinbase;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public long getNumber() {
+        return number;
+    }
+
+    public void setNumber(long number) {
+        this.number = number;
+    }
 
 }

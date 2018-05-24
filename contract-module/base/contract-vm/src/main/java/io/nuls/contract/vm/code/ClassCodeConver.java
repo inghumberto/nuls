@@ -12,45 +12,45 @@ import java.util.stream.Collectors;
 public class ClassCodeConver {
 
     public static ClassCode toClassCode(ClassNode classNode) {
-        return ClassCode.builder()
-                .version(classNode.version)
-                .access(classNode.access)
-                .name(classNode.name)
-                .signature(classNode.signature)
-                .superName(classNode.superName)
-                .interfaces(classNode.interfaces != null ? classNode.interfaces : new ArrayList<>())
-                .sourceFile(classNode.sourceFile)
-                .sourceDebug(classNode.sourceDebug)
-                .module(classNode.module)
-                .outerClass(classNode.outerClass)
-                .outerMethod(classNode.outerMethod)
-                .outerMethodDesc(classNode.outerMethodDesc)
-                .visibleAnnotations(classNode.visibleAnnotations)
-                .invisibleAnnotations(classNode.invisibleAnnotations)
-                .visibleTypeAnnotations(classNode.visibleTypeAnnotations)
-                .invisibleTypeAnnotations(classNode.invisibleTypeAnnotations)
-                .attrs(classNode.attrs)
-                .innerClasses(classNode.innerClasses != null ? classNode.innerClasses : new ArrayList<>())
-                .fields(toFieldCodes(classNode.fields))
-                .methods(toMethodCodes(classNode.name, classNode.methods))
-                .variableType(VariableType.valueOf(classNode.name))
-                .build();
+        ClassCode classCode = new ClassCode();
+        classCode.setVersion(classNode.version);
+        classCode.setAccess(classNode.access);
+        classCode.setName(classNode.name);
+        classCode.setSignature(classNode.signature);
+        classCode.setSuperName(classNode.superName);
+        classCode.setInterfaces(classNode.interfaces != null ? classNode.interfaces : new ArrayList<>());
+        classCode.setSourceFile(classNode.sourceFile);
+        classCode.setSourceDebug(classNode.sourceDebug);
+        classCode.setModule(classNode.module);
+        classCode.setOuterClass(classNode.outerClass);
+        classCode.setOuterMethod(classNode.outerMethod);
+        classCode.setOuterMethodDesc(classNode.outerMethodDesc);
+        classCode.setVisibleAnnotations(classNode.visibleAnnotations);
+        classCode.setInvisibleAnnotations(classNode.invisibleAnnotations);
+        classCode.setVisibleTypeAnnotations(classNode.visibleTypeAnnotations);
+        classCode.setInvisibleTypeAnnotations(classNode.invisibleTypeAnnotations);
+        classCode.setAttrs(classNode.attrs);
+        classCode.setInnerClasses(classNode.innerClasses != null ? classNode.innerClasses : new ArrayList<>());
+        classCode.setFields(toFieldCodes(classNode.fields));
+        classCode.setMethods(toMethodCodes(classNode.name, classNode.methods));
+        classCode.setVariableType(VariableType.valueOf(classNode.name));
+        return classCode;
     }
 
     public static FieldCode toFieldCode(FieldNode fieldNode) {
-        return FieldCode.builder()
-                .access(fieldNode.access)
-                .name(fieldNode.name)
-                .desc(fieldNode.desc)
-                .signature(fieldNode.signature)
-                .value(fieldNode.value)
-                .visibleAnnotations(fieldNode.visibleAnnotations)
-                .invisibleAnnotations(fieldNode.invisibleAnnotations)
-                .visibleTypeAnnotations(fieldNode.visibleTypeAnnotations)
-                .invisibleTypeAnnotations(fieldNode.invisibleTypeAnnotations)
-                .attrs(fieldNode.attrs)
-                .variableType(VariableType.valueOf(fieldNode.desc))
-                .build();
+        FieldCode fieldCode = new FieldCode();
+        fieldCode.setAccess(fieldNode.access);
+        fieldCode.setName(fieldNode.name);
+        fieldCode.setDesc(fieldNode.desc);
+        fieldCode.setSignature(fieldNode.signature);
+        fieldCode.setValue(fieldNode.value);
+        fieldCode.setVisibleAnnotations(fieldNode.visibleAnnotations);
+        fieldCode.setInvisibleAnnotations(fieldNode.invisibleAnnotations);
+        fieldCode.setVisibleTypeAnnotations(fieldNode.visibleTypeAnnotations);
+        fieldCode.setInvisibleTypeAnnotations(fieldNode.invisibleTypeAnnotations);
+        fieldCode.setAttrs(fieldNode.attrs);
+        fieldCode.setVariableType(VariableType.valueOf(fieldNode.desc));
+        return fieldCode;
     }
 
     public static List<FieldCode> toFieldCodes(List<FieldNode> fieldNodes) {
@@ -58,33 +58,33 @@ public class ClassCodeConver {
     }
 
     public static MethodCode toMethodCode(String className, MethodNode methodNode) {
-        return MethodCode.builder()
-                .access(methodNode.access)
-                .name(methodNode.name)
-                .desc(methodNode.desc)
-                .signature(methodNode.signature)
-                .exceptions(methodNode.exceptions)
-                .parameters(methodNode.parameters)
-                .visibleAnnotations(methodNode.visibleAnnotations)
-                .invisibleAnnotations(methodNode.invisibleAnnotations)
-                .visibleTypeAnnotations(methodNode.visibleTypeAnnotations)
-                .invisibleTypeAnnotations(methodNode.invisibleTypeAnnotations)
-                .attrs(methodNode.attrs)
-                .annotationDefault(methodNode.annotationDefault)
-                .visibleParameterAnnotations(methodNode.visibleParameterAnnotations)
-                .invisibleParameterAnnotations(methodNode.invisibleParameterAnnotations)
-                .instructions(methodNode.instructions)
-                .tryCatchBlocks(methodNode.tryCatchBlocks != null ? methodNode.tryCatchBlocks : new ArrayList<>())
-                .maxStack(methodNode.maxStack)
-                .maxLocals(methodNode.maxLocals)
-                .localVariables(toLocalVariableCodes(methodNode.localVariables))
-                .visibleLocalVariableAnnotations(methodNode.visibleLocalVariableAnnotations)
-                .invisibleLocalVariableAnnotations(methodNode.invisibleLocalVariableAnnotations)
-                //.visited(methodNode.visited)
-                .className(className)
-                .returnVariableType(VariableType.parseReturn(methodNode.desc))
-                .argsVariableType(VariableType.parseArgs(methodNode.desc))
-                .build();
+        MethodCode methodCode = new MethodCode();
+        methodCode.setAccess(methodNode.access);
+        methodCode.setName(methodNode.name);
+        methodCode.setDesc(methodNode.desc);
+        methodCode.setSignature(methodNode.signature);
+        methodCode.setExceptions(methodNode.exceptions);
+        methodCode.setParameters(methodNode.parameters);
+        methodCode.setVisibleAnnotations(methodNode.visibleAnnotations);
+        methodCode.setInvisibleAnnotations(methodNode.invisibleAnnotations);
+        methodCode.setVisibleTypeAnnotations(methodNode.visibleTypeAnnotations);
+        methodCode.setInvisibleTypeAnnotations(methodNode.invisibleTypeAnnotations);
+        methodCode.setAttrs(methodNode.attrs);
+        methodCode.setAnnotationDefault(methodNode.annotationDefault);
+        methodCode.setVisibleParameterAnnotations(methodNode.visibleParameterAnnotations);
+        methodCode.setInvisibleParameterAnnotations(methodNode.invisibleParameterAnnotations);
+        methodCode.setInstructions(methodNode.instructions);
+        methodCode.setTryCatchBlocks(methodNode.tryCatchBlocks != null ? methodNode.tryCatchBlocks : new ArrayList<>());
+        methodCode.setMaxStack(methodNode.maxStack);
+        methodCode.setMaxLocals(methodNode.maxLocals);
+        methodCode.setLocalVariables(toLocalVariableCodes(methodNode.localVariables));
+        methodCode.setVisibleLocalVariableAnnotations(methodNode.visibleLocalVariableAnnotations);
+        methodCode.setInvisibleLocalVariableAnnotations(methodNode.invisibleLocalVariableAnnotations);
+        //.visited(methodNode.visited)
+        methodCode.setClassName(className);
+        methodCode.setReturnVariableType(VariableType.parseReturn(methodNode.desc));
+        methodCode.setArgsVariableType(VariableType.parseArgs(methodNode.desc));
+        return methodCode;
     }
 
     public static List<MethodCode> toMethodCodes(String className, List<MethodNode> methodNodes) {
@@ -92,15 +92,15 @@ public class ClassCodeConver {
     }
 
     public static LocalVariableCode toLocalVariableCode(LocalVariableNode localVariableNode) {
-        return LocalVariableCode.builder()
-                .name(localVariableNode.name)
-                .desc(localVariableNode.desc)
-                .signature(localVariableNode.signature)
-                .start(localVariableNode.start)
-                .end(localVariableNode.end)
-                .index(localVariableNode.index)
-                .variableType(VariableType.valueOf(localVariableNode.desc))
-                .build();
+        LocalVariableCode localVariableCode = new LocalVariableCode();
+        localVariableCode.setName(localVariableNode.name);
+        localVariableCode.setDesc(localVariableNode.desc);
+        localVariableCode.setSignature(localVariableNode.signature);
+        localVariableCode.setStart(localVariableNode.start);
+        localVariableCode.setEnd(localVariableNode.end);
+        localVariableCode.setIndex(localVariableNode.index);
+        localVariableCode.setVariableType(VariableType.valueOf(localVariableNode.desc));
+        return localVariableCode;
     }
 
     public static List<LocalVariableCode> toLocalVariableCodes(List<LocalVariableNode> localVariableNodes) {

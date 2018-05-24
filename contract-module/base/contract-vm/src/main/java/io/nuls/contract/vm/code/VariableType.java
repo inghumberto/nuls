@@ -3,18 +3,12 @@ package io.nuls.contract.vm.code;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-@Getter
-@ToString
-@EqualsAndHashCode
 public class VariableType {
 
     private static LoadingCache<String, VariableType> CACHE;
@@ -292,6 +286,83 @@ public class VariableType {
         } else {
             return this.desc;
         }
+    }
+
+    public String getDesc() {
+        return desc;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public VariableType getComponentType() {
+        return componentType;
+    }
+
+    public boolean isPrimitiveType() {
+        return primitiveType;
+    }
+
+    public boolean isPrimitive() {
+        return primitive;
+    }
+
+    public boolean isArray() {
+        return array;
+    }
+
+    public int getDimensions() {
+        return dimensions;
+    }
+
+    public Object getDefaultValue() {
+        return defaultValue;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        VariableType that = (VariableType) o;
+
+        if (primitiveType != that.primitiveType) return false;
+        if (primitive != that.primitive) return false;
+        if (array != that.array) return false;
+        if (dimensions != that.dimensions) return false;
+        if (desc != null ? !desc.equals(that.desc) : that.desc != null) return false;
+        if (type != null ? !type.equals(that.type) : that.type != null) return false;
+        if (componentType != null ? !componentType.equals(that.componentType) : that.componentType != null)
+            return false;
+        return defaultValue != null ? defaultValue.equals(that.defaultValue) : that.defaultValue == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = desc != null ? desc.hashCode() : 0;
+        result = 31 * result + (type != null ? type.hashCode() : 0);
+        result = 31 * result + (componentType != null ? componentType.hashCode() : 0);
+        result = 31 * result + (primitiveType ? 1 : 0);
+        result = 31 * result + (primitive ? 1 : 0);
+        result = 31 * result + (array ? 1 : 0);
+        result = 31 * result + dimensions;
+        result = 31 * result + (defaultValue != null ? defaultValue.hashCode() : 0);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "VariableType{" +
+                "desc='" + desc + '\'' +
+                ", type='" + type + '\'' +
+                ", componentType=" + componentType +
+                ", primitiveType=" + primitiveType +
+                ", primitive=" + primitive +
+                ", array=" + array +
+                ", dimensions=" + dimensions +
+                ", defaultValue=" + defaultValue +
+                '}';
     }
 
 }
