@@ -72,10 +72,10 @@ public class ProgramMethod {
     @Override
     public String toString() {
         return "ProgramMethod{" +
-                "name='" + name + '\'' +
-                ", desc='" + desc + '\'' +
+                "name=" + name +
+                ", desc=" + desc +
                 ", args=" + args +
-                ", returnArg='" + returnArg + '\'' +
+                ", returnArg=" + returnArg +
                 '}';
     }
 

@@ -171,8 +171,8 @@ public class ProgramCall {
                 ", naLimit=" + naLimit +
                 ", price=" + price +
                 ", contractAddress=" + Arrays.toString(contractAddress) +
-                ", methodName='" + methodName + '\'' +
-                ", methodDesc='" + methodDesc + '\'' +
+                ", methodName=" + methodName +
+                ", methodDesc=" + methodDesc +
                 ", args=" + Arrays.toString(args) +
                 '}';
     }

@@ -255,9 +255,9 @@ public class MethodCode {
     public String toString() {
         return "MethodCode{" +
                 "access=" + access +
-                ", name='" + name + '\'' +
-                ", desc='" + desc + '\'' +
-                ", signature='" + signature + '\'' +
+                ", name=" + name +
+                ", desc=" + desc +
+                ", signature=" + signature +
                 ", exceptions=" + exceptions +
                 ", parameters=" + parameters +
                 ", visibleAnnotations=" + visibleAnnotations +
@@ -275,7 +275,7 @@ public class MethodCode {
                 ", localVariables=" + localVariables +
                 ", visibleLocalVariableAnnotations=" + visibleLocalVariableAnnotations +
                 ", invisibleLocalVariableAnnotations=" + invisibleLocalVariableAnnotations +
-                ", className='" + className + '\'' +
+                ", className=" + className +
                 ", returnVariableType=" + returnVariableType +
                 ", argsVariableType=" + argsVariableType +
                 '}';

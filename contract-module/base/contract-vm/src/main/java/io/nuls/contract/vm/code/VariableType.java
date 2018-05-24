@@ -354,8 +354,8 @@ public class VariableType {
     @Override
     public String toString() {
         return "VariableType{" +
-                "desc='" + desc + '\'' +
-                ", type='" + type + '\'' +
+                "desc=" + desc +
+                ", type=" + type +
                 ", componentType=" + componentType +
                 ", primitiveType=" + primitiveType +
                 ", primitive=" + primitive +

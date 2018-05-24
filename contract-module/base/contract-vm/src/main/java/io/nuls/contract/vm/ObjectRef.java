@@ -88,8 +88,8 @@ public class ObjectRef {
     @Override
     public String toString() {
         return "ObjectRef{" +
-                "ref='" + ref + '\'' +
-                ", desc='" + desc + '\'' +
+                "ref=" + ref +
+                ", desc=" + desc +
                 ", dimensions=" + Arrays.toString(dimensions) +
                 '}';
     }

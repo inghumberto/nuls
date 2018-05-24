@@ -92,9 +92,9 @@ public class ProgramResult {
     public String toString() {
         return "ProgramResult{" +
                 "gasUsed=" + gasUsed +
-                ", result='" + result + '\'' +
+                ", result=" + result +
                 ", error=" + error +
-                ", errorMessage='" + errorMessage + '\'' +
+                ", errorMessage=" + errorMessage +
                 ", transfers=" + transfers +
                 '}';
     }
