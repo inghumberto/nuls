@@ -22,6 +22,7 @@ public class BlockHeaderDto implements Serializable {
     private long txCount;
     private byte[] packingAddress;//23 bytes
     private String signature ;
+    private byte[] stateRoot;
 
     public BlockHeaderDto() {}
 
@@ -34,6 +35,8 @@ public class BlockHeaderDto implements Serializable {
         this.txCount = header.getTxCount();
         this.packingAddress = header.getPackingAddress();
         this.signature = Hex.encode(header.getScriptSig().serialize());
+        //TODO pierre BlockHeader需加入状态根，用于智能合约
+        this.stateRoot = null;
     }
 
     public String getHash() {
@@ -98,5 +101,13 @@ public class BlockHeaderDto implements Serializable {
 
     public void setSignature(String signature) {
         this.signature = signature;
+    }
+
+    public byte[] getStateRoot() {
+        return stateRoot;
+    }
+
+    public void setStateRoot(byte[] stateRoot) {
+        this.stateRoot = stateRoot;
     }
 }

@@ -39,7 +39,6 @@ public interface ContractTxService {
      * @param value           交易附带的货币量
      * @param naLimit         最大Na消耗
      * @param price           执行合约单价
-     * @param contractAddress 合约地址
      * @param contractCode    合约代码
      * @param args            参数列表
      * @param password        钱包密码
@@ -47,7 +46,7 @@ public interface ContractTxService {
      * @return
      */
     Result contractCreateTx(String sender, Na value, Na naLimit, byte price,
-                            String contractAddress, byte[] contractCode, String[] args, String password, String remark);
+                            byte[] contractCode, String[] args, String password, String remark);
 
     /**
      * 创建调用智能合约的交易

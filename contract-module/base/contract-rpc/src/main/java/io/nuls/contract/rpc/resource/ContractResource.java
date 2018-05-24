@@ -72,10 +72,6 @@ public class ContractResource {
             return Result.getFailed(AccountLedgerErrorCode.ADDRESS_ERROR);
         }
 
-        if (!Address.validAddress(create.getContractAddress())) {
-            return Result.getFailed(AccountLedgerErrorCode.ADDRESS_ERROR);
-        }
-
         String contractCode = create.getContractCode();
         if(StringUtils.isBlank(contractCode)) {
             return Result.getFailed(ContractErrorCode.NULL_PARAMETER);
@@ -87,7 +83,6 @@ public class ContractResource {
                 Na.valueOf(create.getValue()),
                 Na.valueOf(create.getNaLimit()),
                 create.getPrice(),
-                create.getContractAddress(),
                 contractCodeBytes,
                 create.getArgs(),
                 create.getPassword(),

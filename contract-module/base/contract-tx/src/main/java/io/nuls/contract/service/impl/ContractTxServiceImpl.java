@@ -28,6 +28,7 @@ import io.nuls.account.ledger.service.AccountLedgerService;
 import io.nuls.account.model.Account;
 import io.nuls.account.service.AccountService;
 import io.nuls.contract.constant.ContractErrorCode;
+import io.nuls.contract.entity.BlockHeaderDto;
 import io.nuls.contract.entity.tx.CallContractTransaction;
 import io.nuls.contract.entity.tx.CreateContractTransaction;
 import io.nuls.contract.entity.tx.DeleteContractTransaction;
@@ -53,6 +54,7 @@ import io.nuls.kernel.lite.annotation.Service;
 import io.nuls.kernel.lite.core.bean.InitializingBean;
 import io.nuls.kernel.model.*;
 import io.nuls.kernel.script.P2PKHScriptSig;
+import io.nuls.kernel.utils.AddressTool;
 import io.nuls.protocol.service.TransactionService;
 
 import java.io.IOException;
@@ -101,15 +103,17 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
      */
     @Override
     public Result contractCreateTx(String sender, Na value, Na naLimit, byte price,
-                                   String contractAddress, byte[] contractCode, String[] args,
+                                   byte[] contractCode, String[] args,
                                    String password, String remark) {
         try {
             AssertUtil.canNotEmpty(sender, "the sender address can not be empty");
-            AssertUtil.canNotEmpty(contractAddress, "the contractAddress can not be empty");
             AssertUtil.canNotEmpty(contractCode, "the contractCode can not be empty");
             if (value == null) {
                 value = Na.ZERO;
             }
+
+            //TODO pierre 生成一个地址作为智能合约地址
+            String contractAddress = null;
 
             Result<Account> accountResult = accountService.getAccount(sender);
             if (accountResult.isFailed()) {
@@ -170,10 +174,11 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
                 coinData.getTo().add(toCoin);
             }
 
-            // 当前区块高度//TODO pierre 不提交执行创建智能合约是否可以不用传入区块高度和状态根
-            long blockHeight = -1;
-            // 前一区块状态根//TODO pierre
-            byte[] prevStateRoot = null;
+            // 当前区块高度
+            BlockHeaderDto blockHeader = vmContext.getBlockHeader();
+            long blockHeight = blockHeader.getHeight();
+            // 当前区块状态根
+            byte[] prevStateRoot = blockHeader.getStateRoot();
             // 执行VM估算Gas消耗
             ProgramCreate programCreate = new ProgramCreate();
             programCreate.setContractAddress(createContractData.getContractAddress());
@@ -325,10 +330,11 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
                 coinData.getTo().add(toCoin);
             }
 
-            // 当前区块高度//TODO pierre 不提交执行创建智能合约是否可以不用传入区块高度和状态根
-            long blockHeight = -1;
-            // 前一区块状态根//TODO pierre
-            byte[] prevStateRoot = null;
+            // 当前区块高度
+            BlockHeaderDto blockHeader = vmContext.getBlockHeader();
+            long blockHeight = blockHeader.getHeight();
+            // 当前区块状态根
+            byte[] prevStateRoot = blockHeader.getStateRoot();
             // 执行VM估算Gas消耗
             ProgramCall programCall = new ProgramCall();
             programCall.setContractAddress(callContractData.getContractAddress());
@@ -454,8 +460,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
              */
             CoinData coinData = new CoinData();
 
-            //TODO pierre 终止智能合约的交易手续费如何计算
-            // 总花费
+            // 总花费 终止智能合约的交易手续费按普通交易计算手续费
             CoinDataResult coinDataResult = accountLedgerService.getCoinData(senderBytes, Na.ZERO, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH);
             if (!coinDataResult.isEnough()) {
                 return Result.getFailed(ContractErrorCode.BALANCE_NOT_ENOUGH);

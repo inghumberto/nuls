@@ -22,16 +22,6 @@ public class ContractBase {
     private String password;
     @ApiModelProperty(name = "remark", value = "备注", required = false)
     private String remark;
-    @ApiModelProperty(name = "contractAddress", value = "智能合约地址", required = true)
-    private String contractAddress;
-
-    public String getContractAddress() {
-        return contractAddress;
-    }
-
-    public void setContractAddress(String contractAddress) {
-        this.contractAddress = contractAddress;
-    }
 
     public String getSender() {
         return sender;
