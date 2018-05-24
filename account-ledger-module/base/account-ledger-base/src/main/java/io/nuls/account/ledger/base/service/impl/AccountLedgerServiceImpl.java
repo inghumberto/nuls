@@ -372,7 +372,7 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
             if (saveResult.isFailed()) {
                 return saveResult;
             }
-            Result sendResult = this.transactionService.broadcastTx(tx);
+            Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
                 return sendResult;
             }
@@ -477,7 +477,7 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
 
         long start = 0;
         long end = NulsContext.getInstance().getBestHeight();
-        while (start < end) {
+        while (start <= end) {
             for (long i = start; i <= end; i++) {
                 List<NulsDigestData> txs = blockService.getBlock(i).getData().getTxHashList();
                 for (int j = 0; j < txs.size(); j++) {
@@ -487,6 +487,9 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
             }
             start = end;
             end = NulsContext.getInstance().getBestHeight();
+            if (start == end) {
+                break;
+            }
         }
         try {
             balanceManager.refreshBalance(addressBytes);
@@ -527,7 +530,7 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
                 lockCoinList.add(coin);
             }
         }
-        Collections.sort(coinList, CoinComparator.getInstance());
+//        Collections.sort(coinList, CoinComparator.getInstance());
         result.setData(lockCoinList);
         return result;
     }
@@ -710,6 +713,9 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
             byte[] indexBytes;
             Map<byte[], byte[]> toMap = new HashMap<>();
             for (int i = 0, length = tos.size(); i < length; i++) {
+                if (!isLocalAccount(tos.get(i).getOwner())) {
+                    continue;
+                }
                 try {
                     byte[] outKey = org.spongycastle.util.Arrays.concatenate(tos.get(i).getOwner(), tx.getHash().serialize(), new VarInt(i).encode());
                     toMap.put(outKey, tos.get(i).serialize());

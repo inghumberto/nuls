@@ -1,18 +1,18 @@
-/*
+/**
  * MIT License
- *
+ * <p>
  * Copyright (c) 2017-2018 nuls.io
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,38 +20,36 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
-package io.nuls.protocol.model.validator;
+package io.nuls.account.ledger.base.util;
 
-import io.nuls.kernel.lite.annotation.Component;
-import io.nuls.kernel.model.Block;
-import io.nuls.kernel.model.NulsDigestData;
-import io.nuls.kernel.validate.NulsDataValidator;
-import io.nuls.kernel.validate.ValidateResult;
+import io.nuls.kernel.model.Coin;
+import io.nuls.kernel.model.Transaction;
+
+import java.util.Comparator;
 
 /**
- * @author Niels
- * @date 2017/11/17
+ * author Facjas
+ * date 2018/5/23.
  */
-@Component
-public class BlockMerkleValidator implements NulsDataValidator<Block> {
-    private static final String ERROR_MESSAGE = "Merkle Hash is wrong!";
+public class TransactionTimeComparator implements Comparator<Transaction> {
+    private static TransactionTimeComparator instance = new TransactionTimeComparator();
 
-    @Override
-    public ValidateResult validate(Block data) {
-        ValidateResult result = ValidateResult.getFailedResult(this.getClass().getName(), ERROR_MESSAGE);
-        do {
-            if (null == data) {
-                result.setMsg("Data is null!");
-                break;
-            }
-            if (data.getHeader().getMerkleHash().equals(NulsDigestData.calcMerkleDigestData(data.getTxHashList()))) {
-                result = ValidateResult.getSuccessResult();
-                break;
-            }
-        } while (false);
-        return result;
+    private TransactionTimeComparator() {
+
     }
 
+    public static TransactionTimeComparator getInstance() {
+        return instance;
+    }
+
+    @Override
+    public int compare(Transaction o1, Transaction o2) {
+        if (o1.getTime() < o2.getTime()) {
+            return -1;
+        } else if (o1.getTime() > o2.getTime()) {
+            return 1;
+        }
+        return 0;
+    }
 }

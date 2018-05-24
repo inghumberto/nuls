@@ -140,6 +140,7 @@ public class PocConsensusResource {
         List<Agent> allAgentList = PocConsensusContext.getChainManager().getMasterChain().getChain().getAgentList();
         long startBlockHeight = NulsContext.getInstance().getBestHeight();
         int agentCount = 0;
+        String agentHash = null;
         byte[] addressBytes = AddressTool.getAddress(address);
         for (int i = allAgentList.size() - 1; i >= 0; i--) {
             Agent agent = allAgentList.get(i);
@@ -150,6 +151,7 @@ public class PocConsensusResource {
             }
             if (Arrays.equals(agent.getAgentAddress(), addressBytes)) {
                 agentCount = 1;
+                agentHash = agent.getTxHash().getDigestHex();
                 break;
             }
         }
@@ -172,6 +174,7 @@ public class PocConsensusResource {
 
 
         dto.setAgentCount(agentCount);
+        dto.setAgentHash(agentHash);
         dto.setJoinAgentCount(agentSet.size());
         //todo 需要添加计算奖励的机制
         dto.setReward(201800000000L);
@@ -212,6 +215,13 @@ public class PocConsensusResource {
         }
         if (account.isEncrypted()) {
             AssertUtil.canNotEmpty(form.getPassword());
+            try {
+                if (!account.decrypt(form.getPassword())) {
+                    return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG);
+                }
+            } catch (NulsException e) {
+                return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG);
+            }
         }
         CreateAgentTransaction tx = new CreateAgentTransaction();
         tx.setTime(TimeService.currentTimeMillis());
@@ -250,7 +260,7 @@ public class PocConsensusResource {
     @POST
     @Path("/deposit")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "deposit nuls to a bank! 申请参与共识 [3.6.4]", notes = "返回申请成功交易hash")
+    @ApiOperation(value = "deposit nuls to a bank! 申请参与共识 ", notes = "返回申请成功交易hash")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "success", response = String.class)
     })
@@ -269,7 +279,15 @@ public class PocConsensusResource {
         }
         if (account.isEncrypted()) {
             AssertUtil.canNotEmpty(form.getPassword());
+            try {
+                if (!account.decrypt(form.getPassword())) {
+                    return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG);
+                }
+            } catch (NulsException e) {
+                return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG);
+            }
         }
+
         DepositTransaction tx = new DepositTransaction();
         Deposit deposit = new Deposit();
         deposit.setAddress(AddressTool.getAddress(form.getAddress()));
@@ -343,6 +361,13 @@ public class PocConsensusResource {
         }
         if (account.isEncrypted()) {
             AssertUtil.canNotEmpty(form.getPassword());
+            try {
+                if (!account.decrypt(form.getPassword())) {
+                    return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG);
+                }
+            } catch (NulsException e) {
+                return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG);
+            }
         }
         StopAgentTransaction tx = new StopAgentTransaction();
         StopAgent stopAgent = new StopAgent();
@@ -504,22 +529,20 @@ public class PocConsensusResource {
     }
 
     @GET
-    @Path("/agent/{agentAddress}")
+    @Path("/agent/{agentHash}")
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "查询共识节点详细信息 [3.6.7]", notes = "result.data: Map<String, Object>")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "success", response = Map.class)
     })
-    public Result<AgentDTO> getAgentByAddress(@ApiParam(name = "agentAddress", value = "节点地址", required = true)
-                                              @PathParam("agentAddress") String agentAddress) {
-        if (!Address.validAddress(agentAddress)) {
-            return Result.getFailed(KernelErrorCode.PARAMETER_ERROR);
-        }
+    public Result<AgentDTO> getAgentByAddress(@ApiParam(name = "agentHash", value = "节点标识", required = true)
+                                              @PathParam("agentHash") String agentHash) throws NulsException {
+        AssertUtil.canNotEmpty(agentHash);
         Result result = Result.getSuccess();
         List<Agent> agentList = PocConsensusContext.getChainManager().getMasterChain().getChain().getAgentList();
-
+        NulsDigestData agentHashData = NulsDigestData.fromDigestHex(agentHash);
         for (Agent agent : agentList) {
-            if (Arrays.equals(agent.getAgentAddress(), AddressTool.getAddress(agentAddress))) {
+            if (agent.getTxHash().equals(agentHashData)) {
                 MeetingRound round = PocConsensusContext.getChainManager().getMasterChain().getCurrentRound();
                 this.fillAgent(agent, round, null);
                 AgentDTO dto = new AgentDTO(agent);
@@ -666,9 +689,17 @@ public class PocConsensusResource {
             }
         }
         List<DepositDTO> resultList = new ArrayList<>();
+
         for (int i = start; i < depositList.size() && i < (start + pageSize); i++) {
             Deposit deposit = depositList.get(i);
-            Agent agent = map.get(deposit.getAgentHash());
+            List<Agent> agentList = PocConsensusContext.getChainManager().getMasterChain().getChain().getAgentList();
+            Agent agent = null;
+            for (Agent a : agentList) {
+                if (a.getTxHash().equals(deposit.getAgentHash())) {
+                    agent = a;
+                    break;
+                }
+            }
             deposit.setStatus(agent == null ? 0 : 1);
             resultList.add(new DepositDTO(deposit, agent));
         }
@@ -764,6 +795,13 @@ public class PocConsensusResource {
         }
         if (account.isEncrypted()) {
             AssertUtil.canNotEmpty(form.getPassword());
+            try {
+                if (!account.decrypt(form.getPassword())) {
+                    return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG);
+                }
+            } catch (NulsException e) {
+                return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG);
+            }
         }
         CancelDepositTransaction tx = new CancelDepositTransaction();
         CancelDeposit cancelDeposit = new CancelDeposit();
