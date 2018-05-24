@@ -70,7 +70,7 @@ public class ContractTest {
         programCall.args(Hex.toHexString(SENDER.getBytes()), "1000");
         System.out.println(programCall);
 
-        byte[] prevStateRoot = Hex.decode("f62fb55138566957f431c7a8a826b066935286d8b57c6d601302fc47d99ff220");
+        byte[] prevStateRoot = Hex.decode("6ce51a8225836dd33e94e0412af66bbd6b923607c08cc50ff152cb7f155741ef");
 
         ProgramExecutor track = programExecutor.begin(prevStateRoot);
         ProgramResult programResult = track.call(programCall);
@@ -96,7 +96,7 @@ public class ContractTest {
 
     @Test
     public void testStop() throws IOException {
-        byte[] prevStateRoot = Hex.decode("8da400684629cf07ff562075c9421d39d7257f4504e8a706c05ce78a9db41405");
+        byte[] prevStateRoot = Hex.decode("e3ddc1a2bb001d75b038ade8aaef3868e75be68eaf4010958f0b4587f844a906");
         byte[] address = ADDRESS.getBytes();
         byte[] sender = SENDER.getBytes();
 
@@ -137,7 +137,7 @@ public class ContractTest {
         System.out.println(programCall1);
         transactions.add(programCall1);
 
-        byte[] prevStateRoot = Hex.decode("8da400684629cf07ff562075c9421d39d7257f4504e8a706c05ce78a9db41405");
+        byte[] prevStateRoot = Hex.decode("e3ddc1a2bb001d75b038ade8aaef3868e75be68eaf4010958f0b4587f844a906");
 
         ProgramExecutor track = programExecutor.begin(prevStateRoot);
         for (ProgramCall transaction : transactions) {
@@ -156,7 +156,7 @@ public class ContractTest {
 
     @Test
     public void testMethod() throws IOException {
-        byte[] prevStateRoot = Hex.decode("8da400684629cf07ff562075c9421d39d7257f4504e8a706c05ce78a9db41405");
+        byte[] prevStateRoot = Hex.decode("e3ddc1a2bb001d75b038ade8aaef3868e75be68eaf4010958f0b4587f844a906");
         byte[] address = ADDRESS.getBytes();
         byte[] sender = SENDER.getBytes();
 

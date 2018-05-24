@@ -48,7 +48,7 @@ public class CrowdsaleTest {
         programCreate.args("10", Hex.toHexString("wallet_address".getBytes()), Hex.toHexString("token_address".getBytes()));
         System.out.println(programCreate);
 
-        byte[] prevStateRoot = Hex.decode("f62fb55138566957f431c7a8a826b066935286d8b57c6d601302fc47d99ff220");
+        byte[] prevStateRoot = Hex.decode("e3ddc1a2bb001d75b038ade8aaef3868e75be68eaf4010958f0b4587f844a906");
 
         ProgramExecutor track = programExecutor.begin(prevStateRoot);
         ProgramResult programResult = track.create(programCreate);
@@ -73,7 +73,7 @@ public class CrowdsaleTest {
         programCall.args(Hex.toHexString(SENDER.getBytes()));
         System.out.println(programCall);
 
-        byte[] prevStateRoot = Hex.decode("2769fd6bdcbb12b133de659149c32f64fdc4441760663f77b866af5b850018dc");
+        byte[] prevStateRoot = Hex.decode("16f848285e84fe44cdf09e039c0e750bcfcf92c4395fa27bf50180d61465751b");
 
         ProgramExecutor track = programExecutor.begin(prevStateRoot);
         ProgramResult programResult = track.call(programCall);
