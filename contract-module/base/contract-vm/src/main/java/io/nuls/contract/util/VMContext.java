@@ -5,6 +5,8 @@ import io.nuls.contract.entity.BlockHeaderDto;
 import io.nuls.core.tools.str.StringUtils;
 import io.nuls.kernel.context.NulsContext;
 import io.nuls.kernel.exception.NulsException;
+import io.nuls.kernel.lite.annotation.Autowired;
+import io.nuls.kernel.lite.annotation.Component;
 import io.nuls.kernel.lite.core.SpringLiteContext;
 import io.nuls.kernel.model.BlockHeader;
 import io.nuls.kernel.model.NulsDigestData;
@@ -18,10 +20,11 @@ import java.io.IOException;
  * @Author: PierreLuo
  * @Date: 2018/5/2
  */
-public enum VMContext {
-    CONTEXT;
+@Component
+public class VMContext {
 
-    private BlockService blockService = SpringLiteContext.getBean(BlockService.class);
+    @Autowired
+    private BlockService blockService;
 
     /**
      * @param hash

@@ -27,7 +27,11 @@ import io.nuls.contract.util.VMContext;
 import io.nuls.contract.vm.program.ProgramExecutor;
 import io.nuls.contract.vm.program.impl.ProgramExecutorImpl;
 import io.nuls.db.service.DBService;
+import io.nuls.kernel.exception.NulsException;
+import io.nuls.kernel.lite.annotation.Autowired;
+import io.nuls.kernel.lite.annotation.Component;
 import io.nuls.kernel.lite.core.SpringLiteContext;
+import io.nuls.kernel.lite.core.bean.InitializingBean;
 import io.nuls.protocol.service.BlockService;
 
 /**
@@ -35,16 +39,23 @@ import io.nuls.protocol.service.BlockService;
  * @author: PierreLuo
  * @date: 2018/5/22
  */
-public enum VMHelper {
-    HELPER;
+@Component
+public class VMHelper implements InitializingBean {
+
+    @Autowired
+    private VMContext vmContext;
+    @Autowired
+    private DBService dbService;
 
     private ProgramExecutor programExecutor;
-    private VMHelper() {
-        DBService dbService = SpringLiteContext.getBean(DBService.class);
-        programExecutor = new ProgramExecutorImpl(VMContext.CONTEXT, dbService);
-    }
 
     public ProgramExecutor getProgramExecutor() {
         return programExecutor;
+    }
+
+    @Override
+    public void afterPropertiesSet() throws NulsException {
+        programExecutor = new ProgramExecutorImpl(vmContext, dbService);
+
     }
 }
