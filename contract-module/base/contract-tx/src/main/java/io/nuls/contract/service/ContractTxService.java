@@ -41,7 +41,7 @@ public interface ContractTxService {
      * @param price           执行合约单价
      * @param contractCode    合约代码
      * @param args            参数列表
-     * @param password        钱包密码
+     * @param password        账户密码
      * @param remark          备注
      * @return
      */
@@ -59,7 +59,7 @@ public interface ContractTxService {
      * @param methodName      方法名
      * @param methodDesc      方法签名，如果方法名不重复，可以不传
      * @param args            参数列表
-     * @param password        钱包密码
+     * @param password        账户密码
      * @param remark          备注
      * @return
      */
@@ -71,7 +71,7 @@ public interface ContractTxService {
      *
      * @param sender          交易创建者
      * @param contractAddress 合约地址
-     * @param password        钱包密码
+     * @param password        账户密码
      * @param remark          备注
      * @return
      */

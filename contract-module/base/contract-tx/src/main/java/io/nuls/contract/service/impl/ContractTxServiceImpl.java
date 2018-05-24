@@ -27,6 +27,7 @@ import io.nuls.account.ledger.model.CoinDataResult;
 import io.nuls.account.ledger.service.AccountLedgerService;
 import io.nuls.account.model.Account;
 import io.nuls.account.service.AccountService;
+import io.nuls.account.util.AccountTool;
 import io.nuls.contract.constant.ContractErrorCode;
 import io.nuls.contract.entity.BlockHeaderDto;
 import io.nuls.contract.entity.tx.CallContractTransaction;
@@ -37,6 +38,7 @@ import io.nuls.contract.entity.txdata.CreateContractData;
 import io.nuls.contract.entity.txdata.DeleteContractData;
 import io.nuls.contract.helper.VMHelper;
 import io.nuls.contract.service.ContractTxService;
+import io.nuls.contract.storage.service.ContractStorageService;
 import io.nuls.contract.util.VMContext;
 import io.nuls.contract.vm.program.ProgramCall;
 import io.nuls.contract.vm.program.ProgramCreate;
@@ -76,6 +78,8 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
     @Autowired
     private TransactionService transactionService;
     @Autowired
+    private ContractStorageService contractStorageService;
+    @Autowired
     private VMHelper vmHelper;
     @Autowired
     private VMContext vmContext;
@@ -97,7 +101,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
      * @param contractAddress 合约地址
      * @param contractCode    合约代码
      * @param args            参数列表
-     * @param password        钱包密码
+     * @param password        账户密码
      * @param remark          备注
      * @return
      */
@@ -112,16 +116,13 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
                 value = Na.ZERO;
             }
 
-            //TODO pierre 生成一个地址作为智能合约地址
-            String contractAddress = null;
-
             Result<Account> accountResult = accountService.getAccount(sender);
             if (accountResult.isFailed()) {
                 return accountResult;
             }
 
             Account account = accountResult.getData();
-            // 验证钱包密码
+            // 验证账户密码
             if (accountService.isEncrypted(account).isSuccess()) {
                 AssertUtil.canNotEmpty(password, "the password can not be empty");
 
@@ -130,6 +131,13 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
                     return passwordResult;
                 }
             }
+
+            // 生成一个地址作为智能合约账户
+            Account contractAccount = AccountTool.createAccount();
+            //TODO pierre 是否需要加密合约账户的私钥
+            //contractAccount.encrypt(password);
+            byte[] contractAddressBytes = contractAccount.getAddress().getBase58Bytes();
+            byte[] senderBytes = Base58.decode(sender);
 
             CreateContractTransaction tx = new CreateContractTransaction();
             if (StringUtils.isNotBlank(remark)) {
@@ -141,9 +149,6 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
                 }
             }
             tx.setTime(TimeService.currentTimeMillis());
-
-            byte[] senderBytes = Base58.decode(sender);
-            byte[] contractAddressBytes = Base58.decode(contractAddress);
 
             // 组装txData
             CreateContractData createContractData = new CreateContractData();
@@ -168,7 +173,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
              * 多扣除的费用会以CoinBase交易还给Sender
              */
             CoinData coinData = new CoinData();
-            // 向智能合约地址转账
+            // 向智能合约账户转账
             if(!Na.ZERO.equals(value)) {
                 Coin toCoin = new Coin(contractAddressBytes, value);
                 coinData.getTo().add(toCoin);
@@ -221,14 +226,20 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             sig.setSignData(accountService.signData(tx.getHash().serialize(), account, password));
             tx.setScriptSig(sig.serialize());
 
-            // 保存
+            // 保存未确认交易
             Result saveResult = accountLedgerService.saveUnconfirmedTransaction(tx);
             if (saveResult.isFailed()) {
                 return saveResult;
             }
+            // 广播交易
             Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
                 return sendResult;
+            }
+            // 保存合约账户
+            saveResult = contractStorageService.saveContractAddress(contractAccount);
+            if (saveResult.isFailed()) {
+                return saveResult;
             }
 
             return Result.getSuccess().setData(tx.getHash().getDigestHex());
@@ -255,7 +266,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
      * @param methodName      方法名
      * @param methodDesc      方法签名，如果方法名不重复，可以不传
      * @param args            参数列表
-     * @param password        钱包密码
+     * @param password        账户密码
      * @param remark          备注
      * @return
      */
@@ -277,7 +288,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             }
 
             Account account = accountResult.getData();
-            // 验证钱包密码
+            // 验证账户密码
             if (accountService.isEncrypted(account).isSuccess()) {
                 AssertUtil.canNotEmpty(password, "the password can not be empty");
 
@@ -324,7 +335,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
              * 多扣除的费用会以CoinBase交易还给Sender
              */
             CoinData coinData = new CoinData();
-            // 向智能合约地址转账
+            // 向智能合约账户转账
             if(!Na.ZERO.equals(value)) {
                 Coin toCoin = new Coin(contractAddressBytes, value);
                 coinData.getTo().add(toCoin);
@@ -406,7 +417,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
      *
      * @param sender          交易创建者
      * @param contractAddress 合约地址
-     * @param password        钱包密码
+     * @param password        账户密码
      * @param remark          备注
      * @return
      */
@@ -423,7 +434,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             }
 
             Account account = accountResult.getData();
-            // 验证钱包密码
+            // 验证账户密码
             if (accountService.isEncrypted(account).isSuccess()) {
                 AssertUtil.canNotEmpty(password, "the password can not be empty");
 
@@ -478,14 +489,20 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             sig.setSignData(accountService.signData(tx.getHash().serialize(), account, password));
             tx.setScriptSig(sig.serialize());
 
-            // 保存
+            // 保存删除合约的交易
             Result saveResult = accountLedgerService.saveUnconfirmedTransaction(tx);
             if (saveResult.isFailed()) {
                 return saveResult;
             }
+            // 广播交易
             Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
                 return sendResult;
+            }
+            // 删除合约账户
+            Result deleteResult = contractStorageService.deleteContractAddress(contractAddressBytes);
+            if (deleteResult.isFailed()) {
+                return deleteResult;
             }
 
             return Result.getSuccess().setData(tx.getHash().getDigestHex());

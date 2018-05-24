@@ -18,7 +18,7 @@ public class ContractBase {
     private long value;
     @ApiModelProperty(name = "price", value = "执行合约单价", required = true)
     private byte price;
-    @ApiModelProperty(name = "password", value = "钱包密码", required = true)
+    @ApiModelProperty(name = "password", value = "账户密码", required = true)
     private String password;
     @ApiModelProperty(name = "remark", value = "备注", required = false)
     private String remark;
