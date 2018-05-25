@@ -127,6 +127,7 @@ public class AliasService {
             }
             Result sendResult = this.transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
+                accountLedgerService.rollback(tx);
                 return sendResult;
             }
             String hash = tx.getHash().getDigestHex();
@@ -203,7 +204,10 @@ public class AliasService {
                 if(rs.isSuccess()) {
                     AccountPo accountPo = rs.getData();
                     accountPo.setAlias("");
-                    accountStorageService.updateAccount(accountPo);
+                    Result result = accountStorageService.updateAccount(accountPo);
+                    if(result.isFailed()){
+                        return Result.getFailed(AccountErrorCode.FAILED);
+                    }
                 }
             }
         } catch (Exception e) {

@@ -25,6 +25,7 @@
 
 package io.nuls.account.ledger.base.service.impl;
 
+import io.nuls.account.constant.AccountErrorCode;
 import io.nuls.account.ledger.base.manager.BalanceManager;
 import io.nuls.account.ledger.base.util.CoinComparator;
 import io.nuls.account.ledger.base.util.TxInfoComparator;
@@ -50,6 +51,7 @@ import io.nuls.core.tools.param.AssertUtil;
 import io.nuls.core.tools.str.StringUtils;
 import io.nuls.db.model.Entry;
 import io.nuls.kernel.cfg.NulsConfig;
+import io.nuls.kernel.constant.ErrorCode;
 import io.nuls.kernel.constant.KernelErrorCode;
 import io.nuls.kernel.context.NulsContext;
 import io.nuls.kernel.exception.NulsException;
@@ -374,6 +376,7 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
             }
             Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
+                this.rollback(tx);
                 return sendResult;
             }
             return Result.getSuccess().setData(tx.getHash().getDigestHex());
@@ -462,6 +465,9 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
         return Result.getSuccess();
     }
 
+    /**
+     * 导入账户
+     */
     @Override
     public Result importAccountLedger(String address) {
         if (address == null || !Address.validAddress(address)) {
@@ -477,11 +483,14 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
 
         long start = 0;
         long end = NulsContext.getInstance().getBestHeight();
-        while (start <= end) {
+        while (start < end) {
             for (long i = start; i <= end; i++) {
                 List<NulsDigestData> txs = blockService.getBlock(i).getData().getTxHashList();
                 for (int j = 0; j < txs.size(); j++) {
                     Transaction tx = ledgerService.getTx(txs.get(j));
+                    if (tx == null) {
+                        return Result.getFailed(KernelErrorCode.NULL_PARAMETER);
+                    }
                     saveTransaction(tx, addressBytes, TransactionInfo.CONFIRMED);
                 }
             }
@@ -536,7 +545,9 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
     }
 
     protected Result<Integer> saveTransaction(Transaction tx, byte status) {
-
+        if (tx == null) {
+            return Result.getFailed(KernelErrorCode.NULL_PARAMETER);
+        }
         List<byte[]> addresses = getRelatedAddresses(tx);
         if (addresses == null || addresses.size() == 0) {
             return Result.getSuccess().setData(new Integer(0));
@@ -567,7 +578,7 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
     }
 
     protected Result<Integer> saveTransaction(Transaction tx, byte[] address, byte status) {
-        List<byte[]> destAddresses = new ArrayList<byte[]>();
+        List<byte[]> destAddresses = new ArrayList<>();
         destAddresses.add(address);
         List<byte[]> addresses = getRelatedAddresses(tx, destAddresses);
         if (addresses == null || addresses.size() == 0) {
@@ -713,12 +724,21 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
             byte[] indexBytes;
             Map<byte[], byte[]> toMap = new HashMap<>();
             for (int i = 0, length = tos.size(); i < length; i++) {
-                if (!isLocalAccount(tos.get(i).getOwner())) {
+                Coin to = tos.get(i);
+                if (!isLocalAccount(to.getOwner())) {
                     continue;
                 }
                 try {
                     byte[] outKey = org.spongycastle.util.Arrays.concatenate(tos.get(i).getOwner(), tx.getHash().serialize(), new VarInt(i).encode());
-                    toMap.put(outKey, tos.get(i).serialize());
+                    if(to.getLockTime() == -1) {
+                        byte[] toKey = org.spongycastle.util.Arrays.concatenate(tx.getHash().serialize(), new VarInt(i).encode());
+
+                        Coin ledgerCoin = ledgerService.getUtxo(toKey);
+                        if(null != ledgerCoin){
+                            to = ledgerCoin;
+                        }
+                    }
+                    toMap.put(outKey, to.serialize());
                 } catch (IOException e) {
                     throw new NulsRuntimeException(e);
                 }

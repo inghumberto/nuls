@@ -111,4 +111,21 @@ public interface LedgerService {
      * @return boolean
      */
     Result rollbackUnlockTxCoinData(Transaction tx) throws NulsException;
+
+    /**
+     * Get the entire network of UTXO
+     *
+     * 获取全网UTXO
+     * @return
+     */
+    long getWholeUTXO();
+
+    /**
+     * get UTXO by key
+     *
+     * 根据key获取UTXO
+     * @param owner
+     * @return
+     */
+    Coin getUtxo(byte[] owner);
 }
