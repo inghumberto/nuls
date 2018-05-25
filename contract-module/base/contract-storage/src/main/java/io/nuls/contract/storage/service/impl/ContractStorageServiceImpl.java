@@ -75,11 +75,13 @@ public class ContractStorageServiceImpl implements ContractStorageService, Initi
     }
 
     @Override
-    public Result deleteContractAddress(byte[] contractAddressBytes) {
+    public Result<Account> deleteContractAddress(byte[] contractAddressBytes) {
         if (contractAddressBytes == null) {
             return Result.getFailed(KernelErrorCode.NULL_PARAMETER);
         }
-        Result result = dbService.delete(ContractStorageConstant.DB_NAME_CONTRACT_ADDRESS, contractAddressBytes);
+        Account account = dbService.getModel(ContractStorageConstant.DB_NAME_CONTRACT_ADDRESS, contractAddressBytes, Account.class);
+        Result<Account> result = dbService.delete(ContractStorageConstant.DB_NAME_CONTRACT_ADDRESS, contractAddressBytes);
+        result.setData(account);
         return result;
     }
 

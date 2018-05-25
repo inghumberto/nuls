@@ -231,15 +231,18 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             if (saveResult.isFailed()) {
                 return saveResult;
             }
-            // 广播交易
-            Result sendResult = transactionService.broadcastTx(tx);
-            if (sendResult.isFailed()) {
-                return sendResult;
-            }
             // 保存合约账户
             saveResult = contractStorageService.saveContractAddress(contractAccount);
             if (saveResult.isFailed()) {
+                accountLedgerService.rollback(tx);
                 return saveResult;
+            }
+            // 广播交易
+            Result sendResult = transactionService.broadcastTx(tx);
+            if (sendResult.isFailed()) {
+                accountLedgerService.rollback(tx);
+                contractStorageService.deleteContractAddress(contractAccount.getAddress().getBase58Bytes());
+                return sendResult;
             }
 
             return Result.getSuccess().setData(tx.getHash().getDigestHex());
@@ -394,8 +397,11 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             if (saveResult.isFailed()) {
                 return saveResult;
             }
+            // 广播
             Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
+                // 失败则回滚
+                accountLedgerService.rollback(tx);
                 return sendResult;
             }
 
@@ -494,17 +500,23 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             if (saveResult.isFailed()) {
                 return saveResult;
             }
+            // 删除合约账户
+            Result<Account> deleteResult = contractStorageService.deleteContractAddress(contractAddressBytes);
+            if (deleteResult.isFailed()) {
+                // 失败则回滚
+                accountLedgerService.rollback(tx);
+                return deleteResult;
+            }
             // 广播交易
             Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
+                // 失败则回滚
+                accountLedgerService.rollback(tx);
+                if(deleteResult.getData() != null) {
+                    contractStorageService.saveContractAddress(deleteResult.getData());
+                }
                 return sendResult;
             }
-            // 删除合约账户
-            Result deleteResult = contractStorageService.deleteContractAddress(contractAddressBytes);
-            if (deleteResult.isFailed()) {
-                return deleteResult;
-            }
-
             return Result.getSuccess().setData(tx.getHash().getDigestHex());
         } catch (IOException e) {
             Log.error(e);

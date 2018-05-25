@@ -49,7 +49,7 @@ public interface ContractStorageService {
      * @param contractAddressBytes
      * @return
      */
-    Result deleteContractAddress(byte[] contractAddressBytes);
+    Result<Account> deleteContractAddress(byte[] contractAddressBytes);
 
     /**
      * 根据合约地址获取本地合约账户详细信息
