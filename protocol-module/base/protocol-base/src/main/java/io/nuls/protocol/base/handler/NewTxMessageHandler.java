@@ -27,18 +27,17 @@ package io.nuls.protocol.base.handler;
 import io.nuls.consensus.constant.ConsensusConstant;
 import io.nuls.consensus.service.ConsensusService;
 import io.nuls.core.tools.log.Log;
-import io.nuls.kernel.constant.SeverityLevelEnum;
 import io.nuls.kernel.constant.TransactionErrorCode;
 import io.nuls.kernel.context.NulsContext;
 import io.nuls.kernel.model.Transaction;
 import io.nuls.kernel.validate.ValidateResult;
-import io.nuls.ledger.service.LedgerService;
 import io.nuls.message.bus.handler.AbstractMessageHandler;
 import io.nuls.network.model.Node;
 import io.nuls.network.service.NetworkService;
 import io.nuls.protocol.cache.TemporaryCacheManager;
 import io.nuls.protocol.constant.ProtocolConstant;
 import io.nuls.protocol.message.TransactionMessage;
+import io.nuls.protocol.service.TransactionService;
 
 /**
  * @author Niels
@@ -46,35 +45,32 @@ import io.nuls.protocol.message.TransactionMessage;
  */
 public class NewTxMessageHandler extends AbstractMessageHandler<TransactionMessage> {
 
-
     private TemporaryCacheManager temporaryCacheManager = TemporaryCacheManager.getInstance();
 
     private NetworkService networkService = NulsContext.getServiceBean(NetworkService.class);
-    private LedgerService ledgerService = NulsContext.getServiceBean(LedgerService.class);
     private ConsensusService consensusService = NulsContext.getServiceBean(ConsensusService.class);
+    private TransactionService transactionService = NulsContext.getServiceBean(TransactionService.class);
 
     public NewTxMessageHandler() {
     }
 
     @Override
-    public void onMessage(TransactionMessage event, Node fromNode) {
+    public void onMessage(TransactionMessage message, Node fromNode) {
 
-        Transaction tx = event.getMsgBody();
-
-        Log.debug("receive new tx {} from {} , tx count {}", tx.getHash().getDigestHex(), fromNode.getId(), temporaryCacheManager.getTxCount());
-
+        Transaction tx = message.getMsgBody();
         if (null == tx) {
             return;
         }
+        Log.debug("receive new tx {} from {} , tx count {}", tx.getHash().getDigestHex(), fromNode.getId(), temporaryCacheManager.getTxCount());
+
         if (tx.getType() == ProtocolConstant.TX_TYPE_COINBASE || tx.getType() == ConsensusConstant.TX_TYPE_YELLOW_PUNISH || tx.getType() == ConsensusConstant.TX_TYPE_RED_PUNISH) {
             return;
         }
-
         ValidateResult result = tx.verify();
         if (result.isFailed() && result.getErrorCode() != TransactionErrorCode.ORPHAN_TX) {
-            if (result.getLevel() == SeverityLevelEnum.FLAGRANT_FOUL) {
-                networkService.removeNode(fromNode.getId());
-            }
+//            if (result.getLevel() == SeverityLevelEnum.FLAGRANT_FOUL) {
+//                networkService.removeNode(fromNode.getId());
+//            }
             return;
         }
 
@@ -83,11 +79,10 @@ public class NewTxMessageHandler extends AbstractMessageHandler<TransactionMessa
             consensusService.newTx(tx);
             return;
         }
-        temporaryCacheManager.cacheTx(tx);
-
         try {
+            temporaryCacheManager.cacheTx(tx);
             consensusService.newTx(tx);
-            messageBusService.broadcastHashAndCache(event, fromNode, true);
+            transactionService.forwardTx(message.getMsgBody(), fromNode);
         } catch (Exception e) {
             Log.error(e);
         }

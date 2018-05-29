@@ -115,25 +115,25 @@ public class ForkChainProcess {
 
             ChainLog.debug("discover the fork chain {} : start {} - {} , end {} - {} , exceed the master {} - {} - {}, start verify the fork chian", newChain.getChain().getId(), newChain.getChain().getStartBlockHeader().getHeight(), newChain.getChain().getStartBlockHeader().getHash(), newChain.getChain().getEndBlockHeader().getHeight(), newChain.getChain().getEndBlockHeader().getHash(), chainManager.getMasterChain().getChain().getId(), chainManager.getBestBlockHeight(), chainManager.getBestBlock().getHeader().getHash());
 
-            ChainContainer resultChain = verifyNewChain(newChain);
+            Lockers.CHAIN_LOCK.lock();
+            try {
+                ChainContainer resultChain = verifyNewChain(newChain);
 
-            if (resultChain == null) {
-                ChainLog.debug("verify the fork chain fail {} remove it", newChain.getChain().getId());
+                if (resultChain == null) {
+                    ChainLog.debug("verify the fork chain fail {} remove it", newChain.getChain().getId());
 
-                chainManager.getChains().remove(newChain);
-            } else {
-                //Verify pass, try to switch chain
-                Lockers.CHAIN_LOCK.lock();
-                try {
-                    //验证通过，尝试切换链
-                    boolean success = changeChain(resultChain, newChain);
-                    if (success) {
-                        chainManager.getChains().remove(newChain);
-                    }
-                    ChainLog.debug("verify the fork chain {} success, change master chain result : {} , new master chain is {} : {} - {}", newChain.getChain().getId(), success, chainManager.getBestBlock().getHeader().getHeight(), chainManager.getBestBlock().getHeader().getHash());
-                } finally {
-                    Lockers.CHAIN_LOCK.unlock();
+                    chainManager.getChains().remove(newChain);
+                } else {
+                    //Verify pass, try to switch chain
+                        //验证通过，尝试切换链
+                        boolean success = changeChain(resultChain, newChain);
+                        if (success) {
+                            chainManager.getChains().remove(newChain);
+                        }
+                        ChainLog.debug("verify the fork chain {} success, change master chain result : {} , new master chain is {} : {} - {}", newChain.getChain().getId(), success, chainManager.getBestBlock().getHeader().getHeight(), chainManager.getBestBlock().getHeader().getHash());
                 }
+            } finally {
+                Lockers.CHAIN_LOCK.unlock();
             }
         }
 
@@ -375,10 +375,10 @@ public class ForkChainProcess {
         //现在的主链，在切换之后的分叉链，需要放入待验证链列表里面
         ChainContainer oldChain = chainManager.getMasterChain().getAfterTheForkChain(originalForkChain);
 
-        //rollback
+        //rollbackTransaction
         List<Block> rollbackBlockList = oldChain.getChain().getBlockList();
 
-        ChainLog.debug("rollback the master chain , need rollback block count is {}, master chain is {} : {} - {} , service best block : {} - {}", rollbackBlockList.size(), chainManager.getMasterChain().getChain().getId(), chainManager.getBestBlock().getHeader().getHeight(), chainManager.getBestBlock().getHeader().getHash(), blockService.getBestBlock().getData().getHeader().getHeight(), blockService.getBestBlock().getData().getHeader().getHash());
+        ChainLog.debug("rollbackTransaction the master chain , need rollbackTransaction block count is {}, master chain is {} : {} - {} , service best block : {} - {}", rollbackBlockList.size(), chainManager.getMasterChain().getChain().getId(), chainManager.getBestBlock().getHeader().getHeight(), chainManager.getBestBlock().getHeader().getHash(), blockService.getBestBlock().getData().getHeader().getHeight(), blockService.getBestBlock().getData().getHeader().getHash());
 
         //Need descending order
         //需要降序排列
@@ -486,6 +486,7 @@ public class ForkChainProcess {
                     RewardStatisticsProcess.rollbackBlock(rollbackBlock);
                     rollbackList.add(rollbackBlock);
                 } else {
+                    Collections.reverse(rollbackList);
                     for (Block block : rollbackList) {
                         try {
                             blockService.saveBlock(block);
@@ -514,7 +515,7 @@ public class ForkChainProcess {
             }
         }
 
-        ChainLog.debug("rollback complete, success count is {} , now service best block : {} - {}", rollbackList.size(), blockService.getBestBlock().getData().getHeader().getHeight(), blockService.getBestBlock().getData().getHeader().getHash());
+        ChainLog.debug("rollbackTransaction complete, success count is {} , now service best block : {} - {}", rollbackList.size(), blockService.getBestBlock().getData().getHeader().getHeight(), blockService.getBestBlock().getData().getHeader().getHash());
         return true;
     }
 

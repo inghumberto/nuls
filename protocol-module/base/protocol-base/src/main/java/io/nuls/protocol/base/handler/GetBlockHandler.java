@@ -24,20 +24,62 @@
  */
 package io.nuls.protocol.base.handler;
 
+import io.nuls.core.tools.log.Log;
+import io.nuls.kernel.context.NulsContext;
+import io.nuls.kernel.model.Block;
+import io.nuls.kernel.model.NulsDigestData;
+import io.nuls.kernel.model.Result;
 import io.nuls.message.bus.handler.AbstractMessageHandler;
+import io.nuls.message.bus.service.MessageBusService;
 import io.nuls.network.model.Node;
-import io.nuls.protocol.base.utils.BlockSendThread;
-import io.nuls.protocol.message.GetBlockRequest;
+import io.nuls.protocol.constant.NotFoundType;
+import io.nuls.protocol.message.BlockMessage;
+import io.nuls.protocol.message.GetBlockMessage;
+import io.nuls.protocol.message.NotFoundMessage;
+import io.nuls.protocol.model.NotFound;
+import io.nuls.protocol.service.BlockService;
 
 /**
  * @author facjas
  * @date 2017/11/16
  */
-public class GetBlockHandler extends AbstractMessageHandler<GetBlockRequest> {
+public class GetBlockHandler extends AbstractMessageHandler<GetBlockMessage> {
 
+    private BlockService blockService = NulsContext.getServiceBean(BlockService.class);
+    private MessageBusService messageBusService = NulsContext.getServiceBean(MessageBusService.class);
 
     @Override
-    public void onMessage(GetBlockRequest message, Node fromNode) {
-        BlockSendThread.offer(message, fromNode);
+    public void onMessage(GetBlockMessage message, Node fromNode) {
+
+        if(message == null || message.getMsgBody() == null || fromNode == null) {
+            return;
+        }
+
+        Block block= null;
+        Result<Block> result = blockService.getBlock(message.getBlockHash());
+        if (result.isFailed() || (block = result.getData()) == null) {
+            sendNotFound(message.getBlockHash(), fromNode);
+            return;
+        }
+        sendBlock(block, fromNode);
+    }
+
+    private void sendNotFound(NulsDigestData hash, Node node) {
+        NotFoundMessage message = new NotFoundMessage();
+        NotFound data = new NotFound(NotFoundType.BLOCK, hash);
+        message.setMsgBody(data);
+        Result result = this.messageBusService.sendToNode(message, node, true);
+        if (result.isFailed()) {
+            Log.warn("send BLOCK NotFound failed:" + node.getId() + ", hash:" + hash);
+        }
+    }
+
+    private void sendBlock(Block block, Node fromNode) {
+        BlockMessage blockMessage = new BlockMessage();
+        blockMessage.setMsgBody(block);
+        Result result = this.messageBusService.sendToNode(blockMessage, fromNode, true);
+        if (result.isFailed()) {
+            Log.warn("send block failed:" + fromNode.getId() + ",height:" + block.getHeader().getHeight());
+        }
     }
 }

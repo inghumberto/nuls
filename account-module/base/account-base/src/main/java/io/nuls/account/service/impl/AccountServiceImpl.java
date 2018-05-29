@@ -86,7 +86,7 @@ public class AccountServiceImpl implements AccountService {
                 Log.info("accountStorageService is null");
             }
             Result result = accountStorageService.saveAccountList(accountPos);
-            if(result.isFailed()){
+            if (result.isFailed()) {
                 return result;
             }
             LOCAL_ADDRESS_LIST.addAll(resultList);
@@ -135,7 +135,7 @@ public class AccountServiceImpl implements AccountService {
             }
         }
         Result result = accountStorageService.removeAccount(account.getAddress());
-        if(result.isFailed()){
+        if (result.isFailed()) {
             return result;
         }
         LOCAL_ADDRESS_LIST.remove(address);
@@ -144,9 +144,9 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public Result<Account> updatePasswordByAccountKeyStore(AccountKeyStore keyStore, String password) {
-        AssertUtil.canNotEmpty(keyStore,AccountErrorCode.PARAMETER_ERROR.getMsg());
-        AssertUtil.canNotEmpty(keyStore.getAddress(),AccountErrorCode.PARAMETER_ERROR.getMsg());
-        AssertUtil.canNotEmpty(password,AccountErrorCode.PARAMETER_ERROR.getMsg());
+        AssertUtil.canNotEmpty(keyStore, AccountErrorCode.PARAMETER_ERROR.getMsg());
+        AssertUtil.canNotEmpty(keyStore.getAddress(), AccountErrorCode.PARAMETER_ERROR.getMsg());
+        AssertUtil.canNotEmpty(password, AccountErrorCode.PARAMETER_ERROR.getMsg());
         Account account;
         byte[] priKey = null;
         if (null != keyStore.getPrikey() && keyStore.getPrikey().length > 0) {
@@ -159,7 +159,7 @@ public class AccountServiceImpl implements AccountService {
             } catch (NulsException e) {
                 return Result.getFailed(AccountErrorCode.FAILED);
             }
-        }else{
+        } else {
             try {
                 account = AccountTool.createAccount();
             } catch (NulsException e) {
@@ -189,12 +189,12 @@ public class AccountServiceImpl implements AccountService {
         }
 
         AccountPo po = new AccountPo(account);
-        Result result =  accountStorageService.saveAccount(po);
-        if(result.isFailed()){
+        Result result = accountStorageService.saveAccount(po);
+        if (result.isFailed()) {
             return result;
         }
         LOCAL_ADDRESS_LIST.add(keyStore.getAddress());
-        accountLedgerService.importAccountLedger(account.getAddress().getBase58());
+        accountLedgerService.importLedgerByAddress(account.getAddress().getBase58());
         return Result.getSuccess().setData(account);
     }
 
@@ -253,12 +253,12 @@ public class AccountServiceImpl implements AccountService {
             }
         }
         AccountPo po = new AccountPo(account);
-        Result result =  accountStorageService.saveAccount(po);
-        if(result.isFailed()){
+        Result result = accountStorageService.saveAccount(po);
+        if (result.isFailed()) {
             return result;
         }
         LOCAL_ADDRESS_LIST.add(keyStore.getAddress());
-        accountLedgerService.importAccountLedger(account.getAddress().getBase58());
+        accountLedgerService.importLedgerByAddress(account.getAddress().getBase58());
         return Result.getSuccess().setData(account);
     }
 
@@ -301,12 +301,12 @@ public class AccountServiceImpl implements AccountService {
             account.setAlias(acc.getAlias());
         }
         AccountPo po = new AccountPo(account);
-        Result result =  accountStorageService.saveAccount(po);
-        if(result.isFailed()){
+        Result result = accountStorageService.saveAccount(po);
+        if (result.isFailed()) {
             return result;
         }
         LOCAL_ADDRESS_LIST.add(account.getAddress().toString());
-        accountLedgerService.importAccountLedger(account.getAddress().getBase58());
+        accountLedgerService.importLedgerByAddress(account.getAddress().getBase58());
         return Result.getSuccess().setData(account);
     }
 
@@ -369,7 +369,7 @@ public class AccountServiceImpl implements AccountService {
         AccountPo accountPo = null;
         try {
             Result<AccountPo> result = accountStorageService.getAccount(Base58.decode(address));
-            if(result.isFailed()){
+            if (result.isFailed()) {
                 return null;
             }
             accountPo = result.getData();
@@ -418,7 +418,7 @@ public class AccountServiceImpl implements AccountService {
     public Result<List<Account>> getAccountList() {
         List<Account> list = new ArrayList<>();
         Result<List<AccountPo>> result = accountStorageService.getAccountList();
-        if(result.isFailed()){
+        if (result.isFailed()) {
             return Result.getFailed().setData(list);
         }
         List<AccountPo> poList = result.getData();
@@ -506,10 +506,10 @@ public class AccountServiceImpl implements AccountService {
                 return Result.getSuccess();
             }
         } catch (NulsException e) {
-            Log.error(e);
-            return Result.getFailed();
+            return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG);
         }
     }
+
     @Override
     public Result<Boolean> verifyAddressFormat(String address) {
         if (!Address.validAddress(address)) {
@@ -622,7 +622,7 @@ public class AccountServiceImpl implements AccountService {
         List<Account> list = new ArrayList<>();
         Balance balance = new Balance();
         Result<List<AccountPo>> result = accountStorageService.getAccountList();
-        if(result.isFailed()){
+        if (result.isFailed()) {
             return Result.getFailed().setData(balance);
         }
         List<AccountPo> poList = result.getData();

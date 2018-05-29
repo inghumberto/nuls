@@ -25,12 +25,12 @@
 
 package io.nuls.protocol.base.download.cache;
 
+import io.nuls.core.tools.log.Log;
 import io.nuls.kernel.model.Block;
 import io.nuls.kernel.model.NulsDigestData;
+import io.nuls.kernel.utils.SerializeUtils;
 import io.nuls.protocol.constant.NotFoundType;
-import io.nuls.protocol.model.BlockHashResponse;
-import io.nuls.protocol.model.NotFound;
-import io.nuls.protocol.model.TxGroup;
+import io.nuls.protocol.model.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -45,6 +45,8 @@ public class DownloadCacheHandler {
     private static Map<NulsDigestData, CompletableFuture<Block>> blockCacher = new HashMap<>();
     private static Map<NulsDigestData, CompletableFuture<TxGroup>> txGroupCacher = new HashMap<>();
     private static Map<NulsDigestData, CompletableFuture<BlockHashResponse>> blockHashesCacher = new HashMap<>();
+    private static Map<NulsDigestData, CompletableFuture<CompleteParam>> taskCacher = new HashMap<>();
+    private static Map<NulsDigestData, CompletableFuture<NulsDigestData>> reactCacher = new HashMap<>();
 
     public static CompletableFuture<Block> addGetBlockRequest(NulsDigestData blockHash) {
 
@@ -56,10 +58,18 @@ public class DownloadCacheHandler {
     }
 
     public static void receiveBlock(Block block) {
-        CompletableFuture<Block> future = blockCacher.get(block.getHeader().getHash());
+        NulsDigestData hash = NulsDigestData.calcDigestData(SerializeUtils.uint64ToByteArray(block.getHeader().getHeight()));
+        CompletableFuture<Block> future = blockCacher.get(hash);
+
+        if(future == null) {
+            hash = block.getHeader().getHash();
+            future = blockCacher.get(hash);
+        }
         if (future != null) {
             future.complete(block);
-            blockCacher.remove(block.getHeader().getHash());
+            blockCacher.remove(hash);
+        }  else {
+            Log.warn("Block null : " + block.getHeader().getHash());
         }
     }
 
@@ -77,28 +87,8 @@ public class DownloadCacheHandler {
         if (future != null) {
             future.complete(hashes);
             blockHashesCacher.remove(hashes.getRequestMessageHash());
-        }
-    }
-
-    public static void notFoundBlock(NotFound data) {
-        if (data.getType() == NotFoundType.BLOCK) {
-            CompletableFuture<Block> future = blockCacher.get(data.getHash());
-            if (future != null) {
-                future.complete(null);
-                blockCacher.remove(data.getHash());
-            }
-        } else if (data.getType() == NotFoundType.TRANSACTION) {
-            CompletableFuture<TxGroup> future = txGroupCacher.get(data.getHash());
-            if (future != null) {
-                future.complete(null);
-                txGroupCacher.remove(data.getHash());
-            }
-        } else if (data.getType() == NotFoundType.HASHES) {
-            CompletableFuture<BlockHashResponse> future = blockHashesCacher.get(data.getHash());
-            if (future != null) {
-                future.complete(null);
-                blockHashesCacher.remove(data.getHash());
-            }
+        } else {
+            Log.warn("hashes null : " + hashes.getRequestMessageHash());
         }
     }
 
@@ -107,6 +97,8 @@ public class DownloadCacheHandler {
         if (null != future) {
             future.complete(txGroup);
             txGroupCacher.remove(txGroup.getRequestHash());
+        } else {
+            Log.warn("txGroup null : " + txGroup.getRequestHash());
         }
     }
 
@@ -114,6 +106,71 @@ public class DownloadCacheHandler {
         CompletableFuture<TxGroup> future = new CompletableFuture<>();
         txGroupCacher.put(hash, future);
         return future;
+    }
+    public static Future<CompleteParam> addTaskRequest(NulsDigestData hash) {
+        CompletableFuture<CompleteParam> future = new CompletableFuture<>();
+        taskCacher.put(hash, future);
+        return future;
+    }
+
+    public static void notFoundBlock(NotFound data) {
+        if (data.getType() == NotFoundType.BLOCK) {
+            CompletableFuture<Block> future = blockCacher.get(data.getHash());
+            if (future != null) {
+                future.complete(null);
+                blockCacher.remove(data.getHash());
+            } else {
+                Log.warn("BLOCK NotFound null : " + data.getHash());
+            }
+        } else if (data.getType() == NotFoundType.BLOCKS) {
+            CompletableFuture<CompleteParam> future = taskCacher.get(data.getHash());
+            if (future != null) {
+                future.complete(new CompleteParam(data.getHash(), false));
+                taskCacher.remove(data.getHash());
+            } else {
+                Log.warn("BLOCKS NotFound null : " + data.getHash());
+            }
+        } else if (data.getType() == NotFoundType.TRANSACTION) {
+            CompletableFuture<TxGroup> future = txGroupCacher.get(data.getHash());
+            if (future != null) {
+                future.complete(null);
+                txGroupCacher.remove(data.getHash());
+            } else {
+                Log.warn("TRANSACTION NotFound null : " + data.getHash());
+            }
+        } else if (data.getType() == NotFoundType.HASHES) {
+            CompletableFuture<BlockHashResponse> future = blockHashesCacher.get(data.getHash());
+            if (future != null) {
+                future.complete(null);
+                blockHashesCacher.remove(data.getHash());
+            } else {
+                Log.warn("HASHES NotFound null : " + data.getHash());
+            }
+        }
+    }
+    public static void taskComplete(CompleteParam param) {
+        CompletableFuture<CompleteParam> future = taskCacher.get(param.getRequestHash());
+        if (future != null) {
+            future.complete(param);
+            taskCacher.remove(param.getRequestHash());
+        } else {
+            Log.warn("BLOCKS NotFound null : " + param.getRequestHash());
+        }
+    }
+
+    public static Future<NulsDigestData> addRequest(NulsDigestData requesetId) {
+        CompletableFuture<NulsDigestData> future = new CompletableFuture<>();
+        reactCacher.put(requesetId, future);
+        return future;
+
+    }
+
+    public static void requestReact(NulsDigestData requesetId) {
+        CompletableFuture<NulsDigestData> future = reactCacher.get(requesetId);
+        if (future != null) {
+            future.complete(requesetId);
+            reactCacher.remove(requesetId);
+        }
     }
 
     public static void removeBlockFuture(NulsDigestData hash) {
@@ -127,4 +184,9 @@ public class DownloadCacheHandler {
     public static void removeTxGroupFuture(NulsDigestData hash) {
         txGroupCacher.remove(hash);
     }
+
+    public static void removeTaskFuture(NulsDigestData hash) {
+        taskCacher.remove(hash);
+    }
+
 }

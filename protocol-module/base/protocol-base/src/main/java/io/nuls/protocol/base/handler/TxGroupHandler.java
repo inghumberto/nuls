@@ -38,7 +38,6 @@ import io.nuls.protocol.model.TxGroup;
  */
 public class TxGroupHandler extends AbstractMessageHandler<TxGroupMessage> {
 
-
     @Override
     public void onMessage(TxGroupMessage message, Node fromNode) throws NulsException {
         TxGroup txGroup = message.getMsgBody();

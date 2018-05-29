@@ -25,10 +25,10 @@ package io.nuls.ledger.service.impl;
 
 import io.nuls.core.tools.calc.LongUtils;
 import io.nuls.core.tools.log.Log;
+import io.nuls.core.tools.map.MapUtil;
 import io.nuls.core.tools.param.AssertUtil;
 import io.nuls.db.service.BatchOperation;
 import io.nuls.kernel.exception.NulsException;
-import io.nuls.kernel.func.TimeService;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Service;
 import io.nuls.kernel.model.*;
@@ -67,7 +67,6 @@ public class UtxoLedgerServiceImpl implements LedgerService {
             return Result.getFailed(LedgerErrorCode.NULL_PARAMETER);
         }
         try {
-            //TestLog-
             // 保存CoinData
             Result result = saveCoinData(tx);
             if (result.isFailed()) {
@@ -119,9 +118,6 @@ public class UtxoLedgerServiceImpl implements LedgerService {
             byte[] indexBytes;
             for (int i = 0, length = tos.size(); i < length; i++) {
                 try {
-                    //TestLog+
-                    Coin to = tos.get(i);
-                    //TestLog-
                     batch.put(Arrays.concatenate(txHashBytes, new VarInt(i).encode()), tos.get(i).serialize());
                 } catch (IOException e) {
                     Log.error(e);
@@ -172,18 +168,26 @@ public class UtxoLedgerServiceImpl implements LedgerService {
     }
 
     private Result rollbackCoinData(Transaction tx) throws IOException, NulsException {
-        byte[] txHashBytes = txHashBytes = tx.getHash().serialize();
+        byte[] txHashBytes = tx.getHash().serialize();
         BatchOperation batch = utxoLedgerUtxoStorageService.createWriteBatch();
         CoinData coinData = tx.getCoinData();
-        P2PKHScriptSig p2PKHScriptSig = P2PKHScriptSig.createFromBytes(tx.getScriptSig());
         if (coinData != null) {
             // 保存utxo已花费 - from
             List<Coin> froms = coinData.getFrom();
             Coin recovery;
-            byte[] fromAdress = AddressTool.getAddress(p2PKHScriptSig.getPublicKey());
             for (Coin from : froms) {
                 try {
-                    recovery = new Coin(fromAdress, from.getNa(), from.getLockTime());
+                    byte[] hashBytes = new byte[NulsDigestData.HASH_LENGTH];
+                    System.arraycopy(from.getOwner(), 0, hashBytes, 0, hashBytes.length);
+                    NulsDigestData fromTxHash = new NulsDigestData();
+                    fromTxHash.parse(hashBytes);
+
+                    byte[] indexBytes = new byte[from.getOwner().length - NulsDigestData.HASH_LENGTH];
+                    System.arraycopy(from.getOwner(), NulsDigestData.HASH_LENGTH, indexBytes, 0, indexBytes.length);
+                    int fromIndex = (int) new VarInt(indexBytes, 0).value;
+
+                    Transaction fromTx = utxoLedgerTransactionStorageService.getTx(fromTxHash);
+                    recovery = fromTx.getCoinData().getTo().get(fromIndex);
                     recovery.setFrom(from.getFrom());
                     batch.put(from.getOwner(), recovery.serialize());
                 } catch (IOException e) {
@@ -193,7 +197,6 @@ public class UtxoLedgerServiceImpl implements LedgerService {
             }
             // 删除utxo - to
             List<Coin> tos = coinData.getTo();
-            byte[] indexBytes;
             for (int i = 0, length = tos.size(); i < length; i++) {
                 batch.delete(Arrays.concatenate(txHashBytes, new VarInt(i).encode()));
             }
@@ -233,7 +236,7 @@ public class UtxoLedgerServiceImpl implements LedgerService {
             return false;
         }
         int pubKeyHashLength = pubKeyHash.length;
-        if (address.length != 23 || pubKeyHashLength != 20) {
+        if (address.length != AddressTool.HASH_LENGTH || pubKeyHashLength != 20) {
             return false;
         }
         for (int i = 0; i < pubKeyHashLength; i++) {
@@ -251,44 +254,64 @@ public class UtxoLedgerServiceImpl implements LedgerService {
      *
      * @param transaction
      * @param txList
-     * @return
+     * @return ValidateResult
      */
     @Override
     public ValidateResult verifyCoinData(Transaction transaction, List<Transaction> txList) {
-        if (transaction == null || transaction.getCoinData() == null || txList == null) {
+        if (transaction == null || transaction.getCoinData() == null) {
             return ValidateResult.getFailedResult(CLASS_NAME, LedgerErrorCode.NULL_PARAMETER);
         }
+        boolean isEmptyTxList = (txList == null || txList.size() == 0);
         try {
             CoinData coinData = transaction.getCoinData();
-            int initialCapacity = 0;
-            CoinData validateCoinData;
-            List<Coin> validateToList;
-            // 计算HashMap容量
-            for (Transaction tx : txList) {
-                validateCoinData = tx.getCoinData();
-                if (validateCoinData == null) {
-                    continue;
+            int initialToUtxoCapacity = 0,
+            initialFromUtxoCapacity = 0;
+
+            // 与txList相关的校验准备数据
+            Map<String, Coin> validateToUtxoMap = null;
+            Set<String> validateFromUtxoSet = null;
+            if(!isEmptyTxList) {
+                CoinData validateCoinData;
+                // 计算HashMap容量
+                for (Transaction tx : txList) {
+                    validateCoinData = tx.getCoinData();
+                    if (validateCoinData == null) {
+                        continue;
+                    }
+                    // 此txList是待打包的块中的交易，所以toList是下一步的UTXO，应该校验它
+                    initialToUtxoCapacity += validateCoinData.getTo().size();
+                    // fromUtxoSet用于校验是否双花，既是待校验交易的fromUtxo是否和txList中的fromUtxo重复，有重复则是双花
+                    initialFromUtxoCapacity += validateCoinData.getFrom().size();
                 }
-                // 此txList是待打包的块中的交易，所以toList是下一步的UTXO，应该校验它
-                initialCapacity += validateCoinData.getTo().size();
-            }
-            // txList中所有的to存放于HashMap中
-            Map<String, Coin> validateUtxoMap = new HashMap<>(initialCapacity);
-            Transaction tx;
-            byte[] txHashBytes;
-            Coin toOfValidate;
-            for (int i = 0, length = txList.size(); i < length; i++) {
-                tx = txList.get(i);
-                validateCoinData = tx.getCoinData();
-                if (validateCoinData == null) {
-                    continue;
-                }
-                // 此txList是待打包的块中的交易，所以toList是下一步的UTXO，应该校验它
-                txHashBytes = tx.getHash().serialize();
-                validateToList = validateCoinData.getTo();
-                for (int k = 0, toLength = validateToList.size(); k < toLength; k++) {
-                    toOfValidate = validateToList.get(k);
-                    validateUtxoMap.put(asString(Arrays.concatenate(txHashBytes, new VarInt(k).encode())), toOfValidate);
+                initialToUtxoCapacity = MapUtil.tableSizeFor(initialToUtxoCapacity) << 1;
+                initialFromUtxoCapacity = MapUtil.tableSizeFor(initialFromUtxoCapacity) << 1;
+                // txList中所有的to存放于HashMap中
+                validateToUtxoMap = new HashMap<>(initialToUtxoCapacity);
+                // txList中所有的from.owner存放于HashSet中
+                validateFromUtxoSet = new HashSet<>(initialFromUtxoCapacity);
+                Transaction tx;
+                byte[] txHashBytes;
+                Coin toOfValidate;
+                List<Coin> validateToList;
+                List<Coin> validateFromList;
+                for (int i = 0, length = txList.size(); i < length; i++) {
+                    tx = txList.get(i);
+                    validateCoinData = tx.getCoinData();
+                    if (validateCoinData == null) {
+                        continue;
+                    }
+                    // 此txList是待打包的块中的交易，所以toList是下一步的UTXO，应该校验它
+                    txHashBytes = tx.getHash().serialize();
+                    validateToList = validateCoinData.getTo();
+                    for (int k = 0, toLength = validateToList.size(); k < toLength; k++) {
+                        toOfValidate = validateToList.get(k);
+                        validateToUtxoMap.put(asString(Arrays.concatenate(txHashBytes, new VarInt(k).encode())), toOfValidate);
+                    }
+                    // fromUtxoSet用于校验是否双花，既是待校验交易的fromUtxo是否和txList中的fromUtxo重复，有重复则是双花
+                    validateFromList = validateCoinData.getFrom();
+                    for (int j = 0, fromLength = validateFromList.size(); j < fromLength; j++) {
+                        validateFromUtxoSet.add(asString(validateFromList.get(j).getOwner()));
+                    }
                 }
             }
 
@@ -310,29 +333,32 @@ public class UtxoLedgerServiceImpl implements LedgerService {
                     return ValidateResult.getFailedResult(CLASS_NAME, LedgerErrorCode.DATA_ERROR);
                 }
             }
-            HashSet set = new HashSet(fromSize);
+            // 保存Set用于验证自身双花
+            int initialSetCapacity = MapUtil.tableSizeFor(fromSize) << 1;
+            HashSet<String> set = new HashSet<>(initialSetCapacity);
             Na fromTotal = Na.ZERO;
             byte[] fromBytes;
-            // 保存在数据中的utxo数据
-            Coin fromInDBorList = null;
+            // 保存在数据库中或者txList中的utxo数据
+            Coin fromOfFromCoin = null;
             byte[] fromAdressBytes = null;
             for (Coin from : froms) {
                 fromBytes = from.getOwner();
-                // 验证是否可花费, 校验的coinData的fromUTXO，检查数据库中或者txList中是否存在此UTXO
+                // 验证是否可花费, 校验的coinData的fromUTXO，检查数据库中是否存在此UTXO
                 //Log.info("getUTXO: hash-" + LedgerUtil.getTxHash(fromBytes) + ", index-" + LedgerUtil.getIndex(fromBytes));
-                fromInDBorList = utxoLedgerUtxoStorageService.getUtxo(fromBytes);
-                if (fromInDBorList == null) {
-                    fromInDBorList = validateUtxoMap.get(asString(fromBytes));
+                fromOfFromCoin = utxoLedgerUtxoStorageService.getUtxo(fromBytes);
+                // 检查txList中是否存在此UTXO
+                if (!isEmptyTxList && fromOfFromCoin == null ) {
+                    fromOfFromCoin = validateToUtxoMap.get(asString(fromBytes));
                 }
-                if (null == fromInDBorList) {
-                    // 如果既不存在于txList的to中，又不存在于数据库中，那么这是一笔问题数据，进一步检查是否存在这笔交易，交易有就是双花，没有就是孤儿交易，则返回失败
+                if (null == fromOfFromCoin) {
+                    // 如果既不存在于txList的to中(如果txList不为空)，又不存在于数据库中，那么这是一笔问题数据，进一步检查是否存在这笔交易，交易有就是双花，没有就是孤儿交易，则返回失败
                     if (null != utxoLedgerTransactionStorageService.getTxBytes(LedgerUtil.getTxHashBytes(fromBytes))) {
                         return ValidateResult.getFailedResult(CLASS_NAME, LedgerErrorCode.LEDGER_DOUBLE_SPENT, "no UTXO in DB&&txList, had one tx.");
                     } else {
                         return ValidateResult.getFailedResult(CLASS_NAME, LedgerErrorCode.ORPHAN_TX);
                     }
                 } else {
-                    fromAdressBytes = fromInDBorList.getOwner();
+                    fromAdressBytes = fromOfFromCoin.getOwner();
                     // 验证地址中的公钥hash160和交易中的公钥hash160是否相等，不相等则说明这笔utxo不属于交易发出者
                     if (!checkPublicKeyHash(fromAdressBytes, user)) {
                         Log.warn("public key hash160 check error.");
@@ -342,21 +368,26 @@ public class UtxoLedgerServiceImpl implements LedgerService {
                 // 验证非解锁类型的交易及解锁类型的交易
                 if (!transaction.isUnlockTx()) {
                     // 验证非解锁类型的交易，验证是否可用，检查是否还在锁定时间内
-                    if (TimeService.currentTimeMillis() < from.getLockTime()) {
+                    if (!fromOfFromCoin.usable()) {
                         return ValidateResult.getFailedResult(CLASS_NAME, LedgerErrorCode.UTXO_UNUSABLE);
                     }
                 } else {
                     // 验证解锁类型的交易
-                    if (from.getLockTime() != -1) {
+                    if (fromOfFromCoin.getLockTime() != -1) {
                         return ValidateResult.getFailedResult(CLASS_NAME, LedgerErrorCode.UTXO_STATUS_CHANGE);
                     }
                 }
 
-                // 验证双花
+                // 验证自身双花
                 if (!set.add(asString(fromBytes))) {
                     return ValidateResult.getFailedResult(CLASS_NAME, LedgerErrorCode.LEDGER_DOUBLE_SPENT, "duplicate utxo in itself.");
                 }
-                fromTotal = fromTotal.add(from.getNa());
+                // 验证与待确认交易列表中是否有双花，既是待校验交易的fromUtxo是否和txList中的fromUtxo重复，有重复则是双花
+                if (!isEmptyTxList && validateFromUtxoSet.contains(asString(fromBytes))) {
+                    return ValidateResult.getFailedResult(CLASS_NAME, LedgerErrorCode.LEDGER_DOUBLE_SPENT, "duplicate utxo in tx and txList.");
+                }
+                fromTotal = fromTotal.add(fromOfFromCoin.getNa());
+                from.setFrom(fromOfFromCoin);
             }
             List<Coin> tos = coinData.getTo();
             Na toTotal = Na.ZERO;
@@ -379,7 +410,7 @@ public class UtxoLedgerServiceImpl implements LedgerService {
      * 双花验证不通过的交易需要放入result的data中，一次只验证一对双花的交易
      *
      * @param block
-     * @return
+     * @return ValidateResult<List<Transaction>>
      */
     @Override
     public ValidateResult<List<Transaction>> verifyDoubleSpend(Block block) {
@@ -393,14 +424,14 @@ public class UtxoLedgerServiceImpl implements LedgerService {
      * 双花验证不通过的交易需要放入result的data中，一次只验证一对双花的交易
      *
      * @param txList
-     * @return
+     * @return ValidateResult<List<Transaction>>
      */
     @Override
     public ValidateResult<List<Transaction>> verifyDoubleSpend(List<Transaction> txList) {
         if (txList == null) {
             return ValidateResult.getFailedResult(CLASS_NAME, LedgerErrorCode.NULL_PARAMETER);
         }
-        // 计算HashSet容量
+        // 计算HashMap容量
         int initialCapacity = 0;
         CoinData coinData;
         for (Transaction tx : txList) {
@@ -410,6 +441,7 @@ public class UtxoLedgerServiceImpl implements LedgerService {
             }
             initialCapacity += tx.getCoinData().getFrom().size();
         }
+        initialCapacity = MapUtil.tableSizeFor(initialCapacity) << 1;
         HashMap<String, Transaction> fromMap = new HashMap<>(initialCapacity);
         List<Coin> froms;
         Transaction prePutTx;

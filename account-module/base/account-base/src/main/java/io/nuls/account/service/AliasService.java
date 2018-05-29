@@ -69,7 +69,7 @@ public class AliasService {
      * @param aliasName the alias to set
      * @return txhash
      */
-    public Result<String> setAlias(String addr, String password, String aliasName) {
+    public Result<String> setAlias(String addr, String aliasName, String password) {
         if (!Address.validAddress(addr)) {
             Result.getFailed(AccountErrorCode.PARAMETER_ERROR);
         }
@@ -121,13 +121,13 @@ public class AliasService {
             NulsSignData nulsSignData = accountService.signData(tx.serializeForHash(), account, password);
             P2PKHScriptSig scriptSig = new P2PKHScriptSig(nulsSignData, account.getPubKey());
             tx.setScriptSig(scriptSig.serialize());
-            Result saveResult = accountLedgerService.saveUnconfirmedTransaction(tx);
+            Result saveResult = accountLedgerService.verifyAndSaveUnconfirmedTransaction(tx);
             if (saveResult.isFailed()) {
                 return saveResult;
             }
             Result sendResult = this.transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
-                accountLedgerService.rollback(tx);
+                accountLedgerService.rollbackTransaction(tx);
                 return sendResult;
             }
             String hash = tx.getHash().getDigestHex();

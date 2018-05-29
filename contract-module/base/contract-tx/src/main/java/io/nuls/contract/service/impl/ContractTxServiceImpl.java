@@ -56,7 +56,6 @@ import io.nuls.kernel.lite.annotation.Service;
 import io.nuls.kernel.lite.core.bean.InitializingBean;
 import io.nuls.kernel.model.*;
 import io.nuls.kernel.script.P2PKHScriptSig;
-import io.nuls.kernel.utils.AddressTool;
 import io.nuls.protocol.service.TransactionService;
 
 import java.io.IOException;
@@ -123,7 +122,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
 
             Account account = accountResult.getData();
             // 验证账户密码
-            if (accountService.isEncrypted(account).isSuccess()) {
+            if (accountService.isEncrypted(account).isSuccess() && account.isLocked()) {
                 AssertUtil.canNotEmpty(password, "the password can not be empty");
 
                 Result passwordResult = accountService.validPassword(account, password);
@@ -227,20 +226,20 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             tx.setScriptSig(sig.serialize());
 
             // 保存未确认交易
-            Result saveResult = accountLedgerService.saveUnconfirmedTransaction(tx);
+            Result saveResult = accountLedgerService.verifyAndSaveUnconfirmedTransaction(tx);
             if (saveResult.isFailed()) {
                 return saveResult;
             }
             // 保存合约账户
             saveResult = contractStorageService.saveContractAddress(contractAccount);
             if (saveResult.isFailed()) {
-                accountLedgerService.rollback(tx);
+                accountLedgerService.rollbackTransaction(tx);
                 return saveResult;
             }
             // 广播交易
             Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
-                accountLedgerService.rollback(tx);
+                accountLedgerService.rollbackTransaction(tx);
                 contractStorageService.deleteContractAddress(contractAccount.getAddress().getBase58Bytes());
                 return sendResult;
             }
@@ -292,7 +291,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
 
             Account account = accountResult.getData();
             // 验证账户密码
-            if (accountService.isEncrypted(account).isSuccess()) {
+            if (accountService.isEncrypted(account).isSuccess() && account.isLocked()) {
                 AssertUtil.canNotEmpty(password, "the password can not be empty");
 
                 Result passwordResult = accountService.validPassword(account, password);
@@ -393,7 +392,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             tx.setScriptSig(sig.serialize());
 
             // 保存
-            Result saveResult = accountLedgerService.saveUnconfirmedTransaction(tx);
+            Result saveResult = accountLedgerService.verifyAndSaveUnconfirmedTransaction(tx);
             if (saveResult.isFailed()) {
                 return saveResult;
             }
@@ -401,7 +400,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
                 // 失败则回滚
-                accountLedgerService.rollback(tx);
+                accountLedgerService.rollbackTransaction(tx);
                 return sendResult;
             }
 
@@ -441,7 +440,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
 
             Account account = accountResult.getData();
             // 验证账户密码
-            if (accountService.isEncrypted(account).isSuccess()) {
+            if (accountService.isEncrypted(account).isSuccess() && account.isLocked()) {
                 AssertUtil.canNotEmpty(password, "the password can not be empty");
 
                 Result passwordResult = accountService.validPassword(account, password);
@@ -496,7 +495,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             tx.setScriptSig(sig.serialize());
 
             // 保存删除合约的交易
-            Result saveResult = accountLedgerService.saveUnconfirmedTransaction(tx);
+            Result saveResult = accountLedgerService.verifyAndSaveUnconfirmedTransaction(tx);
             if (saveResult.isFailed()) {
                 return saveResult;
             }
@@ -504,14 +503,14 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             Result<Account> deleteResult = contractStorageService.deleteContractAddress(contractAddressBytes);
             if (deleteResult.isFailed()) {
                 // 失败则回滚
-                accountLedgerService.rollback(tx);
+                accountLedgerService.rollbackTransaction(tx);
                 return deleteResult;
             }
             // 广播交易
             Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
                 // 失败则回滚
-                accountLedgerService.rollback(tx);
+                accountLedgerService.rollbackTransaction(tx);
                 if(deleteResult.getData() != null) {
                     contractStorageService.saveContractAddress(deleteResult.getData());
                 }

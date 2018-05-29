@@ -36,9 +36,9 @@ import java.util.List;
  */
 public interface TransactionInfoStorageService {
 
-    Result saveTransactionInfo(TransactionInfoPo tx, List<byte[]> addresses);
+    Result saveTransactionInfo(byte[] key, TransactionInfoPo tx);
 
-    Result deleteTransactionInfo(TransactionInfoPo tx);
+    Result deleteTransactionInfo(byte[] infoKey);
 
     List<TransactionInfoPo> getTransactionInfoListByAddress(byte[] address) throws NulsException;
 }

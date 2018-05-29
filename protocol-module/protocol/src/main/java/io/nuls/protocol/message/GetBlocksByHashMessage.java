@@ -20,35 +20,36 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
-package io.nuls.account.ledger.storage.service;
+package io.nuls.protocol.message;
 
-import io.nuls.account.ledger.storage.po.TransactionInfoPo;
-import io.nuls.db.model.Entry;
 import io.nuls.kernel.exception.NulsException;
-import io.nuls.kernel.model.Coin;
 import io.nuls.kernel.model.NulsDigestData;
-import io.nuls.kernel.model.Result;
-import io.nuls.kernel.model.Transaction;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import io.nuls.kernel.utils.NulsByteBuffer;
+import io.nuls.protocol.constant.ProtocolConstant;
+import io.nuls.protocol.model.GetBlocksByHashParam;
 
 /**
- * @author Facjas
- * @date 2018/5/10.
+ * 获取区块的消息
+ * The message for get block or blocks
+ *
+ * @author Niels
+ * @date 2017/11/13
  */
-public interface AccountLedgerStorageService {
+public class GetBlocksByHashMessage extends BaseProtocolMessage<GetBlocksByHashParam> {
 
-    Result saveUTXO(byte[] key, byte[] value);
+    public GetBlocksByHashMessage() {
+        super(ProtocolConstant.MESSAGE_TYPE_GET_BLOCKS_BY_HASH);
+    }
 
-    Result batchSaveUTXO(Map<byte[],byte[]> utxos);
+    public GetBlocksByHashMessage(NulsDigestData startHash, NulsDigestData endHash) {
+        this();
+        GetBlocksByHashParam param = new GetBlocksByHashParam(startHash, endHash);
+        setMsgBody(param);
+    }
 
-    Result deleteUTXO(byte[] key);
-
-    Result batchDeleteUTXO(Set<byte[]> utxos);
-
-    List<Entry<byte[],byte[]>> loadAllCoinList();
+    @Override
+    protected GetBlocksByHashParam parseMessageBody(NulsByteBuffer byteBuffer) throws NulsException {
+        return byteBuffer.readNulsData(new GetBlocksByHashParam());
+    }
 }

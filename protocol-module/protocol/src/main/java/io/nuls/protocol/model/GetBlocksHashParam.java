@@ -47,58 +47,56 @@ public class GetBlocksHashParam extends BaseNulsData {
      * The starting height of the request is the first height to be returned.
      */
 
-    private long start;
+    private long startHeight;
 
     /**
-     * 请求的区块数量
-     * the count of the blocks request
+     * 请求的结束高度，即需要返回的最后一个高度
+     * end of the blocks request
      */
 
-    private long size;
+    private long endHeight;
+
+    public GetBlocksHashParam() {
+    }
+
+    public GetBlocksHashParam(long startHeight, long endHeight) {
+        this.startHeight = startHeight;
+        this.endHeight = endHeight;
+    }
 
     @Override
     public int size() {
         int size = 0;
-        size += SerializeUtils.sizeOfVarInt(start);
-        size += SerializeUtils.sizeOfVarInt(size);
+        size += SerializeUtils.sizeOfInt48();
+        size += SerializeUtils.sizeOfInt48();
         return size;
     }
 
     @Override
     protected void serializeToStream(NulsOutputStreamBuffer stream) throws IOException {
-        stream.writeVarInt(start);
-        stream.writeVarInt(size);
+        stream.writeInt48(startHeight);
+        stream.writeInt48(endHeight);
     }
 
     @Override
     protected void parse(NulsByteBuffer byteBuffer) throws NulsException {
-        this.start = byteBuffer.readVarInt();
-        this.size = byteBuffer.readVarInt();
-    }
-    public GetBlocksHashParam() {
+        startHeight = byteBuffer.readInt48();
+        endHeight = byteBuffer.readInt48();
     }
 
-    /**
-     * 请求的起始高度，即需要返回的第一个高度
-     * The starting height of the request is the first height to be returned.
-     */
-    public long getStart() {
-        return start;
+    public long getStartHeight() {
+        return startHeight;
     }
 
-    public void setStart(long start) {
-        this.start = start;
+    public void setStartHeight(long startHeight) {
+        this.startHeight = startHeight;
     }
 
-    /**
-     * 请求的区块数量
-     * the count of the blocks request
-     */
-    public long getSize() {
-        return size;
+    public long getEndHeight() {
+        return endHeight;
     }
 
-    public void setSize(long size) {
-        this.size = size;
+    public void setEndHeight(long endHeight) {
+        this.endHeight = endHeight;
     }
 }

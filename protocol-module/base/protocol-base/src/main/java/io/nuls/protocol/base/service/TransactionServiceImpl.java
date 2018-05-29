@@ -35,6 +35,7 @@ import io.nuls.kernel.validate.ValidateResult;
 import io.nuls.ledger.service.LedgerService;
 import io.nuls.message.bus.service.MessageBusService;
 import io.nuls.network.model.Node;
+import io.nuls.protocol.cache.TemporaryCacheManager;
 import io.nuls.protocol.constant.ProtocolConstant;
 import io.nuls.protocol.message.TransactionMessage;
 import io.nuls.protocol.service.TransactionService;
@@ -48,6 +49,8 @@ import java.util.List;
  */
 @Service
 public class TransactionServiceImpl implements TransactionService {
+
+    private TemporaryCacheManager temporaryCacheManager = TemporaryCacheManager.getInstance();
 
     @Autowired
     private MessageBusService messageBusService;
@@ -133,6 +136,7 @@ public class TransactionServiceImpl implements TransactionService {
      */
     @Override
     public Result broadcastTx(Transaction tx) {
+        temporaryCacheManager.cacheTx(tx);
         TransactionMessage message = new TransactionMessage();
         message.setMsgBody(tx);
         return messageBusService.broadcastAndCache(message, null, true);
@@ -153,10 +157,10 @@ public class TransactionServiceImpl implements TransactionService {
         if (null == txList || txList.size() <= 1) {
             return ValidateResult.getSuccessResult();
         }
-        ValidateResult result = ledgerService.verifyDoubleSpend(txList);
-        if (result.isFailed()) {
-            return result;
-        }
+//        ValidateResult result = ledgerService.verifyDoubleSpend(txList);
+//        if (result.isFailed()) {
+//            return result;
+//        }
         List<Transaction> newTxList = new ArrayList<>();
         for (Transaction tx : txList) {
             if (tx.getType() == ProtocolConstant.TX_TYPE_COINBASE || tx.getType() == ProtocolConstant.TX_TYPE_TRANSFER) {
@@ -165,6 +169,7 @@ public class TransactionServiceImpl implements TransactionService {
             newTxList.add(tx);
         }
         List<TransactionProcessor> processorList = TransactionManager.getAllProcessorList();
+        ValidateResult result = ValidateResult.getSuccessResult();
         for (TransactionProcessor processor : processorList) {
             result = processor.conflictDetect(newTxList);
             if (result.isFailed()) {

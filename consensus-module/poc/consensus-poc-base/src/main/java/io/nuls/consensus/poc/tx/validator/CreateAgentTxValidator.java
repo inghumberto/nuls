@@ -47,7 +47,7 @@ import java.util.Arrays;
 public class CreateAgentTxValidator extends BaseConsensusProtocolValidator<CreateAgentTransaction> {
 
     //节点介绍最大长度
-    private static final int INSTRACTION_MAX_LENGTH = 100;
+    private static final int INSTRACTION_MAX_LENGTH = 200;
 
     private static final int AGENT_NAME_MAX_LENGTH = 32;
 
@@ -73,8 +73,8 @@ public class CreateAgentTxValidator extends BaseConsensusProtocolValidator<Creat
             return ValidateResult.getFailedResult(getClass().getName(), "agent name is too long!");
         }
 
-        if(agent.getIntroduction().length>INSTRACTION_MAX_LENGTH){
-            return ValidateResult.getFailedResult(getClass().getName(),"The instruduction is too long!");
+        if (agent.getIntroduction().length > INSTRACTION_MAX_LENGTH) {
+            return ValidateResult.getFailedResult(getClass().getName(), "The instruduction is too long!");
         }
 
         if (tx.getTime() <= 0) {
@@ -87,6 +87,9 @@ public class CreateAgentTxValidator extends BaseConsensusProtocolValidator<Creat
 
         if (PocConsensusProtocolConstant.AGENT_DEPOSIT_LOWER_LIMIT.isGreaterThan(agent.getDeposit())) {
             return ValidateResult.getFailedResult(this.getClass().getName(), PocConsensusErrorCode.DEPOSIT_NOT_ENOUGH);
+        }
+        if (PocConsensusProtocolConstant.AGENT_DEPOSIT_UPPER_LIMIT.isLessThan(agent.getDeposit())) {
+            return ValidateResult.getFailedResult(this.getClass().getName(), PocConsensusErrorCode.DEPOSIT_TOO_MUCH);
         }
 
         if (!isDepositOk(agent.getDeposit(), tx.getCoinData())) {
