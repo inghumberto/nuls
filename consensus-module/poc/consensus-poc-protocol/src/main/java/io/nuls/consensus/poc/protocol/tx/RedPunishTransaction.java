@@ -22,31 +22,40 @@
  * SOFTWARE.
  *
  */
+package io.nuls.consensus.poc.protocol.tx;
 
-package io.nuls.core.tools.crypto;
+import io.nuls.consensus.constant.ConsensusConstant;
+import io.nuls.consensus.poc.protocol.entity.RedPunishData;
+import io.nuls.kernel.exception.NulsException;
+import io.nuls.kernel.model.Transaction;
+import io.nuls.kernel.utils.NulsByteBuffer;
 
-import java.security.MessageDigest;
-
-public class MD5Util {
-
-    public static String md5(String s) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] bytes = md.digest(s.getBytes("utf-8"));
-            return toHex(bytes);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+/**
+ * @author Niels
+ * @date 2017/12/4
+ */
+public class RedPunishTransaction extends Transaction<RedPunishData> {
+    public RedPunishTransaction() {
+        super(ConsensusConstant.TX_TYPE_RED_PUNISH);
     }
 
-    private static String toHex(byte[] bytes) {
-        final char[] HEX_DIGITS = "0123456789ABCDEF".toCharArray();
-        StringBuilder ret = new StringBuilder(bytes.length * 2);
-        for (int i = 0; i < bytes.length; i++) {
-            ret.append(HEX_DIGITS[(bytes[i] >> 4) & 0x0f]);
-            ret.append(HEX_DIGITS[bytes[i] & 0x0f]);
-        }
-        return ret.toString().toLowerCase();
+    @Override
+    protected RedPunishData parseTxData(NulsByteBuffer byteBuffer) throws NulsException {
+        return byteBuffer.readNulsData(new RedPunishData());
     }
 
+    @Override
+    public String getInfo(byte[] address) {
+        return "--";
+    }
+
+    @Override
+    public boolean isFreeOfFee() {
+        return true;
+    }
+
+    @Override
+    public boolean needVerifySignature() {
+        return false;
+    }
 }

@@ -7,7 +7,7 @@ import io.nuls.consensus.poc.protocol.constant.PunishType;
 import io.nuls.consensus.poc.protocol.entity.Agent;
 import io.nuls.consensus.poc.protocol.entity.RedPunishData;
 import io.nuls.consensus.poc.protocol.tx.CreateAgentTransaction;
-import io.nuls.consensus.poc.protocol.tx.RedPunishTransaction1;
+import io.nuls.consensus.poc.protocol.tx.RedPunishTransaction;
 import io.nuls.consensus.poc.protocol.util.PoConvertUtil;
 import io.nuls.consensus.poc.storage.po.AgentPo;
 import io.nuls.consensus.poc.storage.po.DepositPo;
@@ -39,7 +39,7 @@ import java.util.List;
  * @date 2018/5/14
  */
 @Component
-public class RedPunishTxProcessor implements TransactionProcessor<RedPunishTransaction1> {
+public class RedPunishTxProcessor implements TransactionProcessor<RedPunishTransaction> {
 
     @Autowired
     private PunishLogStorageService storageService;
@@ -57,12 +57,12 @@ public class RedPunishTxProcessor implements TransactionProcessor<RedPunishTrans
     private AccountLedgerService accountLedgerService;
 
     @Override
-    public Result onRollback(RedPunishTransaction1 tx, Object secondaryData) {
+    public Result onRollback(RedPunishTransaction tx, Object secondaryData) {
         RedPunishData punishData = tx.getTxData();
 
-        List<Agent> agentList = PocConsensusContext.getChainManager().getMasterChain().getChain().getAgentList();
-        Agent agent = null;
-        for (Agent agent_ : agentList) {
+        List<AgentPo> agentList = agentStorageService.getList();
+        AgentPo agent = null;
+        for (AgentPo agent_ : agentList) {
             if (agent_.getDelHeight() <= 0) {
                 continue;
             }
@@ -74,7 +74,7 @@ public class RedPunishTxProcessor implements TransactionProcessor<RedPunishTrans
         if (null == agent) {
             return Result.getFailed(KernelErrorCode.DATA_ERROR, "There is no agent can be punished.");
         }
-        CreateAgentTransaction transaction = (CreateAgentTransaction) this.ledgerService.getTx(agent.getTxHash());
+        CreateAgentTransaction transaction = (CreateAgentTransaction) this.ledgerService.getTx(agent.getHash());
         if (null == transaction) {
             return Result.getFailed(KernelErrorCode.DATA_ERROR, "Can't find the transaction which create the agent!");
         }
@@ -102,7 +102,7 @@ public class RedPunishTxProcessor implements TransactionProcessor<RedPunishTrans
             if (po.getDelHeight() >= 0) {
                 continue;
             }
-            if (!po.getAgentHash().equals(agent.getTxHash())) {
+            if (!po.getAgentHash().equals(agent.getHash())) {
                 continue;
             }
             po.setDelHeight(-1L);
@@ -129,7 +129,7 @@ public class RedPunishTxProcessor implements TransactionProcessor<RedPunishTrans
                 return Result.getFailed(e.getMessage());
             }
         }
-        AgentPo agentPo = PoConvertUtil.agentToPo(agent);
+        AgentPo agentPo = agent;
         agentPo.setDelHeight(-1L);
         boolean success = agentStorageService.save(agentPo);
         if (!success) {
@@ -159,7 +159,7 @@ public class RedPunishTxProcessor implements TransactionProcessor<RedPunishTrans
     }
 
     @Override
-    public Result onCommit(RedPunishTransaction1 tx, Object secondaryData) {
+    public Result onCommit(RedPunishTransaction tx, Object secondaryData) {
         RedPunishData punishData = tx.getTxData();
         BlockHeader header = (BlockHeader) secondaryData;
         BlockRoundData roundData = new BlockRoundData(header.getExtend());
@@ -170,9 +170,9 @@ public class RedPunishTxProcessor implements TransactionProcessor<RedPunishTrans
         punishLogPo.setTime(tx.getTime());
         punishLogPo.setType(PunishType.RED.getCode());
 
-        List<Agent> agentList = PocConsensusContext.getChainManager().getMasterChain().getChain().getAgentList();
-        Agent agent = null;
-        for (Agent agent_ : agentList) {
+        List<AgentPo> agentList = agentStorageService.getList();
+        AgentPo agent = null;
+        for (AgentPo agent_ : agentList) {
             if (agent_.getDelHeight() > 0) {
                 continue;
             }
@@ -185,7 +185,7 @@ public class RedPunishTxProcessor implements TransactionProcessor<RedPunishTrans
             Log.error("There is no agent can be punished.");
             return Result.getSuccess();
         }
-        CreateAgentTransaction transaction = (CreateAgentTransaction) this.ledgerService.getTx(agent.getTxHash());
+        CreateAgentTransaction transaction = (CreateAgentTransaction) this.ledgerService.getTx(agent.getHash());
         if (null == transaction) {
             return Result.getFailed(KernelErrorCode.DATA_ERROR, "Can't find the transaction which create the agent!");
         }
@@ -213,7 +213,7 @@ public class RedPunishTxProcessor implements TransactionProcessor<RedPunishTrans
             if (po.getDelHeight() >= 0) {
                 continue;
             }
-            if (!po.getAgentHash().equals(agent.getTxHash())) {
+            if (!po.getAgentHash().equals(agent.getHash())) {
                 continue;
             }
             po.setDelHeight(tx.getBlockHeight());
@@ -245,7 +245,7 @@ public class RedPunishTxProcessor implements TransactionProcessor<RedPunishTrans
             this.rollbackUnlockTxList(unlockedList);
             throw new NulsRuntimeException(KernelErrorCode.FAILED, "rollbackTransaction tx failed!");
         }
-        AgentPo agentPo = PoConvertUtil.agentToPo(agent);
+        AgentPo agentPo = agent;
         agentPo.setDelHeight(tx.getBlockHeight());
         success = agentStorageService.save(agentPo);
         if (!success) {

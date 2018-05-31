@@ -76,11 +76,11 @@ public class AgentPo extends BaseNulsData {
         stream.write(agentAddress);
         stream.write(packingAddress);
         stream.write(rewardAddress);
-        stream.writeVarInt(deposit.getValue());
+        stream.writeInt64(deposit.getValue());
         stream.writeDouble(commissionRate);
         stream.writeBytesWithLength(agentName);
         stream.writeBytesWithLength(introduction);
-        stream.writeInt48(time);
+        stream.writeUint48(time);
         stream.writeVarInt(blockHeight);
         stream.writeVarInt(delHeight);
     }
@@ -91,11 +91,11 @@ public class AgentPo extends BaseNulsData {
         this.agentAddress = byteBuffer.readBytes(AddressTool.HASH_LENGTH);
         this.packingAddress = byteBuffer.readBytes(AddressTool.HASH_LENGTH);
         this.rewardAddress = byteBuffer.readBytes(AddressTool.HASH_LENGTH);
-        this.deposit = Na.valueOf(byteBuffer.readVarInt());
+        this.deposit = Na.valueOf(byteBuffer.readInt64());
         this.commissionRate = byteBuffer.readDouble();
         this.agentName = byteBuffer.readByLengthByte();
         this.introduction = byteBuffer.readByLengthByte();
-        this.time = byteBuffer.readInt48();
+        this.time = byteBuffer.readUint48();
         this.blockHeight = byteBuffer.readVarInt();
         this.delHeight = byteBuffer.readVarInt();
     }
@@ -104,13 +104,13 @@ public class AgentPo extends BaseNulsData {
     public int size() {
         int size = SerializeUtils.sizeOfNulsData(hash);
         size += AddressTool.HASH_LENGTH * 3;
-        size += SerializeUtils.sizeOfVarInt(deposit.getValue());
+        size += SerializeUtils.sizeOfInt64(); // deposit.getValue()
         size += SerializeUtils.sizeOfDouble(commissionRate);
         size += SerializeUtils.sizeOfBytes(agentName);
         size += SerializeUtils.sizeOfBytes(introduction);
-        size += SerializeUtils.sizeOfInt48();
-        size += SerializeUtils.sizeOfVarInt(blockHeight);
-        size += SerializeUtils.sizeOfVarInt(delHeight);
+        size += SerializeUtils.sizeOfUint48();
+        size += SerializeUtils.sizeOfVarInt(blockHeight); // blockHeight
+        size += SerializeUtils.sizeOfVarInt(delHeight); // delHeight
         return size;
     }
 

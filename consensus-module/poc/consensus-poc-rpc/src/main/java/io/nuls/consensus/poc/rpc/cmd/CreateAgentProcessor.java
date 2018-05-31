@@ -1,11 +1,11 @@
 package io.nuls.consensus.poc.rpc.cmd;
 
-import io.nuls.core.tools.cmd.CommandBuilder;
-import io.nuls.core.tools.cmd.CommandHelper;
+import io.nuls.kernel.model.RpcClientResult;
+import io.nuls.kernel.utils.CommandBuilder;
+import io.nuls.kernel.utils.CommandHelper;
 import io.nuls.core.tools.str.StringUtils;
 import io.nuls.kernel.model.CommandResult;
 import io.nuls.kernel.model.Na;
-import io.nuls.kernel.model.Result;
 import io.nuls.kernel.processor.CommandProcessor;
 import io.nuls.kernel.utils.RestFulUtils;
 
@@ -41,7 +41,7 @@ public class CreateAgentProcessor implements CommandProcessor {
 
     @Override
     public String getCommandDescription() {
-        return "agent <agentAddress> <packingAddress> <commissionRate> <deposit> <agentName> <remark> [rewardAddress] --create a agent";
+        return "createagent <agentAddress> <packingAddress> <commissionRate> <deposit> <agentName> <remark> [rewardAddress] --create a agent";
     }
 
     @Override
@@ -90,7 +90,7 @@ public class CreateAgentProcessor implements CommandProcessor {
         if(args.length == 8){
             parameters.put("rewardAddress", args[7]);
         }
-        Result result = restFul.post("/consensus/agent",parameters);
+        RpcClientResult result = restFul.post("/consensus/agent",parameters);
         if (result.isFailed()) {
             return CommandResult.getFailed(result.getMsg());
         }
