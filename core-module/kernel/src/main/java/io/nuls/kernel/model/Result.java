@@ -49,6 +49,13 @@ public class Result<T> implements Serializable {
     public Result(boolean success, String message, ErrorCode errorCode, T data) {
         this.success = success;
         this.msg = message;
+
+        if (null == errorCode) {
+            errorCode = KernelErrorCode.FAILED;
+            if (success) {
+                errorCode = KernelErrorCode.SUCCESS;
+            }
+        }
         this.errorCode = errorCode;
         this.data = data;
     }
@@ -58,7 +65,7 @@ public class Result<T> implements Serializable {
     }
 
     public Result(boolean success, String message) {
-        this(success, message, KernelErrorCode.SUCCESS, null);
+        this(success, message, null, null);
     }
 
     public Result(boolean success, ErrorCode errorCode, T data) {
@@ -161,10 +168,10 @@ public class Result<T> implements Serializable {
     public RpcClientResult toRpcClientResult() {
         RpcClientResult rpcClientResult = new RpcClientResult();
         rpcClientResult.setCode(this.errorCode.getCode());
-        if (errorCode == null) {
-            rpcClientResult.setMsg(msg);
-        } else {
+        if (StringUtils.isBlank(msg) && null != errorCode) {
             rpcClientResult.setMsg(this.errorCode.getMsg());
+        } else {
+            rpcClientResult.setMsg(msg);
         }
         rpcClientResult.setSuccess(success);
         rpcClientResult.setData(data);
