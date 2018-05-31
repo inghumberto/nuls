@@ -90,9 +90,8 @@ public class NativeAddress {
 
         frame.getVm().setGasUsed(frame.getVm().getGasUsed() + programResult.getGasUsed());
         if (!programResult.isError()) {
-            for (ProgramTransfer programTransfer : programResult.getTransfers()) {
-                frame.getVm().getTransfers().add(programTransfer);
-            }
+            frame.getVm().getTransfers().addAll(programResult.getTransfers());
+            frame.getVm().getEvents().addAll(programResult.getEvents());
         } else {
             ObjectRef errorRef = frame.getHeap().newString(programResult.getErrorMessage());
             frame.getVm().getResult().error(errorRef);

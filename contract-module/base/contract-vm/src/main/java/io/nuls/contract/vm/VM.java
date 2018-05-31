@@ -68,6 +68,8 @@ public class VM {
 
     private List<ProgramTransfer> transfers = new ArrayList<>();
 
+    private List<String> events = new ArrayList<>();
+
     public VM() {
         this.vmStack = new VMStack(VM_STACK_MAX_SIZE);
         this.heap = new Heap(this);
@@ -998,6 +1000,10 @@ public class VM {
 
     public List<ProgramTransfer> getTransfers() {
         return transfers;
+    }
+
+    public List<String> getEvents() {
+        return events;
     }
 
     public void setResult(Result result) {

@@ -15,6 +15,8 @@ public class ProgramResult {
 
     private List<ProgramTransfer> transfers = new ArrayList<>();
 
+    private List<String> events = new ArrayList<>();
+
     public ProgramResult error(String errorMessage) {
         this.error = true;
         this.errorMessage = errorMessage;
@@ -64,6 +66,14 @@ public class ProgramResult {
         this.transfers = transfers;
     }
 
+    public List<String> getEvents() {
+        return events;
+    }
+
+    public void setEvents(List<String> events) {
+        this.events = events;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -75,7 +85,8 @@ public class ProgramResult {
         if (error != that.error) return false;
         if (result != null ? !result.equals(that.result) : that.result != null) return false;
         if (errorMessage != null ? !errorMessage.equals(that.errorMessage) : that.errorMessage != null) return false;
-        return transfers != null ? transfers.equals(that.transfers) : that.transfers == null;
+        if (transfers != null ? !transfers.equals(that.transfers) : that.transfers != null) return false;
+        return events != null ? events.equals(that.events) : that.events == null;
     }
 
     @Override
@@ -85,6 +96,7 @@ public class ProgramResult {
         result1 = 31 * result1 + (error ? 1 : 0);
         result1 = 31 * result1 + (errorMessage != null ? errorMessage.hashCode() : 0);
         result1 = 31 * result1 + (transfers != null ? transfers.hashCode() : 0);
+        result1 = 31 * result1 + (events != null ? events.hashCode() : 0);
         return result1;
     }
 
@@ -96,6 +108,7 @@ public class ProgramResult {
                 ", error=" + error +
                 ", errorMessage=" + errorMessage +
                 ", transfers=" + transfers +
+                ", events=" + events +
                 '}';
     }
 

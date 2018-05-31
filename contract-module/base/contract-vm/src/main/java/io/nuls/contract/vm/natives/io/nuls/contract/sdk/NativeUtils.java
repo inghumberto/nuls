@@ -34,8 +34,7 @@ public class NativeUtils {
     private static Result emit(MethodCode methodCode, MethodArgs methodArgs, Frame frame) {
         ObjectRef objectRef = (ObjectRef) methodArgs.getInvokeArgs()[0];
         String str = frame.getHeap().toString(objectRef);
-        // TODO: 2018/4/27
-        System.out.println("emit event: " + str);
+        frame.getVm().getEvents().add(str);
         Result result = NativeMethod.result(methodCode, null, frame);
         return result;
     }

@@ -155,6 +155,7 @@ public class ProgramExecutorImpl implements ProgramExecutor {
 
             programResult.setGasUsed(vm.getGasUsed());
             programResult.setTransfers(vm.getTransfers());
+            programResult.setEvents(vm.getEvents());
 
             Object resultValue = vm.getResult().getValue();
             if (resultValue != null) {
