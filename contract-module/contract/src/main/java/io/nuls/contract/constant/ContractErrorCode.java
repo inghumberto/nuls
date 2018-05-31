@@ -6,6 +6,6 @@ import io.nuls.kernel.constant.TransactionErrorCode;
 
 public interface ContractErrorCode extends TransactionErrorCode, KernelErrorCode {
 
-    ErrorCode CONTRACT_EXECUTE_ERROR = ErrorCode.init("CONTRACT001", 100001);
+    ErrorCode CONTRACT_EXECUTE_ERROR = ErrorCode.init("CONTRACT001", "100001");
 
 }
