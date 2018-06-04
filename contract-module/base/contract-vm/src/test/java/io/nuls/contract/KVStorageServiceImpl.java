@@ -93,6 +93,11 @@ public class KVStorageServiceImpl implements DBService {
     }
 
     @Override
+    public List<byte[]> valueList(String area) {
+        return null;
+    }
+
+    @Override
     public Set<Entry<byte[], byte[]>> entrySet(String area) {
         return null;
     }
