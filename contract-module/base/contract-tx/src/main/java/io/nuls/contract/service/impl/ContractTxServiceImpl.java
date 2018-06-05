@@ -56,6 +56,7 @@ import io.nuls.kernel.lite.annotation.Service;
 import io.nuls.kernel.lite.core.bean.InitializingBean;
 import io.nuls.kernel.model.*;
 import io.nuls.kernel.script.P2PKHScriptSig;
+import io.nuls.kernel.utils.TransactionFeeCalculator;
 import io.nuls.protocol.service.TransactionService;
 
 import java.io.IOException;
@@ -209,7 +210,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             Na imputedNa = Na.valueOf(gasUsed * price);
             // 总花费
             Na totalNa = imputedNa.add(value);
-            CoinDataResult coinDataResult = accountLedgerService.getCoinData(senderBytes, totalNa, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH);
+            CoinDataResult coinDataResult = accountLedgerService.getCoinData(senderBytes, totalNa, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH, TransactionFeeCalculator.MIN_PRECE_PRE_1000_BYTES);
             if (!coinDataResult.isEnough()) {
                 return Result.getFailed(ContractErrorCode.BALANCE_NOT_ENOUGH);
             }
@@ -394,7 +395,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             Na imputedNa = Na.valueOf(gasUsed * price);
             // 总花费
             Na totalNa = imputedNa.add(value);
-            CoinDataResult coinDataResult = accountLedgerService.getCoinData(senderBytes, totalNa, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH);
+            CoinDataResult coinDataResult = accountLedgerService.getCoinData(senderBytes, totalNa, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH, TransactionFeeCalculator.MIN_PRECE_PRE_1000_BYTES);
             if (!coinDataResult.isEnough()) {
                 return Result.getFailed(ContractErrorCode.BALANCE_NOT_ENOUGH);
             }
@@ -497,7 +498,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             CoinData coinData = new CoinData();
 
             // 总花费 终止智能合约的交易手续费按普通交易计算手续费
-            CoinDataResult coinDataResult = accountLedgerService.getCoinData(senderBytes, Na.ZERO, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH);
+            CoinDataResult coinDataResult = accountLedgerService.getCoinData(senderBytes, Na.ZERO, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH, TransactionFeeCalculator.MIN_PRECE_PRE_1000_BYTES);
             if (!coinDataResult.isEnough()) {
                 return Result.getFailed(ContractErrorCode.BALANCE_NOT_ENOUGH);
             }
