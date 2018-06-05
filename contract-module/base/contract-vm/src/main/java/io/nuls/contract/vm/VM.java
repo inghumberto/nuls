@@ -137,27 +137,32 @@ public class VM {
         this.gas = programInvoke.getGas();
         String[] args = programInvoke.getArgs();
         int length = args == null ? 1 : args.length + 1;
-        Object[] runArgs = new Object[length];
-        runArgs[0] = objectRef;
+        List runArgs = new ArrayList();
+        runArgs.add(objectRef);
         List<VariableType> argsVariableType = methodCode.getArgsVariableType();
         for (int i = 0; i < argsVariableType.size(); i++) {
             VariableType variableType = argsVariableType.get(i);
             Object arg = args[i];
             if (arg == null) {
-
+                runArgs.add(arg);
             } else if (variableType.isArray()) {
                 throw new RuntimeException("parameter can't be array");
             } else if (variableType.isPrimitive()) {
                 arg = variableType.getPrimitiveValue(arg);
+                runArgs.add(arg);
+                if (variableType.isLong() || variableType.isDouble()) {
+                    runArgs.add(null);
+                }
             } else if (VariableType.STRING_TYPE.equals(variableType)) {
                 arg = this.heap.newString(arg.toString());
+                runArgs.add(arg);
             } else {
                 arg = this.heap.newObject(variableType, arg.toString());
+                runArgs.add(arg);
             }
-            runArgs[i + 1] = arg;
         }
         initProgramContext(programInvoke);
-        run(methodCode, runArgs);
+        run(methodCode, runArgs.toArray());
     }
 
     public void run() {
