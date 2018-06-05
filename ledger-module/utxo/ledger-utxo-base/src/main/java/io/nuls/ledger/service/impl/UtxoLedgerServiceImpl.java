@@ -29,6 +29,8 @@ import io.nuls.core.tools.log.Log;
 import io.nuls.core.tools.map.MapUtil;
 import io.nuls.core.tools.param.AssertUtil;
 import io.nuls.db.service.BatchOperation;
+import io.nuls.kernel.constant.NulsConstant;
+import io.nuls.kernel.context.NulsContext;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Service;
@@ -386,6 +388,9 @@ public class UtxoLedgerServiceImpl implements LedgerService {
                         Log.warn("public key hash160 check error.");
                         return ValidateResult.getFailedResult(CLASS_NAME, LedgerErrorCode.INVALID_INPUT);
                     }
+                    if (java.util.Arrays.equals(fromOfFromCoin.getOwner(), NulsConstant.BLACK_HOLE_ADDRESS)) {
+                        return ValidateResult.getFailedResult(CLASS_NAME, "The address is block hole!");
+                    }
                 }
                 // 验证非解锁类型的交易及解锁类型的交易
                 if (!transaction.isUnlockTx()) {
@@ -437,7 +442,7 @@ public class UtxoLedgerServiceImpl implements LedgerService {
     /**
      * 双花验证不通过的交易需要放入result的data中，一次只验证一对双花的交易
      *
-     * @return ValidateResult<List   <   Transaction>>
+     * @return ValidateResult<List       <       Transaction>>
      */
     @Override
     public ValidateResult<List<Transaction>> verifyDoubleSpend(Block block) {
@@ -450,7 +455,7 @@ public class UtxoLedgerServiceImpl implements LedgerService {
     /**
      * 双花验证不通过的交易需要放入result的data中，一次只验证一对双花的交易
      *
-     * @return ValidateResult<List   <   Transaction>>
+     * @return ValidateResult<List       <       Transaction>>
      */
     @Override
     public ValidateResult<List<Transaction>> verifyDoubleSpend(List<Transaction> txList) {

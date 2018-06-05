@@ -46,9 +46,11 @@ import io.nuls.core.tools.log.Log;
 import io.nuls.core.tools.param.AssertUtil;
 import io.nuls.core.tools.str.StringUtils;
 import io.nuls.kernel.cfg.NulsConfig;
+import io.nuls.kernel.constant.ErrorCode;
 import io.nuls.kernel.constant.KernelErrorCode;
 import io.nuls.kernel.context.NulsContext;
 import io.nuls.kernel.exception.NulsException;
+import io.nuls.kernel.exception.NulsRuntimeException;
 import io.nuls.kernel.func.TimeService;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Service;
@@ -122,6 +124,7 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
                 return result;
             }
         }
+        balanceManager.refreshBalance();
         return Result.getSuccess().setData(savedTxList.size());
     }
 
@@ -223,7 +226,12 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
 
     @Override
     public Result<Integer> rollbackTransaction(List<Transaction> txs) {
-        return rollbackTransaction(txs, true);
+        Result result = Result.getSuccess().setData(txs.size());
+        result = rollbackTransaction(txs, true);
+        if(result.isSuccess()){
+            balanceManager.refreshBalance();
+        }
+        return result;
     }
 
     public Result<Integer> rollbackTransaction(List<Transaction> txs, boolean isCheckMine) {
@@ -288,7 +296,11 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
     }
 
     @Override
-    public CoinDataResult getCoinData(byte[] address, Na amount, int size) throws NulsException {
+    public CoinDataResult getCoinData(byte[] address, Na amount, int size, Na price) throws NulsException {
+        if (null == price) {
+            throw new NulsRuntimeException(KernelErrorCode.FAILED, "the price is null!");
+        }
+
         lock.lock();
         try {
             CoinDataResult coinDataResult = new CoinDataResult();
@@ -314,7 +326,7 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
                     size += 1;
                 }
                 //每次累加一条未花费余额时，需要重新计算手续费
-                Na fee = TransactionFeeCalculator.getFee(size);
+                Na fee = TransactionFeeCalculator.getFee(size, price);
                 values = values.add(coin.getNa());
                 if (values.isGreaterOrEquals(amount.add(fee))) {
                     //余额足够后，需要判断是否找零，如果有找零，则需要重新计算手续费
@@ -324,7 +336,7 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
                         changeCoin.setOwner(address);
                         changeCoin.setNa(change);
 
-                        fee = TransactionFeeCalculator.getFee(size + changeCoin.size());
+                        fee = TransactionFeeCalculator.getFee(size + changeCoin.size(), price);
                         if (values.isLessThan(amount.add(fee))) {
                             continue;
                         }
@@ -353,13 +365,15 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
     }
 
 
-    public Na getTxFee(byte[] address, Na amount, int size) {
+    public Na getTxFee(byte[] address, Na amount, int size, Na price) {
         List<Coin> coinList = balanceManager.getCoinListByAddress(address);
         if (coinList.isEmpty()) {
             return Na.ZERO;
         }
         Collections.sort(coinList, CoinComparator.getInstance());
-
+        if (null == price) {
+            price = TransactionFeeCalculator.MIN_PRECE_PRE_1000_BYTES;
+        }
         Na values = Na.ZERO;
         Na fee = null;
         for (int i = 0; i < coinList.size(); i++) {
@@ -371,7 +385,7 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
             if (i == 127) {
                 size += 1;
             }
-            fee = TransactionFeeCalculator.getFee(size);
+            fee = TransactionFeeCalculator.getFee(size, price);
             values = values.add(coin.getNa());
 
             if (values.isGreaterOrEquals(amount.add(fee))) {
@@ -381,7 +395,7 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
                     changeCoin.setOwner(address);
                     changeCoin.setNa(change);
 
-                    fee = TransactionFeeCalculator.getFee(size + changeCoin.size());
+                    fee = TransactionFeeCalculator.getFee(size + changeCoin.size(), price);
                     if (values.isLessThan(amount.add(fee))) {
                         continue;
                     }
@@ -392,7 +406,7 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
     }
 
     @Override
-    public Result transfer(byte[] from, byte[] to, Na values, String password, String remark) {
+    public Result transfer(byte[] from, byte[] to, Na values, String password, String remark, Na price) {
         try {
             Result<Account> accountResult = accountService.getAccount(from);
             if (accountResult.isFailed()) {
@@ -421,8 +435,10 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
             CoinData coinData = new CoinData();
             Coin toCoin = new Coin(to, values);
             coinData.getTo().add(toCoin);
-
-            CoinDataResult coinDataResult = getCoinData(from, values, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH);
+            if (price == null) {
+                price = TransactionFeeCalculator.MIN_PRECE_PRE_1000_BYTES;
+            }
+            CoinDataResult coinDataResult = getCoinData(from, values, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH, price);
             if (!coinDataResult.isEnough()) {
                 return Result.getFailed(LedgerErrorCode.BALANCE_NOT_ENOUGH);
             }
@@ -459,7 +475,7 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
     }
 
     @Override
-    public Result transferFee(byte[] from, byte[] to, Na values, String remark) {
+    public Result transferFee(byte[] from, byte[] to, Na values, String remark, Na price) {
         Result<Account> accountResult = accountService.getAccount(from);
         if (accountResult.isFailed()) {
             return accountResult;
@@ -474,8 +490,7 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
         CoinData coinData = new CoinData();
         Coin toCoin = new Coin(to, values);
         coinData.getTo().add(toCoin);
-
-        Na fee = getTxFee(from, values, tx.size());
+        Na fee = getTxFee(from, values, tx.size(), price);
         return Result.getSuccess().setData(fee);
     }
 
