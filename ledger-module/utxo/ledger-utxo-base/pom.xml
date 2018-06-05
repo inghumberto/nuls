@@ -55,6 +55,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.nuls.contract-module</groupId>
+            <artifactId>contract</artifactId>
+            <version>0.9.8</version>
+        </dependency>
+        <dependency>
             <groupId>io.nuls.consensus-module</groupId>
             <artifactId>consensus-poc-protocol</artifactId>
             <version>0.9.8</version>

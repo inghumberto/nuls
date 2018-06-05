@@ -70,6 +70,8 @@ import java.math.BigInteger;
 @Service
 public class ContractTxServiceImpl implements ContractTxService, InitializingBean {
 
+    private static final String GET = "get";
+
     @Autowired
     private AccountService accountService;
     @Autowired
@@ -133,8 +135,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
 
             // 生成一个地址作为智能合约账户
             Account contractAccount = AccountTool.createAccount();
-            //TODO pierre 是否需要加密合约账户的私钥
-            //contractAccount.encrypt(password);
+
             byte[] contractAddressBytes = contractAccount.getAddress().getBase58Bytes();
             byte[] senderBytes = Base58.decode(sender);
 
@@ -230,17 +231,17 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             if (saveResult.isFailed()) {
                 return saveResult;
             }
-            // 保存合约账户
+            /*// 保存合约账户
             saveResult = contractStorageService.saveContractAddress(contractAccount);
             if (saveResult.isFailed()) {
                 accountLedgerService.rollbackTransaction(tx);
                 return saveResult;
-            }
+            }*/
             // 广播交易
             Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
                 accountLedgerService.rollbackTransaction(tx);
-                contractStorageService.deleteContractAddress(contractAccount.getAddress().getBase58Bytes());
+                //contractStorageService.deleteContractAddress(contractAccount.getAddress().getBase58Bytes());
                 return sendResult;
             }
 
@@ -300,6 +301,44 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
                 }
             }
 
+            byte[] senderBytes = Base58.decode(sender);
+            byte[] contractAddressBytes = Base58.decode(contractAddress);
+
+            // 当前区块高度
+            BlockHeaderDto blockHeader = vmContext.getBlockHeader();
+            long blockHeight = blockHeader.getHeight();
+            // 当前区块状态根
+            byte[] prevStateRoot = blockHeader.getStateRoot();
+
+            // 组装VM执行数据
+            ProgramCall programCall = new ProgramCall();
+            programCall.setContractAddress(contractAddressBytes);
+            programCall.setSender(senderBytes);
+            programCall.setValue(BigInteger.valueOf(value.getValue()));
+            programCall.setPrice(price);
+            programCall.setNaLimit(naLimit.getValue());
+            programCall.setNumber(blockHeight);
+            programCall.setMethodName(methodName);
+            programCall.setMethodDesc(methodDesc);
+            programCall.setArgs(args);
+
+            // 如果方法名前缀是get，则是不上链的合约调用，同步执行合约代码，不改变状态根，并返回值
+            if(methodName.startsWith(GET)) {
+                ProgramExecutor track = programExecutor.begin(prevStateRoot);
+                ProgramResult programResult = track.call(programCall);
+                Result result = null;
+                if(programResult.isError()) {
+                    result = Result.getFailed(programResult.getErrorMessage());
+                    result.setErrorCode(ContractErrorCode.DATA_ERROR);
+                } else {
+                    result = Result.getSuccess();
+                    result.setData(programResult.getResult());
+                }
+                return result;
+            }
+
+
+            // 创建链上交易，包含智能合约
             CallContractTransaction tx = new CallContractTransaction();
             if (StringUtils.isNotBlank(remark)) {
                 try {
@@ -310,9 +349,6 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
                 }
             }
             tx.setTime(TimeService.currentTimeMillis());
-
-            byte[] senderBytes = Base58.decode(sender);
-            byte[] contractAddressBytes = Base58.decode(contractAddress);
 
             // 组装txData
             CallContractData callContractData = new CallContractData();
@@ -343,23 +379,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
                 coinData.getTo().add(toCoin);
             }
 
-            // 当前区块高度
-            BlockHeaderDto blockHeader = vmContext.getBlockHeader();
-            long blockHeight = blockHeader.getHeight();
-            // 当前区块状态根
-            byte[] prevStateRoot = blockHeader.getStateRoot();
             // 执行VM估算Gas消耗
-            ProgramCall programCall = new ProgramCall();
-            programCall.setContractAddress(callContractData.getContractAddress());
-            programCall.setSender(callContractData.getSender());
-            programCall.setValue(BigInteger.valueOf(callContractData.getValue()));
-            programCall.setPrice(callContractData.getPrice());
-            programCall.setNaLimit(callContractData.getNaLimit());
-            programCall.setNumber(blockHeight);
-            programCall.setMethodName(callContractData.getMethodName());
-            programCall.setMethodDesc(callContractData.getMethodDesc());
-            programCall.setArgs(callContractData.getArgs());
-
             ProgramExecutor track = programExecutor.begin(prevStateRoot);
             ProgramResult programResult = track.call(programCall);
 
@@ -499,21 +519,21 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             if (saveResult.isFailed()) {
                 return saveResult;
             }
-            // 删除合约账户
+            /*// 删除合约账户
             Result<Account> deleteResult = contractStorageService.deleteContractAddress(contractAddressBytes);
             if (deleteResult.isFailed()) {
                 // 失败则回滚
                 accountLedgerService.rollbackTransaction(tx);
                 return deleteResult;
-            }
+            }*/
             // 广播交易
             Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
                 // 失败则回滚
                 accountLedgerService.rollbackTransaction(tx);
-                if(deleteResult.getData() != null) {
+                /*if(deleteResult.getData() != null) {
                     contractStorageService.saveContractAddress(deleteResult.getData());
-                }
+                }*/
                 return sendResult;
             }
             return Result.getSuccess().setData(tx.getHash().getDigestHex());
