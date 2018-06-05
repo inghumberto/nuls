@@ -22,35 +22,18 @@
  * SOFTWARE.
  *
  */
-package io.nuls.account.ledger.storage.service;
 
-import io.nuls.account.ledger.storage.po.TransactionInfoPo;
-import io.nuls.db.model.Entry;
-import io.nuls.kernel.exception.NulsException;
-import io.nuls.kernel.model.Coin;
-import io.nuls.kernel.model.NulsDigestData;
-import io.nuls.kernel.model.Result;
-import io.nuls.kernel.model.Transaction;
+package io.nuls.web.view;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import io.nuls.client.web.view.WebViewBootstrap;
 
 /**
- * @author Facjas
- * @date 2018/5/10.
+ * @author: Niels Wang
+ * @date: 2018/6/5
  */
-public interface LocalUtxoStorageService {
+public class WebViewTest {
 
-    Result saveUTXO(byte[] key, byte[] value);
-
-    Result batchSaveUTXO(Map<byte[], byte[]> utxos);
-
-    Result deleteUTXO(byte[] key);
-
-    Result batchDeleteUTXO(Set<byte[]> utxos);
-
-    List<Entry<byte[], byte[]>> loadAllCoinList();
-
-    Result batchSaveAndDeleteUTXO(Map<byte[], byte[]> utxosToSave, Set<byte[]> utxosToDelete);
+    public static void main(String[] args) {
+        WebViewBootstrap.startWebView();
+    }
 }

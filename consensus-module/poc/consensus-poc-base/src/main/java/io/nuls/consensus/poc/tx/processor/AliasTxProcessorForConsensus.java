@@ -45,8 +45,8 @@ import java.util.List;
  * @author: Charlie
  * @date: 2018/5/13
  */
-@Component
-public class AliasTxProcessorOfAlias implements TransactionProcessor<AliasTransaction> {
+//todo
+public class AliasTxProcessorForConsensus implements TransactionProcessor<AliasTransaction> {
 
     @Autowired
     private AgentStorageService agentStorageService;

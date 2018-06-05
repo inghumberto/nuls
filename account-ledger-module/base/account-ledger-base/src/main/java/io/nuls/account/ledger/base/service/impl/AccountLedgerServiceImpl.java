@@ -46,7 +46,6 @@ import io.nuls.core.tools.log.Log;
 import io.nuls.core.tools.param.AssertUtil;
 import io.nuls.core.tools.str.StringUtils;
 import io.nuls.kernel.cfg.NulsConfig;
-import io.nuls.kernel.constant.ErrorCode;
 import io.nuls.kernel.constant.KernelErrorCode;
 import io.nuls.kernel.context.NulsContext;
 import io.nuls.kernel.exception.NulsException;
@@ -117,7 +116,7 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
         Result result;
         for (int i = 0; i < txs.size(); i++) {
             result = saveConfirmedTransaction(txs.get(i));
-            if (result.isSuccess()) {
+            if (result.isSuccess() && (int)result.getData() == 1) {
                 savedTxList.add(txs.get(i));
             } else {
                 rollbackTransaction(savedTxList, false);
@@ -162,6 +161,7 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
         for (int i = 0; i < addresses.size(); i++) {
             balanceManager.refreshBalance(addresses.get(i));
         }
+        result.setData(new Integer(1));
         return result;
     }
 
@@ -372,7 +372,7 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
         }
         Collections.sort(coinList, CoinComparator.getInstance());
         if (null == price) {
-            price = TransactionFeeCalculator.MIN_PRECE_PRE_1000_BYTES;
+            price = TransactionFeeCalculator.MIN_PRECE_PRE_1024_BYTES;
         }
         Na values = Na.ZERO;
         Na fee = null;
@@ -436,7 +436,7 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
             Coin toCoin = new Coin(to, values);
             coinData.getTo().add(toCoin);
             if (price == null) {
-                price = TransactionFeeCalculator.MIN_PRECE_PRE_1000_BYTES;
+                price = TransactionFeeCalculator.MIN_PRECE_PRE_1024_BYTES;
             }
             CoinDataResult coinDataResult = getCoinData(from, values, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH, price);
             if (!coinDataResult.isEnough()) {

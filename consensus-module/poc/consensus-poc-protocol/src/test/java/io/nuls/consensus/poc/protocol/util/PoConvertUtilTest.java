@@ -25,6 +25,7 @@
 
 package io.nuls.consensus.poc.protocol.util;
 
+import io.nuls.kernel.model.NulsDigestData;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -37,7 +38,9 @@ public class PoConvertUtilTest {
 
     @Test
     public void getAgentId() {
-        System.out.println(PoConvertUtil.getAgentId(1));
+        NulsDigestData hash = NulsDigestData.calcDigestData("123123".getBytes());
+        System.out.println(PoConvertUtil.getAgentId(hash));
+        System.out.println(hash);
         assertTrue(true);
     }
 }
