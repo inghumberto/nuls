@@ -11,8 +11,6 @@ public class ProgramTransfer {
 
     private BigInteger value;
 
-    private long gasUsed;
-
     public ProgramTransfer() {
     }
 
@@ -40,14 +38,6 @@ public class ProgramTransfer {
         this.value = value;
     }
 
-    public long getGasUsed() {
-        return gasUsed;
-    }
-
-    public void setGasUsed(long gasUsed) {
-        this.gasUsed = gasUsed;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -55,7 +45,6 @@ public class ProgramTransfer {
 
         ProgramTransfer that = (ProgramTransfer) o;
 
-        if (gasUsed != that.gasUsed) return false;
         if (!Arrays.equals(from, that.from)) return false;
         if (!Arrays.equals(to, that.to)) return false;
         return value != null ? value.equals(that.value) : that.value == null;
@@ -66,7 +55,6 @@ public class ProgramTransfer {
         int result = Arrays.hashCode(from);
         result = 31 * result + Arrays.hashCode(to);
         result = 31 * result + (value != null ? value.hashCode() : 0);
-        result = 31 * result + (int) (gasUsed ^ (gasUsed >>> 32));
         return result;
     }
 
@@ -76,7 +64,6 @@ public class ProgramTransfer {
                 "from=" + Arrays.toString(from) +
                 ", to=" + Arrays.toString(to) +
                 ", value=" + value +
-                ", gasUsed=" + gasUsed +
                 '}';
     }
 

@@ -55,7 +55,7 @@ public class NativeAddress {
         programTransfer.setFrom(frame.getVm().getProgramInvoke().getAddress());
         programTransfer.setTo(Hex.decode(address));
         programTransfer.setValue(value);
-        programTransfer.setGasUsed(GasCost.TRANSFER);
+        frame.getVm().setGasUsed(frame.getVm().getGasUsed() + GasCost.TRANSFER);
         frame.getVm().getTransfers().add(programTransfer);
         Result result = NativeMethod.result(methodCode, null, frame);
         return result;
