@@ -70,4 +70,6 @@ public interface ContractService {
      * @return
      */
     Result<Object> getVmStatus();
+
+    Result<Boolean> isContractAddress(byte[] fromAddressBytes);
 }

@@ -25,6 +25,9 @@
  */
 package io.nuls.consensus.poc.protocol.entity;
 
+import io.nuls.consensus.poc.protocol.constant.PocConsensusProtocolConstant;
+import io.nuls.consensus.poc.protocol.util.PoConvertUtil;
+import io.nuls.core.tools.calc.LongUtils;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.model.Na;
 import io.nuls.kernel.model.NulsDigestData;
@@ -45,6 +48,7 @@ import java.util.Set;
  */
 public class Agent extends TransactionLogicData {
 
+    private String alias;
 
     private byte[] agentAddress;
 
@@ -55,10 +59,6 @@ public class Agent extends TransactionLogicData {
     private Na deposit;
 
     private double commissionRate;
-
-    private byte[] agentName;
-
-    private byte[] introduction;
 
     private transient long time;
     private transient long blockHeight = -1L;
@@ -80,8 +80,6 @@ public class Agent extends TransactionLogicData {
         size += this.rewardAddress.length;
         size += this.packingAddress.length;
         size += SerializeUtils.sizeOfDouble(this.commissionRate);
-        size += SerializeUtils.sizeOfBytes(this.introduction);
-        size += SerializeUtils.sizeOfBytes(agentName);
         return size;
     }
 
@@ -92,20 +90,25 @@ public class Agent extends TransactionLogicData {
         stream.write(packingAddress);
         stream.write(rewardAddress);
         stream.writeDouble(this.commissionRate);
-        stream.writeBytesWithLength(this.introduction);
-        stream.writeBytesWithLength(agentName);
     }
 
     @Override
     protected void parse(NulsByteBuffer byteBuffer) throws NulsException {
         this.deposit = Na.valueOf(byteBuffer.readInt64());
         this.agentAddress = byteBuffer.readBytes(AddressTool.HASH_LENGTH);
-        this.packingAddress =  byteBuffer.readBytes(AddressTool.HASH_LENGTH);
+        this.packingAddress = byteBuffer.readBytes(AddressTool.HASH_LENGTH);
         this.rewardAddress = byteBuffer.readBytes(AddressTool.HASH_LENGTH);
         this.commissionRate = byteBuffer.readDouble();
-        this.introduction = byteBuffer.readByLengthByte();
-        this.agentName = byteBuffer.readByLengthByte();
     }
+
+    public String getAlias() {
+        return alias;
+    }
+
+    public void setAlias(String alias) {
+        this.alias = alias;
+    }
+
     public Na getDeposit() {
         return deposit;
     }
@@ -138,28 +141,12 @@ public class Agent extends TransactionLogicData {
         this.commissionRate = commissionRate;
     }
 
-    public byte[] getIntroduction() {
-        return introduction;
-    }
-
-    public void setIntroduction(byte[] introduction) {
-        this.introduction = introduction;
-    }
-
     public long getBlockHeight() {
         return blockHeight;
     }
 
     public void setBlockHeight(long blockHeight) {
         this.blockHeight = blockHeight;
-    }
-
-    public byte[] getAgentName() {
-        return agentName;
-    }
-
-    public void setAgentName(byte[] agentName) {
-        this.agentName = agentName;
     }
 
     public void setCreditVal(double creditVal) {
@@ -224,6 +211,14 @@ public class Agent extends TransactionLogicData {
 
     public void setMemberCount(int memberCount) {
         this.memberCount = memberCount;
+    }
+
+    public long getAvailableDepositAmount() {
+        return LongUtils.sub(PocConsensusProtocolConstant.SUM_OF_DEPOSIT_OF_AGENT_UPPER_LIMIT.getValue(), this.getTotalDeposit());
+    }
+
+    public boolean canDeposit() {
+        return getAvailableDepositAmount() >= PocConsensusProtocolConstant.ENTRUSTER_DEPOSIT_LOWER_LIMIT.getValue();
     }
 
     @Override

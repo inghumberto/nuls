@@ -191,4 +191,10 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
         return null;
     }
 
+    @Override
+    public Result<Boolean> isContractAddress(byte[] fromAddressBytes) {
+        //TODO pierre auto-generated method stub
+        return null;
+    }
+
 }

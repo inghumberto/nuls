@@ -23,11 +23,14 @@
  */
 package io.nuls.ledger.service.impl;
 
+import io.nuls.contract.service.ContractService;
 import io.nuls.core.tools.calc.LongUtils;
 import io.nuls.core.tools.log.Log;
 import io.nuls.core.tools.map.MapUtil;
 import io.nuls.core.tools.param.AssertUtil;
 import io.nuls.db.service.BatchOperation;
+import io.nuls.kernel.constant.NulsConstant;
+import io.nuls.kernel.context.NulsContext;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Service;
@@ -60,6 +63,8 @@ public class UtxoLedgerServiceImpl implements LedgerService {
     private UtxoLedgerUtxoStorageService utxoLedgerUtxoStorageService;
     @Autowired
     private UtxoLedgerTransactionStorageService utxoLedgerTransactionStorageService;
+    @Autowired
+    private ContractService contractService;
 
     @Override
     public Result saveTx(Transaction tx) throws NulsException {
@@ -351,7 +356,7 @@ public class UtxoLedgerServiceImpl implements LedgerService {
             byte[] fromBytes;
             // 保存在数据库中或者txList中的utxo数据
             Coin fromOfFromCoin = null;
-            byte[] fromAdressBytes = null;
+            byte[] fromAddressBytes = null;
             for (Coin from : froms) {
                 fromBytes = from.getOwner();
                 // 验证是否可花费, 校验的coinData的fromUTXO，检查数据库中是否存在此UTXO
@@ -369,11 +374,22 @@ public class UtxoLedgerServiceImpl implements LedgerService {
                         return ValidateResult.getFailedResult(CLASS_NAME, LedgerErrorCode.ORPHAN_TX);
                     }
                 } else {
-                    fromAdressBytes = fromOfFromCoin.getOwner();
+                    fromAddressBytes = fromOfFromCoin.getOwner();
+                    //TODO pierre 非合约转账交易，验证fromAdress是否是合约地址，如果是，则返回失败，非合约转账交易不能转出合约地址资产
+                    if(transaction.getType() != 666) {
+                        Result<Boolean> contractResult = contractService.isContractAddress(fromAddressBytes);
+                        if(contractResult.getData()) {
+                            return ValidateResult.getFailedResult(CLASS_NAME, LedgerErrorCode.DATA_ERROR);
+                        }
+                    }
+
                     // 验证地址中的公钥hash160和交易中的公钥hash160是否相等，不相等则说明这笔utxo不属于交易发出者
-                    if (transaction.needVerifySignature() && !checkPublicKeyHash(fromAdressBytes, user)) {
+                    if (transaction.needVerifySignature() && !checkPublicKeyHash(fromAddressBytes, user)) {
                         Log.warn("public key hash160 check error.");
                         return ValidateResult.getFailedResult(CLASS_NAME, LedgerErrorCode.INVALID_INPUT);
+                    }
+                    if (java.util.Arrays.equals(fromOfFromCoin.getOwner(), NulsConstant.BLACK_HOLE_ADDRESS)) {
+                        return ValidateResult.getFailedResult(CLASS_NAME, "The address is block hole!");
                     }
                 }
                 // 验证非解锁类型的交易及解锁类型的交易
@@ -426,7 +442,7 @@ public class UtxoLedgerServiceImpl implements LedgerService {
     /**
      * 双花验证不通过的交易需要放入result的data中，一次只验证一对双花的交易
      *
-     * @return ValidateResult<List   <   Transaction>>
+     * @return ValidateResult<List       <       Transaction>>
      */
     @Override
     public ValidateResult<List<Transaction>> verifyDoubleSpend(Block block) {
@@ -439,7 +455,7 @@ public class UtxoLedgerServiceImpl implements LedgerService {
     /**
      * 双花验证不通过的交易需要放入result的data中，一次只验证一对双花的交易
      *
-     * @return ValidateResult<List   <   Transaction>>
+     * @return ValidateResult<List       <       Transaction>>
      */
     @Override
     public ValidateResult<List<Transaction>> verifyDoubleSpend(List<Transaction> txList) {

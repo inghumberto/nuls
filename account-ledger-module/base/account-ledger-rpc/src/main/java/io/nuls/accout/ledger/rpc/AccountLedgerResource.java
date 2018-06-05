@@ -51,6 +51,7 @@ import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Component;
 import io.nuls.kernel.model.*;
 import io.nuls.kernel.utils.AddressTool;
+import io.nuls.kernel.utils.TransactionFeeCalculator;
 import io.nuls.ledger.service.LedgerService;
 import io.swagger.annotations.*;
 
@@ -140,11 +141,11 @@ public class AccountLedgerResource {
         Na value = Na.valueOf(form.getAmount());
         return accountLedgerService.transfer(AddressTool.getAddress(form.getAddress()),
                 AddressTool.getAddress(form.getToAddress()),
-                value, form.getPassword(), form.getRemark()).toRpcClientResult();
+                value, form.getPassword(), form.getRemark(), TransactionFeeCalculator.MIN_PRECE_PRE_1024_BYTES).toRpcClientResult();
     }
 
 
-    @POST
+    @GET
     @Path("/transfer/fee")
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "转账手续费", notes = "result.data: resultJson 返回转账结果")
@@ -170,7 +171,7 @@ public class AccountLedgerResource {
 
         Na value = Na.valueOf(form.getAmount());
         return accountLedgerService.transferFee(AddressTool.getAddress(form.getAddress()),
-                AddressTool.getAddress(form.getToAddress()), value, form.getRemark()).toRpcClientResult();
+                AddressTool.getAddress(form.getToAddress()), value, form.getRemark(), TransactionFeeCalculator.MIN_PRECE_PRE_1024_BYTES).toRpcClientResult();
     }
 
 
