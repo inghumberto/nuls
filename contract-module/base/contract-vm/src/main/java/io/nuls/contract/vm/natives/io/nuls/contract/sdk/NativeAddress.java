@@ -1,9 +1,6 @@
 package io.nuls.contract.vm.natives.io.nuls.contract.sdk;
 
-import io.nuls.contract.vm.Frame;
-import io.nuls.contract.vm.MethodArgs;
-import io.nuls.contract.vm.ObjectRef;
-import io.nuls.contract.vm.Result;
+import io.nuls.contract.vm.*;
 import io.nuls.contract.vm.code.MethodCode;
 import io.nuls.contract.vm.natives.NativeMethod;
 import io.nuls.contract.vm.program.ProgramCall;
@@ -58,6 +55,7 @@ public class NativeAddress {
         programTransfer.setFrom(frame.getVm().getProgramInvoke().getAddress());
         programTransfer.setTo(Hex.decode(address));
         programTransfer.setValue(value);
+        programTransfer.setGasUsed(GasCost.TRANSFER);
         frame.getVm().getTransfers().add(programTransfer);
         Result result = NativeMethod.result(methodCode, null, frame);
         return result;

@@ -19,5 +19,6 @@ public class GasCost {
     public static final int STACK = 2;//栈操作
     public static final int STORE = 1;//把栈顶的值存入本地变量
     public static final int ARRAYSTORE = 5;//把栈项的值存到数组里
+    public static final int TRANSFER = 1000;//转账交易
 
 }
