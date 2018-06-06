@@ -38,7 +38,7 @@ import io.nuls.contract.entity.txdata.CreateContractData;
 import io.nuls.contract.entity.txdata.DeleteContractData;
 import io.nuls.contract.helper.VMHelper;
 import io.nuls.contract.service.ContractTxService;
-import io.nuls.contract.storage.service.ContractStorageService;
+import io.nuls.contract.storage.service.ContractAddressStorageService;
 import io.nuls.contract.util.VMContext;
 import io.nuls.contract.vm.program.ProgramCall;
 import io.nuls.contract.vm.program.ProgramCreate;
@@ -80,7 +80,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
     @Autowired
     private TransactionService transactionService;
     @Autowired
-    private ContractStorageService contractStorageService;
+    private ContractAddressStorageService contractStorageService;
     @Autowired
     private VMHelper vmHelper;
     @Autowired
@@ -210,7 +210,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             Na imputedNa = Na.valueOf(gasUsed * price);
             // 总花费
             Na totalNa = imputedNa.add(value);
-            CoinDataResult coinDataResult = accountLedgerService.getCoinData(senderBytes, totalNa, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH, TransactionFeeCalculator.MIN_PRECE_PRE_1000_BYTES);
+            CoinDataResult coinDataResult = accountLedgerService.getCoinData(senderBytes, totalNa, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH, TransactionFeeCalculator.MIN_PRECE_PRE_1024_BYTES);
             if (!coinDataResult.isEnough()) {
                 return Result.getFailed(ContractErrorCode.BALANCE_NOT_ENOUGH);
             }
@@ -395,7 +395,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             Na imputedNa = Na.valueOf(gasUsed * price);
             // 总花费
             Na totalNa = imputedNa.add(value);
-            CoinDataResult coinDataResult = accountLedgerService.getCoinData(senderBytes, totalNa, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH, TransactionFeeCalculator.MIN_PRECE_PRE_1000_BYTES);
+            CoinDataResult coinDataResult = accountLedgerService.getCoinData(senderBytes, totalNa, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH, TransactionFeeCalculator.MIN_PRECE_PRE_1024_BYTES);
             if (!coinDataResult.isEnough()) {
                 return Result.getFailed(ContractErrorCode.BALANCE_NOT_ENOUGH);
             }
@@ -498,7 +498,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             CoinData coinData = new CoinData();
 
             // 总花费 终止智能合约的交易手续费按普通交易计算手续费
-            CoinDataResult coinDataResult = accountLedgerService.getCoinData(senderBytes, Na.ZERO, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH, TransactionFeeCalculator.MIN_PRECE_PRE_1000_BYTES);
+            CoinDataResult coinDataResult = accountLedgerService.getCoinData(senderBytes, Na.ZERO, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH, TransactionFeeCalculator.MIN_PRECE_PRE_1024_BYTES);
             if (!coinDataResult.isEnough()) {
                 return Result.getFailed(ContractErrorCode.BALANCE_NOT_ENOUGH);
             }

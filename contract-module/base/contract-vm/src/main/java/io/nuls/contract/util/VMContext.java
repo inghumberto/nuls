@@ -2,6 +2,7 @@ package io.nuls.contract.util;
 
 
 import io.nuls.contract.entity.BlockHeaderDto;
+import io.nuls.contract.ledger.service.ContractUtxoService;
 import io.nuls.core.tools.str.StringUtils;
 import io.nuls.kernel.context.NulsContext;
 import io.nuls.kernel.exception.NulsException;
@@ -14,6 +15,7 @@ import io.nuls.kernel.model.Result;
 import io.nuls.protocol.service.BlockService;
 
 import java.io.IOException;
+import java.math.BigInteger;
 
 /**
  * @Desription:
@@ -25,6 +27,9 @@ public class VMContext {
 
     @Autowired
     private BlockService blockService;
+
+    @Autowired
+    private ContractUtxoService contractUtxoService;
 
     /**
      * @param hash
@@ -70,5 +75,16 @@ public class VMContext {
      */
     public BlockHeaderDto getBlockHeader() throws IOException {
         return new BlockHeaderDto(NulsContext.getInstance().getBestBlock().getHeader());
+    }
+
+    /**
+     * @param address
+     */
+    public BigInteger getBalance(byte[] address) {
+        Result<BigInteger> result = contractUtxoService.getBalance(address);
+        if(result.isSuccess()) {
+            return result.getData();
+        }
+        return null;
     }
 }

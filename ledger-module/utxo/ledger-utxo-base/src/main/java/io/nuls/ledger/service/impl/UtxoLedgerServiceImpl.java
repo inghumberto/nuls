@@ -23,6 +23,7 @@
  */
 package io.nuls.ledger.service.impl;
 
+import io.nuls.contract.constant.ContractConstant;
 import io.nuls.contract.service.ContractService;
 import io.nuls.core.tools.calc.LongUtils;
 import io.nuls.core.tools.log.Log;
@@ -376,9 +377,9 @@ public class UtxoLedgerServiceImpl implements LedgerService {
                 } else {
                     fromAddressBytes = fromOfFromCoin.getOwner();
                     //TODO pierre 非合约转账交易，验证fromAdress是否是合约地址，如果是，则返回失败，非合约转账交易不能转出合约地址资产
-                    if(transaction.getType() != 666) {
-                        Result<Boolean> contractResult = contractService.isContractAddress(fromAddressBytes);
-                        if(contractResult.getData()) {
+                    if(transaction.getType() != ContractConstant.TX_TYPE_CONTRACT_TRANSFER) {
+                        boolean isContractAddress = contractService.isContractAddress(fromAddressBytes);
+                        if(isContractAddress) {
                             return ValidateResult.getFailedResult(CLASS_NAME, LedgerErrorCode.DATA_ERROR);
                         }
                     }

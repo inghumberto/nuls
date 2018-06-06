@@ -41,4 +41,9 @@ public interface ContractConstant extends NulsConstant {
     int TX_TYPE_CALL_CONTRACT = 101;
     int TX_TYPE_DELETE_CONTRACT = 102;
 
+    /**
+     * contract transfer
+     */
+    int TX_TYPE_CONTRACT_TRANSFER = 103;
+
 }

@@ -22,22 +22,25 @@
  * SOFTWARE.
  *
  */
+package io.nuls.contract.storage.service;
 
-package io.nuls.contract.storage.constant;
+import io.nuls.contract.storage.po.TransactionInfoPo;
+import io.nuls.kernel.exception.NulsException;
+import io.nuls.kernel.model.Result;
 
+import java.util.List;
 
 /**
- * @desription:
- * @author: PierreLuo
- * @date: 2018/5/24
+ * author Facjas
+ * date 2018/5/22.
  */
-public interface ContractStorageConstant {
+public interface ContractTransactionInfoStorageService {
 
-    /**
-     * 账户表的名称
-     * The name of the account table
-     */
-    String DB_NAME_CONTRACT_LEDGER_TX_INDEX = "contract_ledger_tx_index";
-    String DB_NAME_CONTRACT_LEDGER_UTXO = "contract_ledger_utxo";
-    String DB_NAME_CONTRACT_ADDRESS = "contract_address";
+    Result saveTransactionInfo(byte[] key, TransactionInfoPo tx);
+
+    Result deleteTransactionInfo(byte[] infoKey);
+
+    Result<byte[]> getTransactionInfo(byte[] infoKey);
+
+    List<TransactionInfoPo> getTransactionInfoListByAddress(byte[] address) throws NulsException;
 }

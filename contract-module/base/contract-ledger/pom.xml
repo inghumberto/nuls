@@ -11,18 +11,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.nuls.contract-module</groupId>
-    <artifactId>contract-base</artifactId>
+    <artifactId>contract-ledger</artifactId>
     <version>0.9.9</version>
     <packaging>jar</packaging>
-    <name>contract-base</name>
+    <name>contract-ledger</name>
+
 
     <dependencies>
-
-        <dependency>
-            <groupId>io.nuls.contract-module</groupId>
-            <artifactId>contract</artifactId>
-            <version>0.9.9</version>
-        </dependency>
 
         <dependency>
             <groupId>io.nuls.contract-module</groupId>
@@ -32,16 +27,21 @@
 
         <dependency>
             <groupId>io.nuls.contract-module</groupId>
-            <artifactId>contract-ledger</artifactId>
+            <artifactId>contract</artifactId>
             <version>0.9.9</version>
         </dependency>
 
         <dependency>
-            <groupId>io.nuls.contract-module</groupId>
-            <artifactId>contract-vm</artifactId>
+            <groupId>io.nuls.account-ledger-module</groupId>
+            <artifactId>account-ledger</artifactId>
+            <version>0.9.9</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.nuls.ledger-module</groupId>
+            <artifactId>ledger</artifactId>
             <version>0.9.9</version>
         </dependency>
 
     </dependencies>
-
 </project>
