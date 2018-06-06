@@ -66,17 +66,19 @@ public class NativeAddress {
         ObjectRef methodNameRef = (ObjectRef) methodArgs.getInvokeArgs()[0];
         ObjectRef methodDescRef = (ObjectRef) methodArgs.getInvokeArgs()[1];
         ObjectRef argsRef = (ObjectRef) methodArgs.getInvokeArgs()[2];
+        ObjectRef valueRef = (ObjectRef) methodArgs.getInvokeArgs()[3];
 
         String address = frame.getHeap().toString(addressRef);
         String methodName = (String) frame.getHeap().getObject(methodNameRef);
         String methodDesc = (String) frame.getHeap().getObject(methodDescRef);
         String[] args = (String[]) frame.getHeap().getObject(argsRef);
+        BigInteger value = (BigInteger) frame.getHeap().getObject(valueRef);
 
         ProgramInvoke programInvoke = frame.getVm().getProgramInvoke();
         ProgramCall programCall = new ProgramCall();
         programCall.setNumber(programInvoke.getNumber());
         programCall.setSender(programInvoke.getAddress());
-        programCall.setValue(BigInteger.ZERO);
+        programCall.setValue(value != null ? value : BigInteger.ZERO);
         programCall.setNaLimit(programInvoke.getGas() - frame.getVm().getGasUsed());
         programCall.setPrice(programInvoke.getGasPrice());
         programCall.setContractAddress(Hex.decode(address));
