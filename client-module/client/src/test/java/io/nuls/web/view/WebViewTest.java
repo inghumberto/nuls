@@ -34,6 +34,6 @@ import io.nuls.client.web.view.WebViewBootstrap;
 public class WebViewTest {
 
     public static void main(String[] args) {
-        WebViewBootstrap.startWebView();
+        WebViewBootstrap.startWebView(null);
     }
 }

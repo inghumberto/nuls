@@ -31,6 +31,7 @@ import io.nuls.account.ledger.storage.service.LocalUtxoStorageService;
 import io.nuls.account.ledger.storage.service.UnconfirmedTransactionStorageService;
 import io.nuls.core.tools.array.ArraysTool;
 import io.nuls.core.tools.crypto.Hex;
+import io.nuls.core.tools.log.Log;
 import io.nuls.kernel.constant.KernelErrorCode;
 import io.nuls.kernel.exception.NulsRuntimeException;
 import io.nuls.kernel.lite.annotation.Autowired;
@@ -105,14 +106,15 @@ public class LocalUtxoServiceImpl implements LocalUtxoService {
                 fromsSet.add(ArraysTool.joinintTogether(address, from.getOwner()));
             }
 
-            Result result = localUtxoStorageService.batchDeleteUTXO(fromsSet);
-            if (!result.isSuccess() || result.getData() == null || ((Integer) result.getData()) != fromsSet.size()) {
-                return result;
-            }
-
             // save utxo - to
             List<Coin> tos = coinData.getTo();
             Map<byte[], byte[]> toMap = new HashMap<>();
+            byte[] txHashBytes = null;
+            try {
+                txHashBytes = tx.getHash().serialize();
+            } catch (IOException e) {
+                throw new NulsRuntimeException(e);
+            }
             for (int i = 0, length = tos.size(); i < length; i++) {
                 Coin to = tos.get(i);
                 if (!AccountLegerUtils.isLocalAccount(to.getOwner())) {
@@ -120,14 +122,16 @@ public class LocalUtxoServiceImpl implements LocalUtxoService {
                 }
 
                 try {
-                    byte[] outKey = ArraysTool.joinintTogether(tos.get(i).getOwner(), tx.getHash().serialize(), new VarInt(i).encode());
-
+                    byte[] outKey = ArraysTool.joinintTogether(tos.get(i).getOwner(), txHashBytes, new VarInt(i).encode());
                     toMap.put(outKey, to.serialize());
                 } catch (IOException e) {
-                    throw new NulsRuntimeException(e);
+                    Log.error(e);
                 }
             }
-            localUtxoStorageService.batchSaveUTXO(toMap);
+            Result result = localUtxoStorageService.batchSaveAndDeleteUTXO(toMap, fromsSet);
+            if (result.isFailed() || result.getData() == null || (int) result.getData() != toMap.size() + fromsSet.size()) {
+                return Result.getFailed();
+            }
         }
         return Result.getSuccess();
     }
@@ -173,6 +177,12 @@ public class LocalUtxoServiceImpl implements LocalUtxoService {
             // save utxo - to
             List<Coin> tos = coinData.getTo();
             Map<byte[], byte[]> toMap = new HashMap<>();
+            byte[] txHashBytes = null;
+            try {
+                txHashBytes = tx.getHash().serialize();
+            } catch (IOException e) {
+                throw new NulsRuntimeException(e);
+            }
             for (int i = 0, length = tos.size(); i < length; i++) {
                 Coin to = tos.get(i);
 
@@ -181,9 +191,9 @@ public class LocalUtxoServiceImpl implements LocalUtxoService {
                 }
 
                 try {
-                    byte[] outKey = ArraysTool.joinintTogether(tos.get(i).getOwner(), tx.getHash().serialize(), new VarInt(i).encode());
+                    byte[] outKey = ArraysTool.joinintTogether(tos.get(i).getOwner(), txHashBytes, new VarInt(i).encode());
                     if (to.getLockTime() == -1L) {
-                        byte[] toKey = ArraysTool.joinintTogether(tx.getHash().serialize(), new VarInt(i).encode());
+                        byte[] toKey = ArraysTool.joinintTogether(txHashBytes, new VarInt(i).encode());
 
                         Coin ledgerCoin = ledgerService.getUtxo(toKey);
                         if (null != ledgerCoin) {
@@ -197,7 +207,7 @@ public class LocalUtxoServiceImpl implements LocalUtxoService {
             }
             //localUtxoStorageService.batchSaveUTXO(toMap);
             Result result = localUtxoStorageService.batchSaveAndDeleteUTXO(toMap, fromsSet);
-            if (result.isFailed() || (int) result.getData() != toMap.size() + fromsSet.size()) {
+            if (result.isFailed() || result.getData() == null || (int) result.getData() != toMap.size() + fromsSet.size()) {
                 return Result.getFailed();
             }
         }
@@ -254,7 +264,7 @@ public class LocalUtxoServiceImpl implements LocalUtxoService {
             }
             //localUtxoStorageService.batchSaveUTXO(fromMap);
             Result result = localUtxoStorageService.batchSaveAndDeleteUTXO(fromMap, toSet);
-            if (result.isFailed() || (int) result.getData() != fromMap.size() + toSet.size()) {
+            if (result.isFailed() || result.getData() == null || (int) result.getData() != fromMap.size() + toSet.size()) {
                 return Result.getFailed();
             }
         }

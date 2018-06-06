@@ -147,7 +147,7 @@ public class CommandHandler {
             throw new NulsRuntimeException(KernelErrorCode.FAILED, "CommandHandler start failed");
         }
         if (StringUtils.isBlank(port)) {
-            RestFulUtils.getInstance().setServerUri("http://" + RpcConstant.DEFAULT_IP + ":" + RpcConstant.DEFAULT_PORT);
+            RestFulUtils.getInstance().setServerUri("http://" + RpcConstant.DEFAULT_IP + ":" + RpcConstant.DEFAULT_PORT + RpcConstant.PREFIX);
         } else {
             String ip = null;
             try {
@@ -155,11 +155,19 @@ public class CommandHandler {
             } catch (Exception e) {
                 ip = RpcConstant.DEFAULT_IP;
             }
-            RestFulUtils.getInstance().setServerUri("http://" + ip + ":" + port);
+            RestFulUtils.getInstance().setServerUri("http://" + ip + ":" + port + RpcConstant.PREFIX);
         }
     }
 
     public static void main(String[] args) {
+        /**
+         * 如果操作系统是windows, 可能会使控制台读取部分处于死循环，可以设置为false，绕过本地Windows API，直接使用Java IO流输出
+         * If the operating system is windows, it may cause the console to read part of the loop, can be set to false,
+         * bypass the native Windows API, use the Java IO stream output directly
+         */
+        if(System.getProperties().getProperty("os.name").toUpperCase().indexOf("WINDOWS") != -1) {
+            System.setProperty("jline.WindowsTerminal.directConsole", "false");
+        }
         CommandHandler instance = new CommandHandler();
         instance.init();
         try {

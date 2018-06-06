@@ -26,10 +26,12 @@ package io.nuls.account.ledger.storage.service.impl;
 
 import io.nuls.account.ledger.storage.constant.AccountLedgerStorageConstant;
 import io.nuls.account.ledger.storage.service.LocalUtxoStorageService;
+import io.nuls.db.constant.DBErrorCode;
 import io.nuls.db.model.Entry;
 import io.nuls.db.service.BatchOperation;
 import io.nuls.db.service.DBService;
 import io.nuls.kernel.exception.NulsException;
+import io.nuls.kernel.exception.NulsRuntimeException;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Component;
 import io.nuls.kernel.lite.core.bean.InitializingBean;
@@ -60,8 +62,8 @@ public class LocalUtxoStorageServiceImpl implements LocalUtxoStorageService, Ini
     public void afterPropertiesSet() throws NulsException {
 
         Result result = dbService.createArea(AccountLedgerStorageConstant.DB_NAME_ACCOUNT_LEDGER_COINDATA);
-        if (result.isFailed()) {
-            //TODO
+        if (result.isFailed() && !DBErrorCode.DB_AREA_EXIST.equals(result.getErrorCode())) {
+            throw new NulsRuntimeException(result.getErrorCode());
         }
     }
 
@@ -112,12 +114,12 @@ public class LocalUtxoStorageServiceImpl implements LocalUtxoStorageService, Ini
     @Override
     public Result batchSaveAndDeleteUTXO(Map<byte[], byte[]> utxosToSave, Set<byte[]> utxosToDelete) {
         BatchOperation batch = dbService.createWriteBatch(AccountLedgerStorageConstant.DB_NAME_ACCOUNT_LEDGER_COINDATA);
-        Set<byte[]> utxoKeySet = utxosToSave.keySet();
-        for (byte[] key : utxoKeySet) {
-            batch.put(key, utxosToSave.get(key));
-        }
         for (byte[] key : utxosToDelete) {
             batch.delete(key);
+        }
+        Set<Map.Entry<byte[], byte[]>> utxosToSaveEntries = utxosToSave.entrySet();
+        for(Map.Entry<byte[], byte[]> entry : utxosToSaveEntries) {
+            batch.put(entry.getKey(), entry.getValue());
         }
         Result batchResult = batch.executeBatch();
         if (batchResult.isFailed()) {

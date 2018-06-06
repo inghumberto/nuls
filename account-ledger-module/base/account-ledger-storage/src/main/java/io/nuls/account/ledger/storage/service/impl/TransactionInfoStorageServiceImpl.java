@@ -30,9 +30,11 @@ import io.nuls.account.ledger.storage.po.TransactionInfoPo;
 import io.nuls.account.ledger.storage.service.TransactionInfoStorageService;
 import io.nuls.core.tools.array.ArraysTool;
 import io.nuls.core.tools.log.Log;
+import io.nuls.db.constant.DBErrorCode;
 import io.nuls.db.service.DBService;
 import io.nuls.kernel.constant.KernelErrorCode;
 import io.nuls.kernel.exception.NulsException;
+import io.nuls.kernel.exception.NulsRuntimeException;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Component;
 import io.nuls.kernel.lite.core.bean.InitializingBean;
@@ -57,8 +59,8 @@ public class TransactionInfoStorageServiceImpl implements TransactionInfoStorage
     @Override
     public void afterPropertiesSet() throws NulsException {
         Result result = dbService.createArea(AccountLedgerStorageConstant.DB_NAME_ACCOUNT_LEDGER_TX_INDEX);
-        if (result.isFailed()) {
-            //TODO
+        if (result.isFailed() && !DBErrorCode.DB_AREA_EXIST.equals(result.getErrorCode())) {
+            throw new NulsRuntimeException(result.getErrorCode());
         }
     }
 
