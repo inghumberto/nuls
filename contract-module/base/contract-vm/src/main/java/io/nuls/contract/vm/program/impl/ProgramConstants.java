@@ -1,6 +1,7 @@
 package io.nuls.contract.vm.program.impl;
 
 import io.nuls.contract.sdk.*;
+import io.nuls.contract.vm.util.VmUtils;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -44,6 +45,7 @@ public class ProgramConstants {
             OutOfMemoryError.class,
             Collections.class,
             HashSet.class,
+            VmUtils.class,
     };
 
     public static final String[] SDK_CLASS_NAMES = new String[SDK_CLASSES.length];

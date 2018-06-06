@@ -6,6 +6,8 @@ import io.nuls.contract.vm.code.MethodCode;
 import io.nuls.contract.vm.code.VariableType;
 import io.nuls.contract.vm.util.CloneUtils;
 import io.nuls.contract.vm.util.JsonUtils;
+import io.nuls.contract.vm.util.Utils;
+import io.nuls.contract.vm.util.VmUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
@@ -373,6 +375,17 @@ public class Heap {
             return null;
         }
         MethodCode methodCode = this.vm.getMethodArea().loadMethod(objectRef.getVariableType().getType(), "toString", "()Ljava/lang/String;");
+        this.vm.run(methodCode, new Object[]{objectRef});
+        Object result = this.vm.getResultValue();
+        String value = (String) getObject((ObjectRef) result);
+        return value;
+    }
+
+    public String stackTrace(ObjectRef objectRef) {
+        if (objectRef == null) {
+            return null;
+        }
+        MethodCode methodCode = this.vm.getMethodArea().loadMethod(Utils.classNameReplace(VmUtils.class.getName()), "stackTrace", null);
         this.vm.run(methodCode, new Object[]{objectRef});
         Object result = this.vm.getResultValue();
         String value = (String) getObject((ObjectRef) result);
