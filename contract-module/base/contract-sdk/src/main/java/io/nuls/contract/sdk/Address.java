@@ -23,11 +23,7 @@ public class Address {
 
     public native void transfer(BigInteger value);
 
-    public native void call(String methodName, String methodDesc, String[] args);
-
-    public void call(String methodName, String[] args) {
-        call(methodName, null, args);
-    }
+    public native void call(String methodName, String methodDesc, String[] args, BigInteger value);
 
     @Override
     public boolean equals(Object o) {

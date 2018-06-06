@@ -39,7 +39,7 @@ public abstract class MintedCrowdsale extends RefundableCrowdsale {
     @Override
     protected void deliverTokens(Address beneficiary, BigInteger tokenAmount) {
         String[] args = new String[]{beneficiary.toString(), tokenAmount.toString()};
-        getToken().call("mint", args);
+        getToken().call("mint", null, args, null);
     }
 
     @Override

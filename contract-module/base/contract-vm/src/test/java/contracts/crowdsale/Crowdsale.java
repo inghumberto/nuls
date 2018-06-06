@@ -161,7 +161,7 @@ public class Crowdsale {
 
     protected void deliverTokens(Address beneficiary, BigInteger tokenAmount) {
         String[] args = new String[]{beneficiary.toString(), tokenAmount.toString()};
-        token.call("transfer", args);
+        token.call("transfer", null, args, null);
     }
 
     protected void processPurchase(Address beneficiary, BigInteger tokenAmount) {
