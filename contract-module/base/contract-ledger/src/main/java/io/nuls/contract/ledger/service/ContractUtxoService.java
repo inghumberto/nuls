@@ -50,8 +50,6 @@ public interface ContractUtxoService {
      */
     Result saveUtxoForContractAddress(Transaction tx);
 
-    Result saveUtxoForAccount(Transaction tx, byte[] addresses);
-
     Result deleteUtxoOfTransaction(Transaction tx);
 
     Result<BigInteger> getBalance(byte[] address);

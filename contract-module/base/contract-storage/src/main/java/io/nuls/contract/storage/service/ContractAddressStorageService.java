@@ -36,33 +36,33 @@ import java.util.List;
  */
 public interface ContractAddressStorageService {
     /**
-     * 保存本地合约账户
+     * 保存合约地址
      *
      * @param account
      * @return
      */
-    Result saveContractAddress(Account account);
+    Result saveContractAddress(byte[] contractAddressBytes);
 
     /**
-     * 根据合约地址删除本地合约账户
+     * 删除合约地址
      *
      * @param contractAddressBytes
      * @return
      */
-    Result<Account> deleteContractAddress(byte[] contractAddressBytes);
+    Result deleteContractAddress(byte[] contractAddressBytes);
 
     /**
-     * 根据合约地址获取本地合约账户详细信息
+     * 根据地址检查是否存在这个合约地址
      *
      * @param contractAddressBytes
      * @return
      */
-    Result<Account> getContractAddress(byte[] contractAddressBytes);
+    boolean isExistContractAddress(byte[] contractAddressBytes);
 
     /**
-     * 获取本地所有创建的合约账户详细信息
+     * 获取所有合约地址
      *
      * @return
      */
-    Result<List<Account>> getContractAddressList();
+    Result<List<byte[]>> getContractAddressList();
 }

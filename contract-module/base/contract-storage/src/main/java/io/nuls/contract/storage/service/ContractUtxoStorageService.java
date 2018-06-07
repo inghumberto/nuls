@@ -37,15 +37,21 @@ import java.util.Set;
  */
 public interface ContractUtxoStorageService {
 
+    @Deprecated
     Result saveUTXO(byte[] key, byte[] value);
 
-    Result batchSaveUTXO(Map<byte[], byte[]> utxos);
+    @Deprecated
+    Result batchSaveUTXO(List<Entry<byte[], byte[]>> utxos);
 
+    @Deprecated
     Result deleteUTXO(byte[] key);
 
-    Result batchDeleteUTXO(Set<byte[]> utxos);
+    @Deprecated
+    Result batchDeleteUTXO(List<byte[]> utxos);
+
+    byte[] getUTXO(byte[] key);
 
     List<Entry<byte[], byte[]>> loadAllCoinList();
 
-    Result batchSaveAndDeleteUTXO(Map<byte[], byte[]> utxosToSave, List<byte[]> utxosToDelete);
+    Result batchSaveAndDeleteUTXO(List<Entry<byte[], byte[]>> utxosToSave, List<byte[]> utxosToDelete);
 }

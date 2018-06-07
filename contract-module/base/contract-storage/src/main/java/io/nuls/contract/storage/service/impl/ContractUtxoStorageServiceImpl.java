@@ -35,10 +35,10 @@ import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Service;
 import io.nuls.kernel.lite.core.bean.InitializingBean;
 import io.nuls.kernel.model.Result;
+import org.spongycastle.math.ec.ScaleYPointMap;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * @desription:
@@ -79,10 +79,9 @@ public class ContractUtxoStorageServiceImpl implements ContractUtxoStorageServic
     }
 
     @Override
-    public Result<Integer> batchSaveUTXO(Map<byte[], byte[]> utxos) {
+    public Result<Integer> batchSaveUTXO(List<Entry<byte[], byte[]>> utxos) {
         BatchOperation batch = dbService.createWriteBatch(ContractStorageConstant.DB_NAME_CONTRACT_LEDGER_UTXO);
-        Set<Map.Entry<byte[], byte[]>> utxosToSaveEntries = utxos.entrySet();
-        for(Map.Entry<byte[], byte[]> entry : utxosToSaveEntries) {
+        for(Entry<byte[], byte[]> entry : utxos) {
             batch.put(entry.getKey(), entry.getValue());
         }
         Result batchResult = batch.executeBatch();
@@ -99,7 +98,7 @@ public class ContractUtxoStorageServiceImpl implements ContractUtxoStorageServic
     }
 
     @Override
-    public Result batchDeleteUTXO(Set<byte[]> utxos) {
+    public Result batchDeleteUTXO(List<byte[]> utxos) {
         BatchOperation batch = dbService.createWriteBatch(ContractStorageConstant.DB_NAME_CONTRACT_LEDGER_UTXO);
         for (byte[] key : utxos) {
             batch.delete(key);
@@ -112,20 +111,35 @@ public class ContractUtxoStorageServiceImpl implements ContractUtxoStorageServic
     }
 
     @Override
-    public Result batchSaveAndDeleteUTXO(Map<byte[], byte[]> utxosToSave, List<byte[]> utxosToDelete) {
+    public byte[] getUTXO(byte[] key) {
+        if(key == null) {
+            return null;
+        }
+        return dbService.get(ContractStorageConstant.DB_NAME_CONTRACT_LEDGER_UTXO, key);
+    }
+
+    @Override
+    public Result<List<Entry<byte[], byte[]>>> batchSaveAndDeleteUTXO(List<Entry<byte[], byte[]>> utxosToSave, List<byte[]> utxosToDelete) {
         BatchOperation batch = dbService.createWriteBatch(ContractStorageConstant.DB_NAME_CONTRACT_LEDGER_UTXO);
+        List<Entry<byte[], byte[]>> deleteUtxoEntryList = new ArrayList<>(utxosToDelete.size());
+        byte[] deleteUtxo;
         for (byte[] key : utxosToDelete) {
+            deleteUtxo = getUTXO(key);
+            // 函数返回将要删除的UTXO
+            if(deleteUtxo != null) {
+                deleteUtxoEntryList.add(new Entry<byte[], byte[]>(key, deleteUtxo));
+            }
             batch.delete(key);
         }
-        Set<Map.Entry<byte[], byte[]>> utxosToSaveEntries = utxosToSave.entrySet();
-        for(Map.Entry<byte[], byte[]> entry : utxosToSaveEntries) {
+
+        for(Entry<byte[], byte[]> entry : utxosToSave) {
             batch.put(entry.getKey(), entry.getValue());
         }
         Result batchResult = batch.executeBatch();
         if (batchResult.isFailed()) {
             return batchResult;
         }
-        return Result.getSuccess().setData(new Integer(utxosToSave.size() + utxosToDelete.size()));
+        return Result.getSuccess().setData(deleteUtxoEntryList);
     }
 
 }

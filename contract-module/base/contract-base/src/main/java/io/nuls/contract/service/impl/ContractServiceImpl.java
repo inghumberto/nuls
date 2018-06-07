@@ -18,7 +18,6 @@ import io.nuls.contract.vm.program.ProgramCreate;
 import io.nuls.contract.vm.program.ProgramExecutor;
 import io.nuls.contract.vm.program.ProgramResult;
 import io.nuls.core.tools.log.Log;
-import io.nuls.kernel.constant.KernelErrorCode;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Service;
@@ -224,7 +223,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
         saveLock.lock();
         try{
             if (tx == null) {
-                return Result.getFailed(KernelErrorCode.NULL_PARAMETER);
+                return Result.getFailed(ContractErrorCode.NULL_PARAMETER);
             }
 
             // 获取tx中是智能合约的地址列表
@@ -261,7 +260,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
     @Override
     public Result<Integer> saveConfirmedTransaction(Transaction tx) {
         if (tx == null) {
-            return Result.getFailed(KernelErrorCode.NULL_PARAMETER);
+            return Result.getFailed(ContractErrorCode.NULL_PARAMETER);
         }
 
         // 获取tx中是智能合约的地址列表

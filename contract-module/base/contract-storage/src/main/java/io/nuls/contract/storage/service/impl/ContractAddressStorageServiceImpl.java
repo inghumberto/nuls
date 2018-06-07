@@ -23,7 +23,6 @@
  */
 package io.nuls.contract.storage.service.impl;
 
-import io.nuls.account.model.Account;
 import io.nuls.contract.storage.constant.ContractStorageConstant;
 import io.nuls.contract.storage.service.ContractAddressStorageService;
 import io.nuls.db.constant.DBErrorCode;
@@ -53,6 +52,8 @@ public class ContractAddressStorageServiceImpl implements ContractAddressStorage
     @Autowired
     private DBService dbService;
 
+    private static final byte[] BYTES = new byte[0];
+
     /**
      * 该方法在所有属性被设置之后调用，用于辅助对象初始化
      * This method is invoked after all properties are set, and is used to assist object initialization.
@@ -66,47 +67,43 @@ public class ContractAddressStorageServiceImpl implements ContractAddressStorage
     }
 
     @Override
-    public Result saveContractAddress(Account account) {
-        if (account == null) {
-            return Result.getFailed(KernelErrorCode.NULL_PARAMETER);
-        }
-        Result result = dbService.putModel(ContractStorageConstant.DB_NAME_CONTRACT_ADDRESS, account.getAddress().getBase58Bytes(), account);
-        return result;
-    }
-
-    @Override
-    public Result<Account> deleteContractAddress(byte[] contractAddressBytes) {
+    public Result saveContractAddress(byte[] contractAddressBytes) {
         if (contractAddressBytes == null) {
             return Result.getFailed(KernelErrorCode.NULL_PARAMETER);
         }
-        Account account = dbService.getModel(ContractStorageConstant.DB_NAME_CONTRACT_ADDRESS, contractAddressBytes, Account.class);
-        Result<Account> result = dbService.delete(ContractStorageConstant.DB_NAME_CONTRACT_ADDRESS, contractAddressBytes);
-        result.setData(account);
+        Result result = dbService.put(ContractStorageConstant.DB_NAME_CONTRACT_ADDRESS, contractAddressBytes, BYTES);
         return result;
     }
 
     @Override
-    public Result<Account> getContractAddress(byte[] contractAddressBytes) {
+    public Result deleteContractAddress(byte[] contractAddressBytes) {
         if (contractAddressBytes == null) {
             return Result.getFailed(KernelErrorCode.NULL_PARAMETER);
         }
-        Account account = dbService.getModel(ContractStorageConstant.DB_NAME_CONTRACT_ADDRESS, contractAddressBytes, Account.class);
-        if(account == null) {
-            return Result.getFailed(KernelErrorCode.DATA_NOT_FOUND);
-        }
-        Result<Account> result = Result.getSuccess();
-        result.setData(account);
+        Result result = dbService.delete(ContractStorageConstant.DB_NAME_CONTRACT_ADDRESS, contractAddressBytes);
         return result;
     }
 
     @Override
-    public Result<List<Account>> getContractAddressList() {
-        List<Account> accountList = dbService.values(ContractStorageConstant.DB_NAME_CONTRACT_ADDRESS, Account.class);
-        if(accountList == null || accountList.size() ==0) {
+    public boolean isExistContractAddress(byte[] contractAddressBytes) {
+        if (contractAddressBytes == null) {
+            return false;
+        }
+        byte[] contract = dbService.get(ContractStorageConstant.DB_NAME_CONTRACT_ADDRESS, contractAddressBytes);
+        if(contract == null) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public Result<List<byte[]>> getContractAddressList() {
+        List<byte[]> list = dbService.valueList(ContractStorageConstant.DB_NAME_CONTRACT_ADDRESS);
+        if(list == null || list.size() ==0) {
             return Result.getFailed(KernelErrorCode.DATA_NOT_FOUND);
         }
-        Result<List<Account>> result = Result.getSuccess();
-        result.setData(accountList);
+        Result<List<byte[]>> result = Result.getSuccess();
+        result.setData(list);
         return result;
     }
 }

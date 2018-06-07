@@ -29,11 +29,14 @@ import io.nuls.account.ledger.service.AccountLedgerService;
 import io.nuls.account.model.Balance;
 import io.nuls.contract.constant.ContractConstant;
 import io.nuls.contract.constant.ContractErrorCode;
+import io.nuls.contract.ledger.manager.ContractBalanceManager;
+import io.nuls.contract.ledger.module.ContractBalance;
 import io.nuls.contract.ledger.service.ContractUtxoService;
 import io.nuls.contract.ledger.util.ContractLedgerUtil;
 import io.nuls.contract.storage.service.ContractUtxoStorageService;
 import io.nuls.core.tools.array.ArraysTool;
 import io.nuls.core.tools.crypto.Hex;
+import io.nuls.db.model.Entry;
 import io.nuls.kernel.constant.KernelErrorCode;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.exception.NulsRuntimeException;
@@ -63,7 +66,11 @@ public class ContractUtxoServiceImpl implements ContractUtxoService {
     private ContractUtxoStorageService contractUtxoStorageService;
 
     @Autowired
+    private ContractBalanceManager contractBalanceManager;
+
+    @Autowired
     private AccountLedgerService accountLedgerService;
+
 
     /**
      * 两种交易
@@ -89,26 +96,27 @@ public class ContractUtxoServiceImpl implements ContractUtxoService {
             if(tx.getType() == ContractConstant.TX_TYPE_CONTRACT_TRANSFER) {
                 List<Coin> froms = coinData.getFrom();
                 byte[] fromSource;
-                byte[] utxoFromSource;
-                byte[] fromIndex;
+                byte[] utxoFromTxHash;
+                byte[] utxoFromIndex;
+                int txHashSize = tx.getHash().size();
                 Coin fromOfFromCoin;
                 for (Coin from : froms) {
                     fromSource = from.getOwner();
-                    utxoFromSource = new byte[tx.getHash().size()];
-                    fromIndex = new byte[fromSource.length - utxoFromSource.length];
-                    System.arraycopy(fromSource, 0, utxoFromSource, 0, tx.getHash().size());
-                    System.arraycopy(fromSource, tx.getHash().size(), fromIndex, 0, fromIndex.length);
+                    utxoFromTxHash = new byte[txHashSize];
+                    utxoFromIndex = new byte[fromSource.length - txHashSize];
+                    System.arraycopy(fromSource, 0, utxoFromTxHash, 0, txHashSize);
+                    System.arraycopy(fromSource, txHashSize, utxoFromIndex, 0, utxoFromIndex.length);
 
                     fromOfFromCoin = from.getFrom();
 
                     if (fromOfFromCoin == null) {
                         Transaction sourceTx = null;
                         try {
-                            sourceTx = ledgerService.getTx(NulsDigestData.fromDigestHex(Hex.encode(fromSource)));
+                            sourceTx = ledgerService.getTx(NulsDigestData.fromDigestHex(Hex.encode(utxoFromTxHash)));
                             //TODO pierre 未确认交易可能已经被删除 BlockServiceImpl.saveBlock, 需要想办法处理
                             //TODO pierre 特殊合约交易是否需要未确认交易, 这类交易在打包/验证区块时执行, 已代表这是确认交易, 不过打包时连续特殊交易如何处理，如何组装CoinData
                             if (sourceTx == null) {
-                                //TODO sourceTx = accountLedgerService.getUnconfirmedTransaction(NulsDigestData.fromDigestHex(Hex.encode(fromSource))).getData();
+                                //TODO sourceTx = accountLedgerService.getUnconfirmedTransaction(NulsDigestData.fromDigestHex(Hex.encode(utxoFromTxHash))).getData();
                             }
                         } catch (Exception e) {
                             throw new NulsRuntimeException(e);
@@ -116,7 +124,7 @@ public class ContractUtxoServiceImpl implements ContractUtxoService {
                         if (sourceTx == null) {
                             return Result.getFailed(AccountLedgerErrorCode.SOURCE_TX_NOT_EXSITS);
                         }
-                        fromOfFromCoin = sourceTx.getCoinData().getTo().get((int) new VarInt(fromIndex, 0).value);
+                        fromOfFromCoin = sourceTx.getCoinData().getTo().get((int) new VarInt(utxoFromIndex, 0).value);
                     }
 
                     byte[] address = fromOfFromCoin.getOwner();
@@ -125,13 +133,13 @@ public class ContractUtxoServiceImpl implements ContractUtxoService {
                         continue;
                     }
 
-                    fromList.add(ArraysTool.joinintTogether(address, from.getOwner()));
+                    fromList.add(ArraysTool.joinintTogether(address, fromSource));
                 }
             }
 
             // save utxo - to
             List<Coin> tos = coinData.getTo();
-            Map<byte[], byte[]> toMap = new HashMap<>();
+            List<Entry<byte[], byte[]>> toList = new ArrayList<>();
             byte[] txHashBytes = null;
             try {
                 txHashBytes = tx.getHash().serialize();
@@ -149,23 +157,19 @@ public class ContractUtxoServiceImpl implements ContractUtxoService {
                 }
                 try {
                     outKey = ArraysTool.joinintTogether(toAddress, txHashBytes, new VarInt(i).encode());
-                    toMap.put(outKey, to.serialize());
+                    toList.add(new Entry<byte[], byte[]>(outKey, to.serialize()));
                 } catch (IOException e) {
                     throw new NulsRuntimeException(e);
                 }
             }
-            Result result = contractUtxoStorageService.batchSaveAndDeleteUTXO(toMap, fromList);
-            if (result.isFailed() || result.getData() == null || (int) result.getData() != toMap.size() + fromList.size()) {
+            Result<List<Entry<byte[], byte[]>>> result = contractUtxoStorageService.batchSaveAndDeleteUTXO(toList, fromList);
+            if (result.isFailed() || result.getData() == null) {
                 return Result.getFailed();
             }
+            // 刷新余额
+            contractBalanceManager.refreshBalance(toList, result.getData());
         }
         return Result.getSuccess();
-    }
-
-    @Override
-    public Result saveUtxoForAccount(Transaction tx, byte[] addresses) {
-        //TODO pierre 是否需要此方法
-        return null;
     }
 
     @Override
@@ -200,40 +204,61 @@ public class ContractUtxoServiceImpl implements ContractUtxoService {
             }
 
             // save - from
-            Map<byte[], byte[]> fromMap = new HashMap<>();
+            List<Entry<byte[], byte[]>> fromList = new ArrayList<>();
             if(tx.getType() == ContractConstant.TX_TYPE_CONTRACT_TRANSFER) {
                 List<Coin> froms = coinData.getFrom();
+                int txHashSize = tx.getHash().size();
                 byte[] fromSource;
-                byte[] utxoFromSource;
-                byte[] fromIndex;
+                byte[] utxoFromHash;
+                byte[] utxoFromIndex;
+                Transaction sourceTx;
+                Coin sourceTxCoinTo;
+                byte[] address;
                 for (Coin from : froms) {
                     fromSource = from.getOwner();
-                    utxoFromSource = new byte[tx.getHash().size()];
-                    fromIndex = new byte[fromSource.length - utxoFromSource.length];
-                    System.arraycopy(fromSource, 0, utxoFromSource, 0, tx.getHash().size());
-                    System.arraycopy(fromSource, tx.getHash().size(), fromIndex, 0, fromIndex.length);
+                    utxoFromHash = new byte[txHashSize];
+                    utxoFromIndex = new byte[fromSource.length - txHashSize];
+                    System.arraycopy(fromSource, 0, utxoFromHash, 0, txHashSize);
+                    System.arraycopy(fromSource, txHashSize, utxoFromIndex, 0, utxoFromIndex.length);
 
-                    Transaction sourceTx = null;
                     try {
-                        sourceTx = ledgerService.getTx(NulsDigestData.fromDigestHex(Hex.encode(fromSource)));
+                        sourceTx = ledgerService.getTx(NulsDigestData.fromDigestHex(Hex.encode(utxoFromHash)));
                     } catch (Exception e) {
                         continue;
                     }
                     if (sourceTx == null) {
                         return Result.getFailed(AccountLedgerErrorCode.SOURCE_TX_NOT_EXSITS);
                     }
-                    byte[] address = sourceTx.getCoinData().getTo().get((int) new VarInt(fromIndex, 0).value).getOwner();
+
+                    sourceTxCoinTo = sourceTx.getCoinData().getTo().get((int) new VarInt(utxoFromIndex, 0).value);
+                    address = sourceTxCoinTo.getOwner();
                     try {
-                        fromMap.put(ArraysTool.joinintTogether(address, from.getOwner()), sourceTx.getCoinData().getTo().get((int) new VarInt(fromIndex, 0).value).serialize());
+                        fromList.add(new Entry<byte[], byte[]>(ArraysTool.joinintTogether(address, fromSource), sourceTxCoinTo.serialize()));
                     } catch (IOException e) {
                         throw new NulsRuntimeException(e);
                     }
                 }
             }
-            Result result = contractUtxoStorageService.batchSaveAndDeleteUTXO(fromMap, toList);
-            if (result.isFailed() || result.getData() == null || (int) result.getData() != fromMap.size() + toList.size()) {
+            /*
+             * 回滚utxo, 保存原来的from，删除to
+             * 回滚余额, 找到已删除的from 加回去， 筛选出已保存的to 减掉
+             */
+            List<Entry<byte[], byte[]>> deletedFromList = new ArrayList<>();
+            for(Entry<byte[], byte[]> entry : fromList) {
+                // 如果为空，则代表已被删除，回滚余额时需要把这个金额加回来
+                if(contractUtxoStorageService.getUTXO(entry.getKey()) == null) {
+                    deletedFromList.add(entry);
+                }
+            }
+
+            // 函数将返回在数据库中存在的to
+            Result<List<Entry<byte[], byte[]>>> result = contractUtxoStorageService.batchSaveAndDeleteUTXO(fromList, toList);
+            if (result.isFailed() || result.getData() == null) {
                 return Result.getFailed();
             }
+            // 回滚余额, 找到已删除的from 加回去， 筛选出已保存的to 减掉
+            contractBalanceManager.refreshBalance(deletedFromList, result.getData());
+
         }
 
         return Result.getSuccess();
@@ -249,12 +274,11 @@ public class ContractUtxoServiceImpl implements ContractUtxoService {
             return Result.getFailed(ContractErrorCode.CONTRACT_ADDRESS_NOT_EXIST);
         }
 
-        //TODO pierre 查询合约余额
-        BigInteger balance = null;
-
-        if (balance == null) {
-            return Result.getFailed(ContractErrorCode.CONTRACT_ADDRESS_NOT_EXIST);
+        ContractBalance contractBalance = contractBalanceManager.getBalance(address).getData();
+        if(contractBalance == null) {
+            return Result.getFailed(ContractErrorCode.DATA_ERROR);
         }
+        BigInteger balance = BigInteger.valueOf(contractBalance.getBalance().getValue());
 
         return Result.getSuccess().setData(balance);
     }
