@@ -24,8 +24,11 @@ public class CrowdsaleTest {
     private DBService dbService;
     private ProgramExecutor programExecutor;
 
-    private static final String ADDRESS = "crowdsale_address";
-    private static final String SENDER = "ccc_address";
+    private static final String CROWDSALE_ADDRESS = "crowdsale_address1";
+    private static final String TOKEN_ADDRESS = "token_address1";
+    private static final String WALLET_ADDRESS = "wallet_address1";
+    private static final String SENDER = "ccc_address1";
+    private static final String BUYER = "buyer_address1";
 
     @Before
     public void setUp() {
@@ -39,16 +42,16 @@ public class CrowdsaleTest {
         byte[] contractCode = IOUtils.toByteArray(in);
 
         ProgramCreate programCreate = new ProgramCreate();
-        programCreate.setContractAddress(ADDRESS.getBytes());
+        programCreate.setContractAddress(CROWDSALE_ADDRESS.getBytes());
         programCreate.setSender(SENDER.getBytes());
         programCreate.setPrice(0);
         programCreate.setNaLimit(1000000);
         programCreate.setNumber(1);
         programCreate.setContractCode(contractCode);
-        programCreate.args("10", Hex.toHexString("wallet_address".getBytes()), Hex.toHexString("token_address".getBytes()));
+        programCreate.args("0", "20000", "10", Hex.toHexString(WALLET_ADDRESS.getBytes()), "20000000", Hex.toHexString(TOKEN_ADDRESS.getBytes()), "10000000");
         System.out.println(programCreate);
 
-        byte[] prevStateRoot = Hex.decode("e3ddc1a2bb001d75b038ade8aaef3868e75be68eaf4010958f0b4587f844a906");
+        byte[] prevStateRoot = Hex.decode("3aa38588e2d53b3751f308724e23a9267b03603b652073a41492072b4336119d");
 
         ProgramExecutor track = programExecutor.begin(prevStateRoot);
         ProgramResult programResult = track.create(programCreate);
@@ -62,7 +65,7 @@ public class CrowdsaleTest {
     @Test
     public void testBuyTokens() throws IOException {
         ProgramCall programCall = new ProgramCall();
-        programCall.setContractAddress(ADDRESS.getBytes());
+        programCall.setContractAddress(CROWDSALE_ADDRESS.getBytes());
         programCall.setSender(SENDER.getBytes());
         programCall.setValue(new BigInteger("1000"));
         programCall.setPrice(0);
@@ -70,10 +73,10 @@ public class CrowdsaleTest {
         programCall.setNumber(1);
         programCall.setMethodName("buyTokens");
         programCall.setMethodDesc("");
-        programCall.args(Hex.toHexString(SENDER.getBytes()));
+        programCall.args(Hex.toHexString(BUYER.getBytes()));
         System.out.println(programCall);
 
-        byte[] prevStateRoot = Hex.decode("16f848285e84fe44cdf09e039c0e750bcfcf92c4395fa27bf50180d61465751b");
+        byte[] prevStateRoot = Hex.decode("4736adde34d8f29123c5dbf511bf64299d1a16a9a60377b8921575fb79ed3621");
 
         ProgramExecutor track = programExecutor.begin(prevStateRoot);
         ProgramResult programResult = track.call(programCall);

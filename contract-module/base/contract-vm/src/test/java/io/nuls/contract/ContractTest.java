@@ -22,8 +22,8 @@ public class ContractTest {
     private DBService dbService;
     private ProgramExecutor programExecutor;
 
-    private static final String ADDRESS = "token_address";
-    private static final String SENDER = "crowdsale_address";
+    private static final String ADDRESS = "token_address1";
+    private static final String SENDER = "crowdsale_address1";
 
     @Before
     public void setUp() {
@@ -70,7 +70,7 @@ public class ContractTest {
         programCall.args(Hex.toHexString(SENDER.getBytes()), "1000");
         System.out.println(programCall);
 
-        byte[] prevStateRoot = Hex.decode("6ce51a8225836dd33e94e0412af66bbd6b923607c08cc50ff152cb7f155741ef");
+        byte[] prevStateRoot = Hex.decode("5346a2c9626e536d87641f0ce8cfc09f0f125dc0fc08ce3a02f693133caa99ad");
 
         ProgramExecutor track = programExecutor.begin(prevStateRoot);
         ProgramResult programResult = track.call(programCall);
@@ -96,7 +96,7 @@ public class ContractTest {
 
     @Test
     public void testStop() throws IOException {
-        byte[] prevStateRoot = Hex.decode("e3ddc1a2bb001d75b038ade8aaef3868e75be68eaf4010958f0b4587f844a906");
+        byte[] prevStateRoot = Hex.decode("3aa38588e2d53b3751f308724e23a9267b03603b652073a41492072b4336119d");
         byte[] address = ADDRESS.getBytes();
         byte[] sender = SENDER.getBytes();
 
@@ -137,7 +137,7 @@ public class ContractTest {
         System.out.println(programCall1);
         transactions.add(programCall1);
 
-        byte[] prevStateRoot = Hex.decode("e3ddc1a2bb001d75b038ade8aaef3868e75be68eaf4010958f0b4587f844a906");
+        byte[] prevStateRoot = Hex.decode("3aa38588e2d53b3751f308724e23a9267b03603b652073a41492072b4336119d");
 
         ProgramExecutor track = programExecutor.begin(prevStateRoot);
         for (ProgramCall transaction : transactions) {
@@ -156,7 +156,7 @@ public class ContractTest {
 
     @Test
     public void testMethod() throws IOException {
-        byte[] prevStateRoot = Hex.decode("e3ddc1a2bb001d75b038ade8aaef3868e75be68eaf4010958f0b4587f844a906");
+        byte[] prevStateRoot = Hex.decode("3aa38588e2d53b3751f308724e23a9267b03603b652073a41492072b4336119d");
         byte[] address = ADDRESS.getBytes();
         byte[] sender = SENDER.getBytes();
 
