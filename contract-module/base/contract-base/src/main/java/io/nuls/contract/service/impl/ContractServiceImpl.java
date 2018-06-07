@@ -247,10 +247,6 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
                 return result;
             }
 
-            for (int i = 0; i < addresses.size(); i++) {
-                //TODO pierre 更新合约账户余额
-                //balanceManager.refreshBalance(addresses.get(i));
-            }
             return result;
         } finally {
             saveLock.unlock();
@@ -291,10 +287,6 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             }
         }
 
-        for (int i = 0; i < addresses.size(); i++) {
-            //TODO pierre 更新合约账户余额
-            //balanceManager.refreshBalance(addresses.get(i));
-        }
         result.setData(new Integer(1));
         return result;
     }
@@ -314,8 +306,6 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
                 return result;
             }
         }
-        //TODO pierre 更新合约账户余额
-        //balanceManager.refreshBalance();
         return Result.getSuccess().setData(savedTxList.size());
     }
 
@@ -341,11 +331,6 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
         }
         result = contractUtxoService.deleteUtxoOfTransaction(tx);
 
-        for (int i = 0; i < addresses.size(); i++) {
-            //TODO pierre 更新合约账户余额
-            //balanceManager.refreshBalance(addresses.get(i));
-        }
-
         return result;
     }
 
@@ -353,17 +338,13 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
     public Result<Integer> rollbackTransaction(List<Transaction> txs) {
         Result result = Result.getSuccess().setData(txs.size());
         result = rollbackTransaction(txs, true);
-        if (result.isSuccess()) {
-            //TODO pierre 更新合约账户余额
-            //balanceManager.refreshBalance();
-        }
         return result;
     }
 
     private Result<Integer> rollbackTransaction(List<Transaction> txs, boolean isCheckContract) {
         List<Transaction> txListToRollback;
         if (isCheckContract) {
-            // 过滤tx为包含合约地址的交易
+            // 过滤掉与合约地址无关的交易，保留与合约相关的交易
             txListToRollback = filterRelatedTransaction(txs);
         } else {
             txListToRollback = txs;

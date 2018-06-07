@@ -39,7 +39,7 @@ import java.util.List;
 public class ContractLedgerUtil {
 
     public static boolean isContractAddress(byte[] addressBytes) {
-        //TODO pierre
+        //TODO pierre 判断是否为合约地址
         return true;
     }
 
