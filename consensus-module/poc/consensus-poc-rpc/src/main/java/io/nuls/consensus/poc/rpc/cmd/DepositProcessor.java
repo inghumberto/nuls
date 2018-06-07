@@ -26,6 +26,7 @@
 package io.nuls.consensus.poc.rpc.cmd;
 
 import io.nuls.kernel.constant.KernelErrorCode;
+import io.nuls.kernel.model.NulsDigestData;
 import io.nuls.kernel.model.RpcClientResult;
 import io.nuls.kernel.utils.CommandBuilder;
 import io.nuls.kernel.utils.CommandHelper;
@@ -57,7 +58,7 @@ public class DepositProcessor implements CommandProcessor {
         bulider.newLine(getCommandDescription())
                 .newLine("\t<address>   Your own account address -required")
                 .newLine("\t<agentHash>   The agent hash you want to deposit  -required")
-                .newLine("\t<deposit>   the amount you want to deposit -required");
+                .newLine("\t<deposit>   the amount you want to deposit, you can have up to 8 valid digits after the decimal point -required");
         return bulider.toString();
     }
 
@@ -75,8 +76,8 @@ public class DepositProcessor implements CommandProcessor {
         if (!CommandHelper.checkArgsIsNull(args)) {
             return false;
         }
-        if(!StringUtils.validAddressSimple(args[1]) || !StringUtils.validHash(args[2])
-                || StringUtils.isBlank(args[3]) || !StringUtils.isNumberGtZero(args[3])){
+        if(!StringUtils.validAddressSimple(args[1]) || !NulsDigestData.validHash(args[2])
+                || StringUtils.isBlank(args[3]) || !StringUtils.isNuls(args[3])){
             return false;
         }
         return true;

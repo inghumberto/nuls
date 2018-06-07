@@ -63,12 +63,11 @@ public class RpcServerManager {
     public void startServer(String ip, int port) {
         URI serverURI = UriBuilder.fromUri("http://" + ip).port(port).build();
         // Create test web application context.
-        WebappContext webappContext = new WebappContext("NULS-RPC-SERVER", "/");
+        WebappContext webappContext = new WebappContext("NULS-RPC-SERVER", "/api");
 
         ServletRegistration servletRegistration = webappContext.addServlet("jersey-servlet", ServletContainer.class);
-
         servletRegistration.setInitParameter("javax.ws.rs.Application","io.nuls.client.rpc.config.NulsResourceConfig");
-        servletRegistration.addMapping("/*");
+        servletRegistration.addMapping("/api/*");
 
         httpServer = new HttpServer();
         NetworkListener listener = new NetworkListener("grizzly2", ip, port);
@@ -94,7 +93,6 @@ public class RpcServerManager {
         try {
             ClassLoader loader = this.getClass().getClassLoader();
 
-
             addSwagerUi(loader);
             addClientUi(loader);
 
@@ -108,9 +106,9 @@ public class RpcServerManager {
 
     private void addClientUi(ClassLoader loader) {
         CLStaticHttpHandler docsHandler = new CLStaticHttpHandler(loader, "client-web/");
-        docsHandler.setFileCacheEnabled(false);
+        docsHandler.setFileCacheEnabled(true);
         ServerConfiguration cfg = httpServer.getServerConfiguration();
-        cfg.addHttpHandler(docsHandler, "/client/");
+        cfg.addHttpHandler(docsHandler, "/");
     }
 
     private void addSwagerUi(ClassLoader loader) {

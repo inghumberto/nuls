@@ -8,4 +8,7 @@ public interface ContractErrorCode extends TransactionErrorCode, KernelErrorCode
 
     ErrorCode CONTRACT_EXECUTE_ERROR = ErrorCode.init("CONTRACT001", "100001");
 
+    //TODO pierre 错误码
+    ErrorCode CONTRACT_ADDRESS_NOT_EXIST = null;
+
 }

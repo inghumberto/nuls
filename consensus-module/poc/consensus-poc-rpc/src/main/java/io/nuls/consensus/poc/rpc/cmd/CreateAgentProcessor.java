@@ -57,10 +57,8 @@ public class CreateAgentProcessor implements CommandProcessor {
         bulider.newLine(getCommandDescription())
                 .newLine("\t<agentAddress>   agent owner address   -required")
                 .newLine("\t<packingAddress>    packing address    -required")
-                .newLine("\t<commissionRate>    commission rate (10~100)   -required")
-                .newLine("\t<deposit>   amount you want to deposit -required")
-                .newLine("\t<agentName>  your agent name    -required")
-                .newLine("\t<remark>    introduction to your agent -required")
+                .newLine("\t<commissionRate>    commission rate (10~100), you can have up to 2 valid digits after the decimal point  -required")
+                .newLine("\t<deposit>   amount you want to deposit, you can have up to 8 valid digits after the decimal point -required")
                 .newLine("\t[rewardAddress]  Billing address    -not required");
         return bulider.toString();
     }
@@ -83,10 +81,10 @@ public class CreateAgentProcessor implements CommandProcessor {
                 || StringUtils.isBlank(args[4])){
             return false;
         }
-        if(!StringUtils.isNumberGtZero(args[3])){
+        if(!StringUtils.isNumberGtZeroLimitTwo(args[3])){
             return false;
         }
-        if(!StringUtils.isNumberGtZero(args[4])){
+        if(!StringUtils.isNuls(args[4])){
             return false;
         }
         if(length == 6 && !StringUtils.validAddressSimple(args[5])){

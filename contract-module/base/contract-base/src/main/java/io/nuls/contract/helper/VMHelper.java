@@ -30,9 +30,7 @@ import io.nuls.db.service.DBService;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Component;
-import io.nuls.kernel.lite.core.SpringLiteContext;
 import io.nuls.kernel.lite.core.bean.InitializingBean;
-import io.nuls.protocol.service.BlockService;
 
 /**
  * @desription:
@@ -49,13 +47,12 @@ public class VMHelper implements InitializingBean {
 
     private ProgramExecutor programExecutor;
 
-    public ProgramExecutor getProgramExecutor() {
-        return programExecutor;
-    }
-
     @Override
     public void afterPropertiesSet() throws NulsException {
         programExecutor = new ProgramExecutorImpl(vmContext, dbService);
+    }
 
+    public ProgramExecutor getProgramExecutor() {
+        return programExecutor;
     }
 }

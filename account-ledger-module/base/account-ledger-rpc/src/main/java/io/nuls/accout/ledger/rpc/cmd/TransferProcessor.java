@@ -61,7 +61,7 @@ public class TransferProcessor implements CommandProcessor {
         builder.newLine(getCommandDescription())
                 .newLine("\t<address> \t\tsource address - Required")
                 .newLine("\t<toaddress> \treceiving address - Required")
-                .newLine("\t<amount> \t\tamount - Required")
+                .newLine("\t<amount> \t\tamount, you can have up to 8 valid digits after the decimal point - Required")
                 .newLine("\t[remark] \t\tremark - ");
         return builder.toString();
     }
@@ -87,7 +87,7 @@ public class TransferProcessor implements CommandProcessor {
             if (!Address.validAddress(args[1]) || !Address.validAddress(args[2])) {
                 return false;
             }
-            if (!StringUtils.isNumberGtZero(args[3])) {
+            if (!StringUtils.isNuls(args[3])) {
                 result = false;
                 break;
             }

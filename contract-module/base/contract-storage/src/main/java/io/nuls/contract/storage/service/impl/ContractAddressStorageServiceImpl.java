@@ -25,7 +25,7 @@ package io.nuls.contract.storage.service.impl;
 
 import io.nuls.account.model.Account;
 import io.nuls.contract.storage.constant.ContractStorageConstant;
-import io.nuls.contract.storage.service.ContractStorageService;
+import io.nuls.contract.storage.service.ContractAddressStorageService;
 import io.nuls.db.constant.DBErrorCode;
 import io.nuls.db.service.DBService;
 import io.nuls.kernel.constant.KernelErrorCode;
@@ -44,7 +44,7 @@ import java.util.List;
  * @date: 2018/5/24
  */
 @Service
-public class ContractStorageServiceImpl implements ContractStorageService, InitializingBean {
+public class ContractAddressStorageServiceImpl implements ContractAddressStorageService, InitializingBean {
 
     /**
      * 通用数据存储服务

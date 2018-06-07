@@ -28,6 +28,9 @@ import io.nuls.contract.entity.txdata.CallContractData;
 import io.nuls.contract.entity.txdata.CreateContractData;
 import io.nuls.contract.entity.txdata.DeleteContractData;
 import io.nuls.kernel.model.Result;
+import io.nuls.kernel.model.Transaction;
+
+import java.util.List;
 
 /**
  * @desription:
@@ -71,5 +74,35 @@ public interface ContractService {
      */
     Result<Object> getVmStatus();
 
-    Result<Boolean> isContractAddress(byte[] fromAddressBytes);
+    boolean isContractAddress(byte[] addressBytes);
+
+    /**
+     * 保存 txInfo : key -> contractAddress + txHash, status is unconfirmed
+     * 保存 UTXO : key -> contractAddress + txHash + index
+     *
+     * @param tx
+     * @return
+     */
+    Result<Integer> saveUnconfirmedTransaction(Transaction tx);
+
+    /**
+     * 保存 txInfo : key -> contractAddress + txHash, status is confirmed
+     * 如果是非交易创建者则保存 UTXO : key -> contractAddress + txHash + index
+     *
+     * @param tx
+     * @return
+     */
+    Result<Integer> saveConfirmedTransaction(Transaction tx);
+    Result<Integer> saveConfirmedTransactionList(List<Transaction> txs);
+
+
+    /**
+     *
+     *
+     * @param tx
+     * @return
+     */
+    Result<Integer> rollbackTransaction(Transaction tx);
+    Result<Integer> rollbackTransaction(List<Transaction> txs);
+
 }
