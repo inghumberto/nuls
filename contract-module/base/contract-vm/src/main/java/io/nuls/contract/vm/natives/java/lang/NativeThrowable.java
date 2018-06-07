@@ -6,7 +6,11 @@ import io.nuls.contract.vm.ObjectRef;
 import io.nuls.contract.vm.Result;
 import io.nuls.contract.vm.code.MethodCode;
 import io.nuls.contract.vm.code.VariableType;
+import io.nuls.contract.vm.instructions.references.Instanceof;
 import io.nuls.contract.vm.natives.NativeMethod;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class NativeThrowable {
 
@@ -36,16 +40,30 @@ public class NativeThrowable {
         ObjectRef objectRef = methodArgs.getObjectRef();
 
         int size = frame.getVm().getVmStack().size();
-        ObjectRef stackTraceElementsRef = frame.getHeap().newArray(VariableType.STACK_TRACE_ELEMENT_ARRAY_TYPE, size);
-        frame.getHeap().putField(objectRef, "stackTraceElements", stackTraceElementsRef);
-        for (int i = 0; i < size; i++) {
+        boolean isThrowable = true;
+        List<Frame> frames = new ArrayList<>();
+        for (int i = size - 1; i >= 0; i--) {
             Frame frame1 = frame.getVm().getVmStack().get(i);
-            ObjectRef declaringClass = frame.getHeap().newString(frame1.getMethodCode().getClassName());
+            if (isThrowable) {
+                if (Instanceof.instanceof_(frame1.getMethodCode().getClassCode().getName(), "java/lang/Throwable", frame)) {
+                    continue;
+                } else {
+                    isThrowable = false;
+                }
+            }
+            frames.add(frame1);
+        }
+
+        ObjectRef stackTraceElementsRef = frame.getHeap().newArray(VariableType.STACK_TRACE_ELEMENT_ARRAY_TYPE, frames.size());
+        frame.getHeap().putField(objectRef, "stackTraceElements", stackTraceElementsRef);
+        int index = 0;
+        for (Frame frame1 : frames) {
+            ObjectRef declaringClass = frame.getHeap().newString(frame1.getMethodCode().getClassCode().getName());
             ObjectRef methodName = frame.getHeap().newString(frame1.getMethodCode().getName());
-            ObjectRef fileName = frame.getHeap().newString(frame1.getMethodCode().getClassName());
-            int lineNumber = 0;
+            ObjectRef fileName = frame.getHeap().newString(frame1.getMethodCode().getClassCode().getSourceFile());
+            int lineNumber = frame1.getLine();
             ObjectRef stackTraceElementRef = frame.getHeap().newObject(VariableType.STACK_TRACE_ELEMENT_TYPE, null, declaringClass, methodName, fileName, lineNumber);
-            frame.getHeap().putArray(stackTraceElementsRef, i, stackTraceElementRef);
+            frame.getHeap().putArray(stackTraceElementsRef, index++, stackTraceElementRef);
         }
 
         Result result = NativeMethod.result(methodCode, objectRef, frame);

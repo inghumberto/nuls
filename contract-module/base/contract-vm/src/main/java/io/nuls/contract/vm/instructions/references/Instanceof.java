@@ -45,7 +45,7 @@ public class Instanceof {
         return result;
     }
 
-    private static boolean instanceof_(String refType, String className, Frame frame) {
+    public static boolean instanceof_(String refType, String className, Frame frame) {
         if (Objects.equals(refType, className) || Objects.equals("java/lang/Object", className)) {
             return true;
         } else if (Objects.equals("java/lang/Object", refType)) {
