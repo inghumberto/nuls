@@ -32,7 +32,7 @@ public class ClassCodeConver {
         classCode.setAttrs(classNode.attrs);
         classCode.setInnerClasses(classNode.innerClasses != null ? classNode.innerClasses : new ArrayList<>());
         classCode.setFields(toFieldCodes(classNode.fields));
-        classCode.setMethods(toMethodCodes(classNode.name, classNode.methods));
+        classCode.setMethods(toMethodCodes(classCode, classNode.methods));
         classCode.setVariableType(VariableType.valueOf(classNode.name));
         return classCode;
     }
@@ -57,7 +57,7 @@ public class ClassCodeConver {
         return fieldNodes == null ? new ArrayList<>() : fieldNodes.stream().map(ClassCodeConver::toFieldCode).collect(Collectors.toList());
     }
 
-    public static MethodCode toMethodCode(String className, MethodNode methodNode) {
+    public static MethodCode toMethodCode(ClassCode classCode, MethodNode methodNode) {
         MethodCode methodCode = new MethodCode();
         methodCode.setAccess(methodNode.access);
         methodCode.setName(methodNode.name);
@@ -81,14 +81,14 @@ public class ClassCodeConver {
         methodCode.setVisibleLocalVariableAnnotations(methodNode.visibleLocalVariableAnnotations);
         methodCode.setInvisibleLocalVariableAnnotations(methodNode.invisibleLocalVariableAnnotations);
         //.visited(methodNode.visited)
-        methodCode.setClassName(className);
+        methodCode.setClassCode(classCode);
         methodCode.setReturnVariableType(VariableType.parseReturn(methodNode.desc));
         methodCode.setArgsVariableType(VariableType.parseArgs(methodNode.desc));
         return methodCode;
     }
 
-    public static List<MethodCode> toMethodCodes(String className, List<MethodNode> methodNodes) {
-        return methodNodes == null ? new ArrayList<>() : methodNodes.stream().map(methodNode -> toMethodCode(className, methodNode)).collect(Collectors.toList());
+    public static List<MethodCode> toMethodCodes(ClassCode classCode, List<MethodNode> methodNodes) {
+        return methodNodes == null ? new ArrayList<>() : methodNodes.stream().map(methodNode -> toMethodCode(classCode, methodNode)).collect(Collectors.toList());
     }
 
     public static LocalVariableCode toLocalVariableCode(LocalVariableNode localVariableNode) {

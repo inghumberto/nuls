@@ -28,7 +28,7 @@ public class NativeMethod {
         Log.nativeMethod(methodCode);
 
         Result result = null;
-        switch (methodCode.getClassName()) {
+        switch (methodCode.getClassCode().getName()) {
             case NativeClass.TYPE:
                 result = NativeClass.run(methodCode, methodArgs, frame);
                 break;

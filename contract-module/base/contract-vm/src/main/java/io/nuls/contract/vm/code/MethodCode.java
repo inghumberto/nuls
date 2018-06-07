@@ -53,7 +53,7 @@ public class MethodCode {
 
     //private boolean visited;
 
-    private String className;
+    private ClassCode classCode;
 
     private VariableType returnVariableType;
 
@@ -227,12 +227,12 @@ public class MethodCode {
         this.invisibleLocalVariableAnnotations = invisibleLocalVariableAnnotations;
     }
 
-    public String getClassName() {
-        return className;
+    public ClassCode getClassCode() {
+        return classCode;
     }
 
-    public void setClassName(String className) {
-        this.className = className;
+    public void setClassCode(ClassCode classCode) {
+        this.classCode = classCode;
     }
 
     public VariableType getReturnVariableType() {
@@ -275,7 +275,7 @@ public class MethodCode {
                 ", localVariables=" + localVariables +
                 ", visibleLocalVariableAnnotations=" + visibleLocalVariableAnnotations +
                 ", invisibleLocalVariableAnnotations=" + invisibleLocalVariableAnnotations +
-                ", className=" + className +
+                ", classCode=" + classCode +
                 ", returnVariableType=" + returnVariableType +
                 ", argsVariableType=" + argsVariableType +
                 '}';

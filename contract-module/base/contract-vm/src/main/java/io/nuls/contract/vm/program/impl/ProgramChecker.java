@@ -116,7 +116,7 @@ public class ProgramChecker {
                 }
                 if (nonsupport) {
                     int line = getLine(abstractInsnNode);
-                    throw new RuntimeException(String.format("nonsupport opcode: class(%s), line(%d)", methodCode.getClassName(), line));
+                    throw new RuntimeException(String.format("nonsupport opcode: class(%s), line(%d)", methodCode.getClassCode().getName(), line));
                 }
             }
         }

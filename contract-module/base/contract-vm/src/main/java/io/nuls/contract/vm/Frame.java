@@ -129,11 +129,11 @@ public class Frame {
 
     public void nonsupportOpCode() {
         int line = getLine();
-        throw new RuntimeException(String.format("nonsupport opcode：class(%s), line(%d)", methodCode.getClassName(), line));
+        throw new RuntimeException(String.format("nonsupport opcode：class(%s), line(%d)", methodCode.getClassCode().getName(), line));
     }
 
     public void nonsupportMethod(MethodCode methodCode) {
-        throw new RuntimeException("nonsupport method: " + methodCode.getClassName() + "." + methodCode.getName() + methodCode.getDesc());
+        throw new RuntimeException("nonsupport method: " + methodCode.getClassCode().getName() + "." + methodCode.getName() + methodCode.getDesc());
     }
 
     public InsnNode insnNode() {
