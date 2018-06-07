@@ -163,7 +163,9 @@ public class ProgramExecutorImpl implements ProgramExecutor {
                     if (vm.getResult().isError() || vm.getResult().isException()) {
                         vm.setResult(new Result());
                         String error = vm.getHeap().toString((ObjectRef) resultValue);
+                        String stackTrace = vm.getHeap().stackTrace((ObjectRef) resultValue);
                         programResult.error(error);
+                        programResult.setStackTrace(stackTrace);
                     } else {
                         String result = vm.getHeap().toString((ObjectRef) resultValue);
                         programResult.setResult(result);

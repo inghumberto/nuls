@@ -13,6 +13,8 @@ public class ProgramResult {
 
     private String errorMessage;
 
+    private String stackTrace;
+
     private List<ProgramTransfer> transfers = new ArrayList<>();
 
     private List<String> events = new ArrayList<>();
@@ -58,6 +60,14 @@ public class ProgramResult {
         this.errorMessage = errorMessage;
     }
 
+    public String getStackTrace() {
+        return stackTrace;
+    }
+
+    public void setStackTrace(String stackTrace) {
+        this.stackTrace = stackTrace;
+    }
+
     public List<ProgramTransfer> getTransfers() {
         return transfers;
     }
@@ -85,6 +95,7 @@ public class ProgramResult {
         if (error != that.error) return false;
         if (result != null ? !result.equals(that.result) : that.result != null) return false;
         if (errorMessage != null ? !errorMessage.equals(that.errorMessage) : that.errorMessage != null) return false;
+        if (stackTrace != null ? !stackTrace.equals(that.stackTrace) : that.stackTrace != null) return false;
         if (transfers != null ? !transfers.equals(that.transfers) : that.transfers != null) return false;
         return events != null ? events.equals(that.events) : that.events == null;
     }
@@ -95,6 +106,7 @@ public class ProgramResult {
         result1 = 31 * result1 + (result != null ? result.hashCode() : 0);
         result1 = 31 * result1 + (error ? 1 : 0);
         result1 = 31 * result1 + (errorMessage != null ? errorMessage.hashCode() : 0);
+        result1 = 31 * result1 + (stackTrace != null ? stackTrace.hashCode() : 0);
         result1 = 31 * result1 + (transfers != null ? transfers.hashCode() : 0);
         result1 = 31 * result1 + (events != null ? events.hashCode() : 0);
         return result1;
@@ -107,6 +119,7 @@ public class ProgramResult {
                 ", result=" + result +
                 ", error=" + error +
                 ", errorMessage=" + errorMessage +
+                ", stackTrace=" + stackTrace +
                 ", transfers=" + transfers +
                 ", events=" + events +
                 '}';
