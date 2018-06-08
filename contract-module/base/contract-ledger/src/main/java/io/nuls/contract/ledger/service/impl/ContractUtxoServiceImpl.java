@@ -133,7 +133,7 @@ public class ContractUtxoServiceImpl implements ContractUtxoService {
                         continue;
                     }
 
-                    fromList.add(ArraysTool.joinintTogether(address, fromSource));
+                    fromList.add(fromSource);
                 }
             }
 
@@ -156,7 +156,7 @@ public class ContractUtxoServiceImpl implements ContractUtxoService {
                     continue;
                 }
                 try {
-                    outKey = ArraysTool.joinintTogether(toAddress, txHashBytes, new VarInt(i).encode());
+                    outKey = ArraysTool.joinintTogether(txHashBytes, new VarInt(i).encode());
                     toList.add(new Entry<byte[], byte[]>(outKey, to.serialize()));
                 } catch (IOException e) {
                     throw new NulsRuntimeException(e);
@@ -199,7 +199,7 @@ public class ContractUtxoServiceImpl implements ContractUtxoService {
                 if(!ContractLedgerUtil.isContractAddress(toAddress)) {
                     continue;
                 }
-                outKey = ArraysTool.joinintTogether(toAddress, txHashBytes, new VarInt(i).encode());
+                outKey = ArraysTool.joinintTogether(txHashBytes, new VarInt(i).encode());
                 toList.add(outKey);
             }
 
@@ -233,7 +233,7 @@ public class ContractUtxoServiceImpl implements ContractUtxoService {
                     sourceTxCoinTo = sourceTx.getCoinData().getTo().get((int) new VarInt(utxoFromIndex, 0).value);
                     address = sourceTxCoinTo.getOwner();
                     try {
-                        fromList.add(new Entry<byte[], byte[]>(ArraysTool.joinintTogether(address, fromSource), sourceTxCoinTo.serialize()));
+                        fromList.add(new Entry<byte[], byte[]>(fromSource, sourceTxCoinTo.serialize()));
                     } catch (IOException e) {
                         throw new NulsRuntimeException(e);
                     }
