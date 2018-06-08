@@ -356,10 +356,6 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
                 coinDataResult.setEnough(false);
                 return coinDataResult;
             }
-            for(Coin coin : coinDataResult.getCoinList()) {
-                coin.setNa(Na.ZERO);
-                coin.setLockTime(0L);
-            }
             return coinDataResult;
         } finally {
             lock.unlock();
@@ -641,4 +637,5 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
     public Result<Transaction> getUnconfirmedTransaction(NulsDigestData hash) {
         return unconfirmedTransactionStorageService.getUnconfirmedTx(hash);
     }
+
 }
