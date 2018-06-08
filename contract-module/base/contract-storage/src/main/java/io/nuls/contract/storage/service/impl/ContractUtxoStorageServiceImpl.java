@@ -121,25 +121,34 @@ public class ContractUtxoStorageServiceImpl implements ContractUtxoStorageServic
     @Override
     public Result<List<Entry<byte[], byte[]>>> batchSaveAndDeleteUTXO(List<Entry<byte[], byte[]>> utxosToSave, List<byte[]> utxosToDelete) {
         BatchOperation batch = dbService.createWriteBatch(ContractStorageConstant.DB_NAME_CONTRACT_LEDGER_UTXO);
-        List<Entry<byte[], byte[]>> deleteUtxoEntryList = new ArrayList<>(utxosToDelete.size());
+        List<Entry<byte[], byte[]>> deleteUtxoEntryList = new ArrayList<>();
         byte[] deleteUtxo;
-        for (byte[] key : utxosToDelete) {
-            deleteUtxo = getUTXO(key);
-            // 函数返回将要删除的UTXO
-            if(deleteUtxo != null) {
-                deleteUtxoEntryList.add(new Entry<byte[], byte[]>(key, deleteUtxo));
+        if(utxosToDelete != null) {
+            for (byte[] key : utxosToDelete) {
+                deleteUtxo = getUTXO(key);
+                // 函数返回将要删除的UTXO
+                if(deleteUtxo != null) {
+                    deleteUtxoEntryList.add(new Entry<byte[], byte[]>(key, deleteUtxo));
+                }
+                batch.delete(key);
             }
-            batch.delete(key);
         }
 
-        for(Entry<byte[], byte[]> entry : utxosToSave) {
-            batch.put(entry.getKey(), entry.getValue());
+        if(utxosToSave != null) {
+            for(Entry<byte[], byte[]> entry : utxosToSave) {
+                batch.put(entry.getKey(), entry.getValue());
+            }
         }
         Result batchResult = batch.executeBatch();
         if (batchResult.isFailed()) {
             return batchResult;
         }
         return Result.getSuccess().setData(deleteUtxoEntryList);
+    }
+
+    @Override
+    public BatchOperation createBatchOperation() {
+        return dbService.createWriteBatch(ContractStorageConstant.DB_NAME_CONTRACT_LEDGER_UTXO);
     }
 
 }

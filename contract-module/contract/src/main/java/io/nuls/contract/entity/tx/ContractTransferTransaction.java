@@ -21,40 +21,41 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package io.nuls.contract.storage.service;
+package io.nuls.contract.entity.tx;
 
-import io.nuls.db.model.Entry;
-import io.nuls.db.service.BatchOperation;
-import io.nuls.kernel.model.Result;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import io.nuls.contract.constant.ContractConstant;
+import io.nuls.contract.entity.txdata.CreateContractData;
+import io.nuls.kernel.constant.NulsConstant;
+import io.nuls.kernel.exception.NulsException;
+import io.nuls.kernel.model.Transaction;
+import io.nuls.kernel.model.TransactionLogicData;
+import io.nuls.kernel.utils.NulsByteBuffer;
 
 /**
  * @desription:
  * @author: PierreLuo
- * @date: 2018/6/5
+ * @date: 2018/6/7
  */
-public interface ContractUtxoStorageService {
+public class ContractTransferTransaction extends Transaction {
 
-    @Deprecated
-    Result saveUTXO(byte[] key, byte[] value);
+    public ContractTransferTransaction() {
+        super(ContractConstant.TX_TYPE_CONTRACT_TRANSFER);
+    }
 
-    @Deprecated
-    Result batchSaveUTXO(List<Entry<byte[], byte[]>> utxos);
+    @Override
+    protected CreateContractData parseTxData(NulsByteBuffer byteBuffer) throws NulsException {
+        byteBuffer.readBytes(NulsConstant.PLACE_HOLDER.length);
+        return null;
+    }
 
-    @Deprecated
-    Result deleteUTXO(byte[] key);
+    @Override
+    public String getInfo(byte[] address) {
+        //TODO pierre
+        return null;
+    }
 
-    @Deprecated
-    Result batchDeleteUTXO(List<byte[]> utxos);
-
-    byte[] getUTXO(byte[] key);
-
-    List<Entry<byte[], byte[]>> loadAllCoinList();
-
-    Result batchSaveAndDeleteUTXO(List<Entry<byte[], byte[]>> utxosToSave, List<byte[]> utxosToDelete);
-
-    BatchOperation createBatchOperation();
+    @Override
+    public boolean needVerifySignature() {
+        return false;
+    }
 }

@@ -32,12 +32,14 @@ import io.nuls.account.model.Balance;
 import io.nuls.account.service.AccountService;
 import io.nuls.contract.constant.ContractErrorCode;
 import io.nuls.contract.ledger.module.ContractBalance;
+import io.nuls.contract.ledger.util.ContractLedgerUtil;
 import io.nuls.contract.storage.service.ContractAddressStorageService;
 import io.nuls.contract.storage.service.ContractUtxoStorageService;
 import io.nuls.core.tools.crypto.Base58;
 import io.nuls.core.tools.log.Log;
 import io.nuls.core.tools.param.AssertUtil;
 import io.nuls.db.model.Entry;
+import io.nuls.db.service.BatchOperation;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Component;
@@ -45,6 +47,7 @@ import io.nuls.kernel.model.Coin;
 import io.nuls.kernel.model.Na;
 import io.nuls.kernel.model.Result;
 import io.nuls.kernel.utils.AddressTool;
+import sun.reflect.misc.ConstructorUtil;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -79,20 +82,15 @@ public class ContractBalanceManager {
         balanceMap.clear();
         List<Coin> coinList = new ArrayList<>();
         List<Entry<byte[], byte[]>> rawList = contractUtxoStorageService.loadAllCoinList();
-        byte[] addressOwner = new byte[AddressTool.HASH_LENGTH];
         Coin coin;
-        byte[] key;
         String strAddress;
         ContractBalance balance;
         byte[] fromOwner;
         for (Entry<byte[], byte[]> coinEntry : rawList) {
-            key = coinEntry.getKey();
-            System.arraycopy(key, 0, addressOwner, 0, AddressTool.HASH_LENGTH);
-            strAddress = asString(addressOwner);
-
             coin = new Coin();
             try {
                 coin.parse(coinEntry.getValue());
+                strAddress = asString(coin.getOwner());
             } catch (NulsException e) {
                 Log.error("parse contract coin error form db", e);
                 continue;
@@ -115,6 +113,44 @@ public class ContractBalanceManager {
         return Base64.getEncoder().encodeToString(bytes);
     }
 
+    public Result<List<Entry<byte[], byte[]>>> removeBalance(byte[] removeAddress) {
+        lock.lock();
+        try {
+            if(!ContractLedgerUtil.isContractAddress(removeAddress)) {
+                return Result.getFailed(ContractErrorCode.CONTRACT_ADDRESS_NOT_EXIST);
+            }
+
+            //TODO pierre 终止合约，销毁合约地址，删除合约地址UTXO
+            List<Entry<byte[], byte[]>> rawList = contractUtxoStorageService.loadAllCoinList();
+            Coin coin;
+            byte[] address;
+            String strAddress;
+            List<Entry<byte[], byte[]>> deleteList = new ArrayList<>();
+            BatchOperation batchOperation = contractUtxoStorageService.createBatchOperation();
+            for (Entry<byte[], byte[]> coinEntry : rawList) {
+                coin = new Coin();
+                try {
+                    coin.parse(coinEntry.getValue());
+                } catch (NulsException e) {
+                    Log.error("parse contract coin error form db", e);
+                    continue;
+                }
+                address = coin.getOwner();
+                if(!Arrays.equals(removeAddress, address)) {
+                    continue;
+                }
+                batchOperation.delete(coinEntry.getKey());
+                deleteList.add(coinEntry);
+            }
+            Result result = batchOperation.executeBatch();
+            if(result.isSuccess()) {
+                balanceMap.remove(asString(removeAddress));
+            }
+            return Result.getSuccess().setData(deleteList);
+        } finally {
+            lock.unlock();
+        }
+    }
     /**
      * 获取账户余额
      *
@@ -128,8 +164,7 @@ public class ContractBalanceManager {
                 return Result.getFailed(ContractErrorCode.PARAMETER_ERROR);
             }
 
-            boolean isExistAddress = contractAddressStorageService.isExistContractAddress(address);
-            if (!isExistAddress) {
+            if (!ContractLedgerUtil.isContractAddress(address)) {
                 return Result.getFailed(ContractErrorCode.CONTRACT_ADDRESS_NOT_EXIST);
             }
 
@@ -156,47 +191,51 @@ public class ContractBalanceManager {
             Coin coin;
             ContractBalance balance;
             String strAddress;
-            for (Entry<byte[], byte[]> addUtxo : addUtxoList) {
-                coin = new Coin();
-                try {
-                    coin.parse(addUtxo.getValue());
-                } catch (NulsException e) {
-                    Log.error("parse contract coin error form db", e);
-                    continue;
-                }
-                strAddress = asString(coin.getOwner());
-                balance = balanceMap.get(strAddress);
-                if(balance == null) {
-                    balance = new ContractBalance();
-                    balanceMap.put(strAddress, balance);
-                }
-                if (coin.usable()) {
-                    balance.addUsable(coin.getNa());
-                } else {
-                    //TODO pierre 合约地址是否存在锁定金额
-                    balance.addLocked(coin.getNa());
+            if(addUtxoList != null) {
+                for (Entry<byte[], byte[]> addUtxo : addUtxoList) {
+                    coin = new Coin();
+                    try {
+                        coin.parse(addUtxo.getValue());
+                    } catch (NulsException e) {
+                        Log.error("parse contract coin error form db", e);
+                        continue;
+                    }
+                    strAddress = asString(coin.getOwner());
+                    balance = balanceMap.get(strAddress);
+                    if(balance == null) {
+                        balance = new ContractBalance();
+                        balanceMap.put(strAddress, balance);
+                    }
+                    if (coin.usable()) {
+                        balance.addUsable(coin.getNa());
+                    } else {
+                        //TODO pierre 合约地址是否存在锁定金额
+                        balance.addLocked(coin.getNa());
+                    }
                 }
             }
 
-            for (Entry<byte[], byte[]> deleteUtxo : deleteUtxoList) {
-                coin = new Coin();
-                try {
-                    coin.parse(deleteUtxo.getValue());
-                } catch (NulsException e) {
-                    Log.error("parse contract coin error form db", e);
-                    continue;
-                }
-                strAddress = asString(coin.getOwner());
-                balance = balanceMap.get(strAddress);
-                if(balance == null) {
-                    balance = new ContractBalance();
-                    balanceMap.put(strAddress, balance);
-                }
-                if (coin.usable()) {
-                    balance.minusUsable(coin.getNa());
-                } else {
-                    //TODO pierre 合约地址是否存在锁定金额
-                    balance.minusLocked(coin.getNa());
+            if(deleteUtxoList != null) {
+                for (Entry<byte[], byte[]> deleteUtxo : deleteUtxoList) {
+                    coin = new Coin();
+                    try {
+                        coin.parse(deleteUtxo.getValue());
+                    } catch (NulsException e) {
+                        Log.error("parse contract coin error form db", e);
+                        continue;
+                    }
+                    strAddress = asString(coin.getOwner());
+                    balance = balanceMap.get(strAddress);
+                    if(balance == null) {
+                        balance = new ContractBalance();
+                        balanceMap.put(strAddress, balance);
+                    }
+                    if (coin.usable()) {
+                        balance.minusUsable(coin.getNa());
+                    } else {
+                        //TODO pierre 合约地址是否存在锁定金额
+                        balance.minusLocked(coin.getNa());
+                    }
                 }
             }
         } finally {

@@ -21,40 +21,38 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package io.nuls.contract.storage.service;
+package io.nuls.contract.entity.tx.processor;
 
-import io.nuls.db.model.Entry;
-import io.nuls.db.service.BatchOperation;
+import io.nuls.contract.entity.tx.ContractTransferTransaction;
+import io.nuls.contract.entity.tx.CreateContractTransaction;
 import io.nuls.kernel.model.Result;
+import io.nuls.kernel.model.Transaction;
+import io.nuls.kernel.processor.TransactionProcessor;
+import io.nuls.kernel.validate.ValidateResult;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * @desription:
  * @author: PierreLuo
- * @date: 2018/6/5
+ * @date: 2018/6/7
  */
-public interface ContractUtxoStorageService {
+public class ContractTransferTxProcessor implements TransactionProcessor<ContractTransferTransaction> {
+    @Override
+    public Result onRollback(ContractTransferTransaction tx, Object secondaryData) {
+        //TODO pierre auto-generated method stub
+        return null;
+    }
 
-    @Deprecated
-    Result saveUTXO(byte[] key, byte[] value);
+    @Override
+    public Result onCommit(ContractTransferTransaction tx, Object secondaryData) {
+        //TODO pierre auto-generated method stub
+        return null;
+    }
 
-    @Deprecated
-    Result batchSaveUTXO(List<Entry<byte[], byte[]>> utxos);
-
-    @Deprecated
-    Result deleteUTXO(byte[] key);
-
-    @Deprecated
-    Result batchDeleteUTXO(List<byte[]> utxos);
-
-    byte[] getUTXO(byte[] key);
-
-    List<Entry<byte[], byte[]>> loadAllCoinList();
-
-    Result batchSaveAndDeleteUTXO(List<Entry<byte[], byte[]>> utxosToSave, List<byte[]> utxosToDelete);
-
-    BatchOperation createBatchOperation();
+    @Override
+    public ValidateResult conflictDetect(List<Transaction> txList) {
+        //TODO pierre auto-generated method stub
+        return null;
+    }
 }

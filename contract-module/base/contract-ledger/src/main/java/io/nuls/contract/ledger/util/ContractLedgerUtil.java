@@ -23,6 +23,7 @@
  */
 package io.nuls.contract.ledger.util;
 
+import io.nuls.contract.storage.service.ContractAddressStorageService;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Component;
 import io.nuls.kernel.model.Transaction;
@@ -38,9 +39,14 @@ import java.util.List;
 @Component
 public class ContractLedgerUtil {
 
+    @Autowired
+    private static ContractAddressStorageService contractAddressStorageService;
+
     public static boolean isContractAddress(byte[] addressBytes) {
-        //TODO pierre 判断是否为合约地址
-        return true;
+        if(addressBytes == null) {
+            return false;
+        }
+        return contractAddressStorageService.isExistContractAddress(addressBytes);
     }
 
     /**
