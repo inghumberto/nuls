@@ -1,5 +1,6 @@
 package io.nuls.contract.service.impl;
 
+import io.nuls.account.ledger.model.CoinDataResult;
 import io.nuls.account.ledger.model.TransactionInfo;
 import io.nuls.account.ledger.service.AccountLedgerService;
 import io.nuls.contract.constant.ContractErrorCode;
@@ -8,25 +9,33 @@ import io.nuls.contract.entity.txdata.CallContractData;
 import io.nuls.contract.entity.txdata.CreateContractData;
 import io.nuls.contract.entity.txdata.DeleteContractData;
 import io.nuls.contract.helper.VMHelper;
+import io.nuls.contract.ledger.manager.ContractBalanceManager;
 import io.nuls.contract.ledger.service.ContractTransactionInfoService;
 import io.nuls.contract.ledger.service.ContractUtxoService;
 import io.nuls.contract.ledger.util.ContractLedgerUtil;
 import io.nuls.contract.service.ContractService;
 import io.nuls.contract.storage.po.TransactionInfoPo;
+import io.nuls.contract.util.ContractCoinComparator;
 import io.nuls.contract.vm.program.ProgramCall;
 import io.nuls.contract.vm.program.ProgramCreate;
 import io.nuls.contract.vm.program.ProgramExecutor;
 import io.nuls.contract.vm.program.ProgramResult;
 import io.nuls.core.tools.log.Log;
+import io.nuls.kernel.constant.KernelErrorCode;
 import io.nuls.kernel.exception.NulsException;
+import io.nuls.kernel.exception.NulsRuntimeException;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Service;
 import io.nuls.kernel.lite.core.bean.InitializingBean;
+import io.nuls.kernel.model.Coin;
+import io.nuls.kernel.model.Na;
 import io.nuls.kernel.model.Result;
 import io.nuls.kernel.model.Transaction;
+import io.nuls.kernel.utils.TransactionFeeCalculator;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -46,6 +55,9 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
     private ContractUtxoService contractUtxoService;
 
     @Autowired
+    private ContractBalanceManager contractBalanceManager;
+
+    @Autowired
     private AccountLedgerService accountLedgerService;
 
     @Autowired
@@ -54,6 +66,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
     private ProgramExecutor programExecutor;
 
     private Lock saveLock = new ReentrantLock();
+    private Lock lock = new ReentrantLock();
 
     @Override
     public void afterPropertiesSet() throws NulsException {
@@ -374,6 +387,64 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             }
         }
         return resultTxs;
+    }
+
+    /**
+     * @param address
+     * @param amount
+     * @return
+     * @throws NulsException
+     */
+    public CoinDataResult getContractSpecialTransferCoinData(byte[] address, Na amount) throws NulsException {
+        lock.lock();
+        try {
+            CoinDataResult coinDataResult = new CoinDataResult();
+            List<Coin> coinList = contractBalanceManager.getCoinListByAddress(address);
+            if (coinList.isEmpty()) {
+                coinDataResult.setEnough(false);
+                return coinDataResult;
+            }
+
+            // 将所有余额从小到大排序
+            Collections.sort(coinList, ContractCoinComparator.getInstance());
+
+            boolean enough = false;
+            List<Coin> coins = new ArrayList<>();
+            Na values = Na.ZERO;
+            Coin coin;
+            // 将所有余额从小到大排序后，累计未花费的余额
+            for (int i = 0, length = coinList.size(); i < length; i++) {
+                coin = coinList.get(i);
+                if (!coin.usable()) {
+                    continue;
+                }
+                coins.add(coin);
+                // 每次累加一条未花费余额
+                values = values.add(coin.getNa());
+                if (values.isGreaterOrEquals(amount)) {
+                    // 余额足够后，需要判断是否找零
+                    Na change = values.subtract(amount);
+                    if (change.isGreaterThan(Na.ZERO)) {
+                        Coin changeCoin = new Coin();
+                        changeCoin.setOwner(address);
+                        changeCoin.setNa(change);
+                        coinDataResult.setChange(changeCoin);
+                    }
+                    enough = true;
+                    coinDataResult.setEnough(true);
+                    coinDataResult.setFee(Na.ZERO);
+                    coinDataResult.setCoinList(coins);
+                    break;
+                }
+            }
+            if (!enough) {
+                coinDataResult.setEnough(false);
+                return coinDataResult;
+            }
+            return coinDataResult;
+        } finally {
+            lock.unlock();
+        }
     }
 
 }

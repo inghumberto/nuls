@@ -245,6 +245,20 @@ public class ContractBalanceManager {
 
     public List<Coin> getCoinListByAddress(byte[] address) {
         List<Coin> coinList = new ArrayList<>();
+        List<Entry<byte[], byte[]>> rawList = contractUtxoStorageService.loadAllCoinList();
+        for (Entry<byte[], byte[]> coinEntry : rawList) {
+            Coin coin = new Coin();
+            try {
+                coin.parse(coinEntry.getValue());
+            } catch (NulsException e) {
+                Log.info("parse coin form db error");
+                continue;
+            }
+            if (Arrays.equals(coin.getOwner(), address)) {
+                coin.setOwner(coinEntry.getKey());
+                coinList.add(coin);
+            }
+        }
         return coinList;
     }
 }
