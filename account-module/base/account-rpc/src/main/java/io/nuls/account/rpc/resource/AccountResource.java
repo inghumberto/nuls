@@ -38,6 +38,8 @@ import io.nuls.account.service.AccountBaseService;
 import io.nuls.account.service.AccountCacheService;
 import io.nuls.account.service.AccountService;
 import io.nuls.account.service.AliasService;
+import io.nuls.account.util.AccountTool;
+import io.nuls.core.tools.crypto.AESEncrypt;
 import io.nuls.core.tools.crypto.Base58;
 import io.nuls.core.tools.crypto.ECKey;
 import io.nuls.core.tools.crypto.Hex;
@@ -57,10 +59,7 @@ import io.swagger.annotations.*;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -118,6 +117,39 @@ public class AccountResource {
         return Result.getSuccess().setData(list).toRpcClientResult();
     }
 
+    @POST
+    @Path("/offline")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "[创建] 创建离线账户, 该账户不保存到数据库, 并将直接返回账户的所有信息 ", notes = "result.data: List<Account>")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "success", response = ArrayList.class)
+    })
+    public RpcClientResult createOfflineAccount(@ApiParam(name = "form", value = "账户表单数据", required = true)
+                                                        AccountCreateForm form) {
+        int count = form.getCount() < 1 ? 1 : form.getCount();
+        if (count <= 0 || count > AccountTool.CREATE_MAX_SIZE) {
+            return Result.getFailed(AccountErrorCode.PARAMETER_ERROR, "between 0 and 100 can be created at once").toRpcClientResult();
+        }
+        String password = form.getPassword();
+        if (StringUtils.isNotBlank(password) && !StringUtils.validPassword(password)) {
+            return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG,
+                    "Length between 8 and 20, the combination of characters and numbers").toRpcClientResult();
+        }
+        List<AccountDto> accounts = new ArrayList<>();
+        try {
+            for (int i = 0; i < count; i++) {
+                Account account = AccountTool.createAccount();
+                if (StringUtils.isNotBlank(password)) {
+                    account.encrypt(password);
+                }
+                accounts.add(new AccountDto(account));
+            }
+        } catch (NulsException e) {
+            return Result.getFailed().toRpcClientResult();
+        }
+        return Result.getSuccess().setData(accounts).toRpcClientResult();
+    }
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "[查询] 查询账户列表 [3.3.4]", notes = "result.data: Page<AccountDto>")
@@ -137,7 +169,8 @@ public class AccountResource {
         if (pageSize == 0) {
             pageSize = 100;
         }
-        List<Account> accountList = accountService.getAccountList().getData();
+        Collection<Account> accounts = accountService.getAccountList().getData();
+        List<Account> accountList = new ArrayList<>(accounts);
         Page<Account> page = new Page<>(pageNumber, pageSize);
         page.setTotal(accountList.size());
         int start = (pageNumber - 1) * pageSize;
@@ -185,11 +218,11 @@ public class AccountResource {
             @ApiResponse(code = 200, message = "success", response = RpcClientResult.class)
     })
     public RpcClientResult isEncrypted(@ApiParam(name = "address", value = "账户地址", required = true)
-                               @PathParam("address") String address) {
+                                       @PathParam("address") String address) {
         if (!Address.validAddress(address)) {
             return Result.getFailed(AccountErrorCode.ADDRESS_ERROR).toRpcClientResult();
         }
-        return accountService.isEncrypted(address).setData(address).toRpcClientResult();
+        return accountService.isEncrypted(address).toRpcClientResult();
     }
 
     @POST
@@ -235,11 +268,11 @@ public class AccountResource {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "success", response = Result.class)
     })
-    public RpcClientResult getIsAliasExist(@ApiParam(name = "aliasName", value = "别名", required = true) @QueryParam("aliasName") String aliasName) {
-        if (StringUtils.isBlank(aliasName)) {
+    public RpcClientResult isAliasExist(@ApiParam(name = "alias", value = "别名", required = true) @QueryParam("alias") String alias) {
+        if (StringUtils.isBlank(alias)) {
             return Result.getFailed(AccountErrorCode.PARAMETER_ERROR).toRpcClientResult();
         }
-        RpcClientResult result = new RpcClientResult(aliasService.isAliasExist(aliasName), KernelErrorCode.SUCCESS);
+        RpcClientResult result = new RpcClientResult(aliasService.isAliasExist(alias), KernelErrorCode.SUCCESS);
         return result;
     }
 
@@ -250,41 +283,15 @@ public class AccountResource {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "success", response = Result.class)
     })
-    public RpcClientResult getAddressByAlias(@ApiParam(name = "aliasName", value = "别名", required = true) @QueryParam("aliasName") String aliasName) {
-        if (StringUtils.isBlank(aliasName)) {
+    public RpcClientResult getAddressByAlias(@ApiParam(name = "alias", value = "别名", required = true) @QueryParam("alias") String alias) {
+        if (StringUtils.isBlank(alias)) {
             return Result.getFailed(AccountErrorCode.PARAMETER_ERROR).toRpcClientResult();
         }
-        Alias alias = aliasService.getAlias(aliasName);
-        if(null == alias){
-            return  new RpcClientResult(false, AccountErrorCode.ALIAS_NOT_EXIST);
+        Alias aliasObj = aliasService.getAlias(alias);
+        if (null == aliasObj) {
+            return new RpcClientResult(false, AccountErrorCode.ALIAS_NOT_EXIST);
         }
-        return Result.getSuccess().setData(Base58.encode(alias.getAddress())).toRpcClientResult();
-    }
-
-    @GET
-    @Path("/balance/{address}")
-    @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation("[余额] 查询账户余额 [3.3.3]")
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "success", response = BalanceDto.class)
-    })
-    public RpcClientResult getBalance(@ApiParam(name = "address", value = "账户地址", required = true)
-                                      @PathParam("address") String address) {
-        if (!Address.validAddress(address)) {
-            return Result.getFailed(AccountErrorCode.ADDRESS_ERROR).toRpcClientResult();
-        }
-        try {
-            Address addr = new Address(address);
-            Result<Balance> result = accountLedgerService.getBalance(addr.getBase58Bytes());
-            if (result.isFailed()) {
-                return result.toRpcClientResult();
-            }
-            Balance balance = result.getData();
-            return Result.getSuccess().setData(new BalanceDto(balance)).toRpcClientResult();
-        } catch (NulsException e) {
-            Log.error(e);
-            return Result.getFailed(AccountErrorCode.FAILED).toRpcClientResult();
-        }
+        return Result.getSuccess().setData(Base58.encode(aliasObj.getAddress())).toRpcClientResult();
     }
 
     @GET
@@ -372,10 +379,8 @@ public class AccountResource {
     @ApiOperation(value = "[解锁] 解锁账户", notes = "")
     public RpcClientResult unlock(@ApiParam(name = "address", value = "账户地址", required = true)
                                   @PathParam("address") String address,
-                                  @ApiParam(name = "password", value = "账户密码", required = true)
-                                  @QueryParam("password") String password,
-                                  @ApiParam(name = "unlockTime", value = "解锁时间默认120秒(单位:秒)")
-                                  @QueryParam("unlockTime") Integer unlockTime) {
+                                  @ApiParam(name = "form", value = "解锁表单数据", required = true)
+                                          AccountUnlockForm form) {
         Account account = accountService.getAccount(address).getData();
         if (null == account) {
             return Result.getFailed(AccountErrorCode.ACCOUNT_NOT_EXIST).toRpcClientResult();
@@ -390,6 +395,8 @@ public class AccountResource {
                 accountUnlockSchedulerMap.remove(addr);
             }
         }
+        String password = form.getPassword();
+        Integer unlockTime = form.getUnlockTime();
         try {
             account.unlock(password);
             accountCacheService.putAccount(account);
@@ -434,6 +441,100 @@ public class AccountResource {
         return accountBaseService.setPassword(address, password).toRpcClientResult();
     }
 
+    @POST
+    @Path("/offline/password/")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "[设密码] 设置离线账户账户密码")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "success", response = Result.class)
+    })
+    public RpcClientResult setPassword(@ApiParam(name = "form", value = "设置离线账户密码表单数据", required = true)
+                                               OfflineAccountPasswordForm form) {
+        String address = form.getAddress();
+        String priKey = form.getPriKey();
+        String password = form.getPassword();
+
+        if (StringUtils.isBlank(address) || !Address.validAddress(address)) {
+            return Result.getFailed(AccountErrorCode.PARAMETER_ERROR, "address error").toRpcClientResult();
+        }
+        if (StringUtils.isBlank(priKey) || !ECKey.isValidPrivteHex(priKey)) {
+            return Result.getFailed(AccountErrorCode.PARAMETER_ERROR, "priKey error").toRpcClientResult();
+        }
+        if (StringUtils.isBlank(password) || !StringUtils.validPassword(password)) {
+            return Result.getFailed(AccountErrorCode.PASSWORD_FORMAT_WRONG).toRpcClientResult();
+        }
+
+        //验证地址是否正确
+        ECKey key = ECKey.fromPrivate(new BigInteger(Hex.decode(priKey)));
+        try {
+            String newAddress = AccountTool.newAddress(key).getBase58();
+            if (!newAddress.equals(address)) {
+                return Result.getFailed(AccountErrorCode.ADDRESS_ERROR, "address and private key do not match").toRpcClientResult();
+            }
+        } catch (NulsException e) {
+            return Result.getFailed(AccountErrorCode.ADDRESS_ERROR, "address and private key do not match").toRpcClientResult();
+        }
+
+        try {
+            Account account = AccountTool.createAccount(priKey);
+            return Result.getSuccess().setData(Hex.encode(account.getEncryptedPriKey())).toRpcClientResult();
+        } catch (NulsException e) {
+            return Result.getFailed(AccountErrorCode.FAILED).toRpcClientResult();
+        }
+    }
+
+    @PUT
+    @Path("/offline/password/")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "[离线钱包修改密码] 根据原密码修改账户密码")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "success", response = Result.class)
+    })
+    public RpcClientResult updatePassword(@ApiParam(name = "form", value = "修改账户密码表单数据", required = true)
+                                                  OfflineAccountPasswordForm form) {
+        String address = form.getAddress();
+        String priKey = form.getPriKey();
+        String password = form.getPassword();
+        String newPassword = form.getNewPassword();
+
+        if (StringUtils.isBlank(address) || !Address.validAddress(address)) {
+            return Result.getFailed(AccountErrorCode.PARAMETER_ERROR, "address error").toRpcClientResult();
+        }
+        if (StringUtils.isBlank(priKey)) {
+            return Result.getFailed(AccountErrorCode.PARAMETER_ERROR, "priKey error").toRpcClientResult();
+        }
+        if (StringUtils.isBlank(password) || !StringUtils.validPassword(password)) {
+            return Result.getFailed(AccountErrorCode.PASSWORD_FORMAT_WRONG).toRpcClientResult();
+        }
+        if (StringUtils.isBlank(newPassword) || !StringUtils.validPassword(newPassword)) {
+            return Result.getFailed(AccountErrorCode.PASSWORD_FORMAT_WRONG).toRpcClientResult();
+        }
+
+        try {
+            byte[] priKeyBytes = AESEncrypt.decrypt(Hex.decode(priKey), password);
+            return getEncryptedPrivateKey(address, Hex.encode(priKeyBytes), newPassword).toRpcClientResult();
+        } catch (Exception e) {
+            return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG).toRpcClientResult();
+        }
+    }
+
+    public Result getEncryptedPrivateKey(String address, String priKey, String password) {
+        if (!ECKey.isValidPrivteHex(priKey)) {
+            return Result.getFailed(AccountErrorCode.PARAMETER_ERROR);
+        }
+        Account account;
+        try {
+            account = AccountTool.createAccount(priKey);
+            if (!address.equals(account.getAddress().getBase58())) {
+                return Result.getFailed(AccountErrorCode.PARAMETER_ERROR);
+            }
+            account.encrypt(password);
+        } catch (NulsException e) {
+            return Result.getFailed(AccountErrorCode.FAILED);
+        }
+        return Result.getSuccess().setData(Hex.encode(account.getEncryptedPriKey()));
+    }
+
     @PUT
     @Path("/password/{address}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -454,7 +555,7 @@ public class AccountResource {
             return Result.getFailed(AccountErrorCode.PARAMETER_ERROR, "The password is required").toRpcClientResult();
         }
         if (StringUtils.isBlank(newPassword)) {
-            return Result.getFailed(AccountErrorCode.PARAMETER_ERROR, "The newPassword is required").toRpcClientResult();
+            return Result.getFailed(AccountErrorCode.PARAMETER_ERROR, "The new password is required").toRpcClientResult();
         }
         if (!StringUtils.validPassword(password)) {
             return Result.getFailed(AccountErrorCode.PASSWORD_FORMAT_WRONG).toRpcClientResult();
@@ -464,6 +565,7 @@ public class AccountResource {
         }
         return this.accountBaseService.changePassword(address, password, newPassword).toRpcClientResult();
     }
+
 
     @PUT
     @Path("/password/prikey")
@@ -481,7 +583,7 @@ public class AccountResource {
         }
         String newPassword = form.getPassword();
         if (StringUtils.isBlank(newPassword)) {
-            return Result.getFailed(AccountErrorCode.PARAMETER_ERROR, "The newPassword is required").toRpcClientResult();
+            return Result.getFailed(AccountErrorCode.PARAMETER_ERROR, "The new password is required").toRpcClientResult();
         }
         if (!StringUtils.validPassword(newPassword)) {
             return Result.getFailed(AccountErrorCode.PASSWORD_FORMAT_WRONG).toRpcClientResult();
@@ -588,6 +690,12 @@ public class AccountResource {
         if (null == form || null == form.getOverwrite()) {
             return Result.getFailed(AccountErrorCode.PARAMETER_ERROR).toRpcClientResult();
         }
+
+        String priKey = form.getPriKey();
+        if (!ECKey.isValidPrivteHex(priKey)) {
+            return Result.getFailed(AccountErrorCode.PARAMETER_ERROR).toRpcClientResult();
+        }
+
         if (!form.getOverwrite()) {
             ECKey key = null;
             try {
@@ -601,10 +709,7 @@ public class AccountResource {
                 return Result.getFailed(AccountErrorCode.ACCOUNT_EXIST).toRpcClientResult();
             }
         }
-        String priKey = form.getPriKey();
-        if (!ECKey.isValidPrivteHex(priKey)) {
-            return Result.getFailed(AccountErrorCode.PARAMETER_ERROR).toRpcClientResult();
-        }
+
         String password = form.getPassword();
         if (StringUtils.isNotBlank(password) && !StringUtils.validPassword(password)) {
             return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG).toRpcClientResult();

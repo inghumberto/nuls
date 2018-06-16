@@ -52,6 +52,8 @@ public class AccountBaseService {
     @Autowired
     private AccountStorageService accountStorageService;
 
+    private AccountCacheService accountCacheService = AccountCacheService.getInstance();
+
     /**
      * 获取账户私钥
      * @param address
@@ -113,6 +115,7 @@ public class AccountBaseService {
             if(result.isFailed()){
                 return Result.getFailed(AccountErrorCode.FAILED);
             }
+            accountCacheService.localAccountMaps.put(account.getAddress().getBase58(), account);
         } catch (NulsException e) {
             Log.error(e);
             return Result.getFailed();
@@ -131,10 +134,10 @@ public class AccountBaseService {
             return Result.getFailed(AccountErrorCode.ADDRESS_ERROR);
         }
         if(StringUtils.isBlank(oldPassword)){
-            return Result.getFailed(AccountErrorCode.PARAMETER_ERROR,"The oldPassword is required");
+            return Result.getFailed(AccountErrorCode.PARAMETER_ERROR,"The old password is required");
         }
         if(StringUtils.isBlank(newPassword)){
-            return Result.getFailed(AccountErrorCode.PARAMETER_ERROR,"The newPassword is required");
+            return Result.getFailed(AccountErrorCode.PARAMETER_ERROR,"The new password is required");
         }
         if (!StringUtils.validPassword(oldPassword)) {
             return Result.getFailed(AccountErrorCode.PASSWORD_FORMAT_WRONG);
@@ -155,10 +158,16 @@ public class AccountBaseService {
             }
             account.encrypt(newPassword, true);
             AccountPo po = new AccountPo(account);
-            return accountStorageService.updateAccount(po);
+
+            Result result = accountStorageService.updateAccount(po);
+            if(result.isFailed()){
+                return Result.getFailed(AccountErrorCode.FAILED);
+            }
+            accountCacheService.localAccountMaps.put(account.getAddress().getBase58(), account);
+            return result;
         } catch (Exception e) {
             Log.error(e);
-            return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG, "The oldPassword is wrong, change password failed");
+            return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG, "The old password is wrong, change password failed");
         }
     }
 

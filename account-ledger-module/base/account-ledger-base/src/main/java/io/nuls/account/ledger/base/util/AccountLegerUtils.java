@@ -35,6 +35,7 @@ import io.nuls.kernel.utils.VarInt;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -50,17 +51,31 @@ public class AccountLegerUtils {
     private final static int TX_HASH_LENGTH = NulsDigestData.HASH_LENGTH;
 
     public static boolean isLocalAccount(byte[] address) {
-        List<Account> localAccountList = accountService.getAccountList().getData();
+        Collection<Account> localAccountList = accountService.getAccountList().getData();
         if (localAccountList == null || localAccountList.size() == 0) {
             return false;
         }
 
-        for (int i = 0; i < localAccountList.size(); i++) {
-            if (Arrays.equals(localAccountList.get(i).getAddress().getBase58Bytes(), address)) {
+        for (Account account : localAccountList) {
+            if (Arrays.equals(account.getAddress().getBase58Bytes(), address)) {
                 return true;
             }
         }
         return false;
+    }
+
+    public static List<byte[]> getLocalAddresses() {
+        List<byte[]> result = new ArrayList<>();
+        Collection<Account> localAccountList = accountService.getAccountList().getData();
+        if (localAccountList == null || localAccountList.size() == 0) {
+            return result;
+        }
+        List<byte[]> destAddresses = new ArrayList<>();
+        for (Account account : localAccountList) {
+            destAddresses.add(account.getAddress().getBase58Bytes());
+        }
+
+        return destAddresses;
     }
 
     public static List<byte[]> getRelatedAddresses(Transaction tx) {
@@ -68,7 +83,7 @@ public class AccountLegerUtils {
         if (tx == null) {
             return result;
         }
-        List<Account> localAccountList = accountService.getAccountList().getData();
+        Collection<Account> localAccountList = accountService.getAccountList().getData();
         if (localAccountList == null || localAccountList.size() == 0) {
             return result;
         }
@@ -80,7 +95,7 @@ public class AccountLegerUtils {
         return getRelatedAddresses(tx, destAddresses);
     }
 
-    private static List<byte[]> getRelatedAddresses(Transaction tx, List<byte[]> addresses) {
+    public static List<byte[]> getRelatedAddresses(Transaction tx, List<byte[]> addresses) {
         List<byte[]> result = new ArrayList<>();
         if (tx == null) {
             return result;
@@ -109,7 +124,7 @@ public class AccountLegerUtils {
         if (tx == null) {
             return false;
         }
-        List<Account> localAccountList = accountService.getAccountList().getData();
+        Collection<Account> localAccountList = accountService.getAccountList().getData();
         if (localAccountList == null || localAccountList.size() == 0) {
             return false;
         }

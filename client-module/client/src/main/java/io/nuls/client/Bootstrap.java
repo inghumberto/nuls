@@ -27,6 +27,8 @@ package io.nuls.client;
 
 import io.nuls.client.rpc.RpcServerManager;
 import io.nuls.client.rpc.constant.RpcConstant;
+import io.nuls.client.rpc.resources.util.FileUtil;
+import io.nuls.client.version.VersionManager;
 import io.nuls.client.web.view.WebViewBootstrap;
 import io.nuls.consensus.poc.cache.TxMemoryPool;
 import io.nuls.consensus.poc.config.ConsensusConfig;
@@ -46,6 +48,7 @@ import io.nuls.network.model.Node;
 import io.nuls.network.service.NetworkService;
 import io.nuls.protocol.service.BlockService;
 
+import java.io.File;
 import java.util.*;
 
 /**
@@ -69,12 +72,12 @@ public class Bootstrap {
             MicroKernelBootstrap mk = MicroKernelBootstrap.getInstance();
             mk.init();
             mk.start();
+            VersionManager.start();
             initModules();
             String ip = NulsConfig.MODULES_CONFIG.getCfgValue(RpcConstant.CFG_RPC_SECTION, RpcConstant.CFG_RPC_SERVER_IP, RpcConstant.DEFAULT_IP);
             int port = NulsConfig.MODULES_CONFIG.getCfgValue(RpcConstant.CFG_RPC_SECTION, RpcConstant.CFG_RPC_SERVER_PORT, RpcConstant.DEFAULT_PORT);
             RpcServerManager.getInstance().startServer(ip, port);
         } while (false);
-
         TaskManager.asynExecuteRunnable(new WebViewBootstrap());
 
         while (true) {

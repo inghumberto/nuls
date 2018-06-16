@@ -40,6 +40,7 @@ import io.nuls.account.storage.service.AliasStorageService;
 import io.nuls.account.tx.AliasTransaction;
 import io.nuls.account.util.AccountTool;
 import io.nuls.core.tools.crypto.*;
+import io.nuls.core.tools.crypto.Exception.CryptoException;
 import io.nuls.core.tools.log.Log;
 import io.nuls.core.tools.param.AssertUtil;
 import io.nuls.core.tools.str.StringUtils;
@@ -55,10 +56,7 @@ import io.nuls.kernel.script.P2PKHScriptSig;
 import io.nuls.kernel.utils.TransactionFeeCalculator;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -86,16 +84,10 @@ public class AccountServiceImpl implements AccountService {
 
     private AccountCacheService accountCacheService = AccountCacheService.getInstance();
 
-    /**
-     * 本地账户集合
-     * Collection of local accounts
-     */
-    public static Set<String> LOCAL_ADDRESS_LIST = ConcurrentHashMap.newKeySet();
-
     @Override
     public Result<List<Account>> createAccount(int count, String password) {
         if (count <= 0 || count > AccountTool.CREATE_MAX_SIZE) {
-            return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG, "between 0 and 100 can be created at once");
+            return Result.getFailed(AccountErrorCode.PARAMETER_ERROR, "between 0 and 100 can be created at once");
         }
         if (StringUtils.isNotBlank(password) && !StringUtils.validPassword(password)) {
             return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG, "Length between 8 and 20, the combination of characters and numbers");
@@ -104,7 +96,6 @@ public class AccountServiceImpl implements AccountService {
         try {
             List<Account> accounts = new ArrayList<>();
             List<AccountPo> accountPos = new ArrayList<>();
-            List<String> resultList = new ArrayList<>();
             for (int i = 0; i < count; i++) {
                 Account account = AccountTool.createAccount();
                 if (StringUtils.isNotBlank(password)) {
@@ -113,7 +104,6 @@ public class AccountServiceImpl implements AccountService {
                 accounts.add(account);
                 AccountPo po = new AccountPo(account);
                 accountPos.add(po);
-                resultList.add(account.getAddress().toString());
             }
             if (accountStorageService == null) {
                 Log.info("accountStorageService is null");
@@ -122,7 +112,9 @@ public class AccountServiceImpl implements AccountService {
             if (result.isFailed()) {
                 return result;
             }
-            LOCAL_ADDRESS_LIST.addAll(resultList);
+            for(Account account : accounts) {
+                accountCacheService.localAccountMaps.put(account.getAddress().getBase58(), account);
+            }
             return Result.getSuccess().setData(accounts);
         } catch (Exception e) {
             Log.error(e);
@@ -171,7 +163,7 @@ public class AccountServiceImpl implements AccountService {
         if (result.isFailed()) {
             return result;
         }
-        LOCAL_ADDRESS_LIST.remove(address);
+        accountCacheService.localAccountMaps.remove(account.getAddress().getBase58());
         return Result.getSuccess();
     }
 
@@ -226,7 +218,7 @@ public class AccountServiceImpl implements AccountService {
         if (result.isFailed()) {
             return result;
         }
-        LOCAL_ADDRESS_LIST.add(keyStore.getAddress());
+        accountCacheService.localAccountMaps.put(account.getAddress().getBase58(), account);
         accountLedgerService.importLedgerByAddress(account.getAddress().getBase58());
         return Result.getSuccess().setData(account);
     }
@@ -290,7 +282,7 @@ public class AccountServiceImpl implements AccountService {
         if (result.isFailed()) {
             return result;
         }
-        LOCAL_ADDRESS_LIST.add(keyStore.getAddress());
+        accountCacheService.localAccountMaps.put(account.getAddress().getBase58(), account);
         accountLedgerService.importLedgerByAddress(account.getAddress().getBase58());
         return Result.getSuccess().setData(account);
     }
@@ -338,7 +330,7 @@ public class AccountServiceImpl implements AccountService {
         if (result.isFailed()) {
             return result;
         }
-        LOCAL_ADDRESS_LIST.add(account.getAddress().toString());
+        accountCacheService.localAccountMaps.put(account.getAddress().getBase58(), account);
         accountLedgerService.importLedgerByAddress(account.getAddress().getBase58());
         return Result.getSuccess().setData(account);
     }
@@ -399,25 +391,10 @@ public class AccountServiceImpl implements AccountService {
         if (null != accountCache) {
             return accountCache;
         }
-        AccountPo accountPo = null;
-        try {
-            Result<AccountPo> result = accountStorageService.getAccount(Base58.decode(address));
-            if (result.isFailed()) {
-                return null;
-            }
-            accountPo = result.getData();
-        } catch (Exception e) {
-            Log.error(e);
-            return null;
+        if(accountCacheService.localAccountMaps == null) {
+            getAccountList();
         }
-        if (accountPo == null) {
-            return null;
-        }
-        Account account = accountPo.toAccount();
-        if (!LOCAL_ADDRESS_LIST.contains(account.getAddress().toString())) {
-            LOCAL_ADDRESS_LIST.add(account.getAddress().toString());
-        }
-        return account;
+        return accountCacheService.localAccountMaps.get(address);
     }
 
     @Override
@@ -448,7 +425,13 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public Result<List<Account>> getAccountList() {
+    public Result<Collection<Account>> getAccountList() {
+
+        if(accountCacheService.localAccountMaps != null) {
+            return Result.getSuccess().setData(accountCacheService.localAccountMaps.values());
+        }
+        accountCacheService.localAccountMaps = new ConcurrentHashMap<>();
+
         List<Account> list = new ArrayList<>();
         Result<List<AccountPo>> result = accountStorageService.getAccountList();
         if (result.isFailed()) {
@@ -464,7 +447,9 @@ public class AccountServiceImpl implements AccountService {
             list.add(account);
             addressList.add(account.getAddress().getBase58());
         }
-        LOCAL_ADDRESS_LIST = addressList;
+        for(Account account : list) {
+            accountCacheService.localAccountMaps.put(account.getAddress().getBase58(), account);
+        }
         return Result.getSuccess().setData(list);
     }
 
@@ -519,8 +504,8 @@ public class AccountServiceImpl implements AccountService {
             return Result.getFailed(AccountErrorCode.ACCOUNT_NOT_EXIST);
         }
         Result result = new Result();
-        result.setSuccess(account.isEncrypted());
-        return result;
+        boolean rs = account.isEncrypted();
+        return result.setSuccess(rs);
     }
 
     @Override
@@ -597,7 +582,11 @@ public class AccountServiceImpl implements AccountService {
         //加过密(有密码)并且没有解锁, 就验证密码 Already encrypted(Added password) and did not unlock, verify password
         if (account.isEncrypted() && account.isLocked()) {
             AssertUtil.canNotEmpty(password, "password can not be empty");
-            return this.signDigest(digest, AESEncrypt.decrypt(account.getEncryptedPriKey(), password));
+            try {
+                return this.signDigest(digest, AESEncrypt.decrypt(account.getEncryptedPriKey(), password));
+            } catch (CryptoException e) {
+                throw new NulsException(AccountErrorCode.DECRYPT_ACCOUNT_ERROR);
+            }
         } else {
             return this.signDigest(digest, account.getPriKey());
         }
@@ -749,5 +738,4 @@ public class AccountServiceImpl implements AccountService {
             return Result.getFailed(e.getMessage());
         }
     }
-
 }

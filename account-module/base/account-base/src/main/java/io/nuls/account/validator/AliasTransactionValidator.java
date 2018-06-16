@@ -79,7 +79,7 @@ public class AliasTransactionValidator implements NulsDataValidator<AliasTransac
         List<AliasPo> list = aliasStorageService.getAliasList().getData();
         for (AliasPo aliasPo : list) {
             if (Base58.encode(aliasPo.getAddress()).equals(Base58.encode(alias.getAddress()))) {
-                return ValidateResult.getFailedResult(this.getClass().getName(), AccountErrorCode.ALIAS_EXIST);
+                return ValidateResult.getFailedResult(this.getClass().getName(), AccountErrorCode.ACCOUNT_ALREADY_SET_ALIAS);
             }
         }
         if (!Address.validAddress(alias.getAddress())) {
@@ -92,7 +92,7 @@ public class AliasTransactionValidator implements NulsDataValidator<AliasTransac
         if (aliasPo != null) {
             return ValidateResult.getFailedResult(this.getClass().getName(), AccountErrorCode.ALIAS_EXIST);
         }
-        if (tx.isFreeOfFee()) {
+        if (tx.isSystemTx()) {
             return ValidateResult.getFailedResult(alias.getClass().getName(), TransactionErrorCode.FEE_NOT_RIGHT);
         }
         CoinData coinData = tx.getCoinData();

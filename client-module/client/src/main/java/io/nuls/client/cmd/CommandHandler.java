@@ -60,6 +60,8 @@ public class CommandHandler {
 
     public static final Map<String, CommandProcessor> PROCESSOR_MAP = new TreeMap<>();
 
+    public static ConsoleReader CONSOLE_READER;
+
     public CommandHandler() {
 
     }
@@ -87,9 +89,9 @@ public class CommandHandler {
         register(new CreateProcessor());
         register(new GetAccountProcessor());
         register(new GetAccountsProcessor());
-        //register(new GetAssetProcessor());
+//        register(new GetAssetProcessor());
         register(new GetBalanceProcessor());
-        //register(new GetWalletBalanceProcessor());
+//        register(new GetWalletBalanceProcessor());
         register(new GetPrivateKeyProcessor());
 //        register(new ImportByKeyStoreProcessor());
         register(new ImportByPrivateKeyProcessor());
@@ -132,10 +134,10 @@ public class CommandHandler {
         register(new ExitProcessor());
         register(new HelpProcessor());
         register(new VersionProcessor());
+        register(new UpgradeProcessor());
 
         sdkInit();
     }
-
 
     private void sdkInit() {
         String port = null;
@@ -175,15 +177,14 @@ public class CommandHandler {
         } catch (NulsException e) {
             e.printStackTrace();
         }
-        ConsoleReader reader = null;
         try {
-            reader = new ConsoleReader();
+            CONSOLE_READER = new ConsoleReader();
             List<Completer> completers = new ArrayList<Completer>();
             completers.add(new StringsCompleter(PROCESSOR_MAP.keySet()));
-            reader.addCompleter(new ArgumentCompleter(completers));
+            CONSOLE_READER.addCompleter(new ArgumentCompleter(completers));
             String line = null;
             do {
-                line = reader.readLine(CommandConstant.COMMAND_PS1);
+                line = CONSOLE_READER.readLine(CommandConstant.COMMAND_PS1);
                 if (StringUtils.isBlank(line)) {
                     continue;
                 }
@@ -193,8 +194,8 @@ public class CommandHandler {
 
         }finally {
             try {
-                if(!reader.delete()){
-                    reader.close();
+                if(!CONSOLE_READER.delete()){
+                    CONSOLE_READER.close();
                 }
             } catch (IOException e) {
                 e.printStackTrace();

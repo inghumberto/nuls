@@ -150,7 +150,7 @@ public class AliasService {
 
             tx.setCoinData(coinData);
             tx.setHash(NulsDigestData.calcDigestData(tx.serializeForHash()));
-            NulsSignData nulsSignData = accountService.signData(tx.getHash().serialize(), account, password);
+            NulsSignData nulsSignData = accountService.signDigest(tx.getHash().getDigestBytes(), account, password);
             P2PKHScriptSig scriptSig = new P2PKHScriptSig(nulsSignData, account.getPubKey());
             tx.setScriptSig(scriptSig.serialize());
             Result saveResult = accountLedgerService.verifyAndSaveUnconfirmedTransaction(tx);
@@ -193,6 +193,8 @@ public class AliasService {
                 if (resultAcc.isFailed()) {
                     this.rollbackAlias(aliaspo);
                 }
+                Account account = po.toAccount();
+                accountCacheService.localAccountMaps.put(account.getAddress().getBase58(), account);
             }
         } catch (Exception e) {
             this.rollbackAlias(aliaspo);
@@ -234,6 +236,8 @@ public class AliasService {
                     if (result.isFailed()) {
                         return Result.getFailed(AccountErrorCode.FAILED);
                     }
+                    Account account = accountPo.toAccount();
+                    accountCacheService.localAccountMaps.put(account.getAddress().getBase58(), account);
                 }
             }
         } catch (Exception e) {

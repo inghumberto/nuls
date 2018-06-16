@@ -58,7 +58,7 @@ public class VersionProcessor implements CommandProcessor {
 
     @Override
     public boolean argsValidate(String[] args) {
-        if(args.length != 1) {
+        if (args.length != 1) {
             return false;
         }
         return true;
@@ -66,7 +66,7 @@ public class VersionProcessor implements CommandProcessor {
 
     @Override
     public CommandResult execute(String[] args) {
-        RpcClientResult result = restFul.get("/sys/version", null);
+        RpcClientResult result = restFul.get("/client/version", null);
         if (result.isFailed()) {
             return CommandResult.getFailed(result.getMsg());
         }

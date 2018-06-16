@@ -28,6 +28,7 @@ import io.nuls.db.model.Entry;
 import io.nuls.kernel.model.Coin;
 import io.nuls.kernel.model.Result;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,9 +47,9 @@ public interface LocalUtxoStorageService {
 
     Result batchDeleteUTXO(Set<byte[]> utxos);
 
-    List<Entry<byte[], byte[]>> loadAllCoinList();
+    Collection<Entry<byte[], byte[]>> loadAllCoinList();
 
-    Result batchSaveAndDeleteUTXO(Map<byte[], byte[]> utxosToSave, Set<byte[]> utxosToDelete);
+    Result batchSaveAndDeleteUTXO(List<Entry<byte[], byte[]>> utxosToSave, List<byte[]> utxosToDelete);
 
     byte[] getUtxoBytes(byte[] owner);
 

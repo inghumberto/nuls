@@ -35,7 +35,10 @@ import io.nuls.account.service.AccountService;
 import io.nuls.core.tools.crypto.Base58;
 import io.nuls.core.tools.log.Log;
 import io.nuls.db.model.Entry;
+import io.nuls.kernel.constant.NulsConstant;
+import io.nuls.kernel.context.NulsContext;
 import io.nuls.kernel.exception.NulsException;
+import io.nuls.kernel.func.TimeService;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Component;
 import io.nuls.kernel.model.Coin;
@@ -59,9 +62,9 @@ public class BalanceManager {
     @Autowired
     private AccountService accountService;
 
-    private Map<String, Balance> balanceMap = new HashMap<>();
+    private Map<String, BalanceCacheEntity> balanceMap = new HashMap<>();
 
-    Lock lock = new ReentrantLock();
+    private Lock lock = new ReentrantLock();
 
     /**
      * 初始化缓存本地所有账户的余额信息
@@ -69,7 +72,7 @@ public class BalanceManager {
     public void initAccountBalance() {
         balanceMap.clear();
 
-        List<Account> accounts = accountService.getAccountList().getData();
+        Collection<Account> accounts = accountService.getAccountList().getData();
         if (accounts == null) {
             return;
         }
@@ -105,19 +108,18 @@ public class BalanceManager {
             if (address == null || address.length != AddressTool.HASH_LENGTH) {
                 return Result.getFailed(AccountLedgerErrorCode.PARAMETER_ERROR);
             }
-            Result<Account> accountResult = accountService.getAccount(address);
-            if (accountResult.isFailed()) {
-                return Result.getFailed(accountResult.getErrorCode());
-            }
 
-            String addressKey = new String(address);
-            Balance balance = balanceMap.get(addressKey);
-            if (balance == null) {
+            String addressKey = Base58.encode(address);
+            BalanceCacheEntity entity = balanceMap.get(addressKey);
+            Balance balance = null;
+            if (entity == null || (entity.getEarlistLockTime() > 0L && entity.getEarlistLockTime() <= TimeService.currentTimeMillis())) {
                 try {
                     balance = calBalanceByAddress(address);
                 } catch (NulsException e) {
                     Log.info("getbalance of address[" + Base58.encode(address) + "] error");
                 }
+            }else {
+                balance = entity.getBalance();
             }
             return Result.getSuccess().setData(balance);
         } finally {
@@ -134,7 +136,7 @@ public class BalanceManager {
         lock.lock();
         try {
             if (address != null) {
-                balanceMap.remove(new String(address));
+                balanceMap.remove(Base58.encode(address));
             }
         } finally {
             lock.unlock();
@@ -166,6 +168,8 @@ public class BalanceManager {
             List<Coin> coinList = getCoinListByAddress(address);
             Collections.sort(coinList, CoinComparator.getInstance());
 
+            BalanceCacheEntity balanceCacheEntity = new BalanceCacheEntity();
+
             Na usable = Na.ZERO;
             Na locked = Na.ZERO;
             for (Coin coin : coinList) {
@@ -173,15 +177,32 @@ public class BalanceManager {
                     usable = usable.add(coin.getNa());
                 } else {
                     locked = locked.add(coin.getNa());
+                    long lockTime = coin.getLockTime();
+                    // the consensus lock type
+                    if (lockTime <= 0L) {
+                        continue;
+                    }
+                    // the height lock type
+                    if (balanceCacheEntity.getLowestLockHeigh() == 0L || (lockTime < NulsConstant.BlOCKHEIGHT_TIME_DIVIDE && lockTime < balanceCacheEntity.getLowestLockHeigh())) {
+                        balanceCacheEntity.setLowestLockHeigh(lockTime);
+                        continue;
+                    }
+                    // the time lock type
+                    if (balanceCacheEntity.getEarlistLockTime() == 0L || (lockTime > NulsConstant.BlOCKHEIGHT_TIME_DIVIDE && lockTime < balanceCacheEntity.getEarlistLockTime())) {
+                        balanceCacheEntity.setEarlistLockTime(lockTime);
+                        continue;
+                    }
                 }
             }
+
 
             Balance balance = new Balance();
             balance.setUsable(usable);
             balance.setLocked(locked);
             balance.setBalance(usable.add(locked));
+            balanceCacheEntity.setBalance(balance);
 
-            balanceMap.put(new String(address), balance);
+            balanceMap.put(Base58.encode(address), balanceCacheEntity);
             return balance;
         } finally {
             lock.unlock();
@@ -190,7 +211,7 @@ public class BalanceManager {
 
     public List<Coin> getCoinListByAddress(byte[] address) {
         List<Coin> coinList = new ArrayList<>();
-        List<Entry<byte[], byte[]>> rawList = localUtxoStorageService.loadAllCoinList();
+        Collection<Entry<byte[], byte[]>> rawList = localUtxoStorageService.loadAllCoinList();
         for (Entry<byte[], byte[]> coinEntry : rawList) {
             Coin coin = new Coin();
             try {
@@ -205,5 +226,32 @@ public class BalanceManager {
             }
         }
         return coinList;
+    }
+
+    public void refreshBalanceIfNesessary() {
+        lock.lock();
+        try {
+            long bestHeight = NulsContext.getInstance().getBestHeight();
+            for (String address : balanceMap.keySet()) {
+                BalanceCacheEntity entity = balanceMap.get(address);
+                if(entity == null){
+                    balanceMap.remove(address);
+                    continue;
+                }
+                if (entity.getEarlistLockTime() == 0L && entity.getLowestLockHeigh() == 0L) {
+                    continue;
+                }
+                if (entity.getLowestLockHeigh() > 0L && entity.getLowestLockHeigh() <= bestHeight) {
+                    balanceMap.remove(address);
+                    continue;
+                }
+                if (entity.getEarlistLockTime() > 0L && entity.getEarlistLockTime() <= TimeService.currentTimeMillis()) {
+                    balanceMap.remove(address);
+                    continue;
+                }
+            }
+        } finally {
+            lock.unlock();
+        }
     }
 }
