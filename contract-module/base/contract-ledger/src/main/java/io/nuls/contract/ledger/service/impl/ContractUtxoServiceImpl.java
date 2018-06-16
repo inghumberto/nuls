@@ -93,6 +93,7 @@ public class ContractUtxoServiceImpl implements ContractUtxoService {
         if (coinData != null) {
             // 在合约独立账本中，只有合约特殊转账交易才能从合约地址中转出资产，所以只有这类交易才处理fromCoinData -> delete - from
             List<byte[]> fromList = new ArrayList<>();
+            // 合约特殊转账交易
             if(tx.getType() == ContractConstant.TX_TYPE_CONTRACT_TRANSFER) {
                 List<Coin> froms = coinData.getFrom();
                 byte[] fromSource;
@@ -113,8 +114,7 @@ public class ContractUtxoServiceImpl implements ContractUtxoService {
                         Transaction sourceTx = null;
                         try {
                             sourceTx = ledgerService.getTx(NulsDigestData.fromDigestHex(Hex.encode(utxoFromTxHash)));
-                            //TODO pierre 未确认交易可能已经被删除 BlockServiceImpl.saveBlock, 需要想办法处理
-                            //TODO pierre 特殊合约交易是否需要未确认交易, 这类交易在打包/验证区块时执行, 已代表这是确认交易, 不过打包时连续特殊交易如何处理，如何组装CoinData
+                            //TODO pierre 特殊合约交易查询连续交易, 这类交易在打包/验证区块时执行, 已代表这是确认交易, 打包时连续特殊交易处理
                             if (sourceTx == null) {
                                 //TODO sourceTx = accountLedgerService.getUnconfirmedTransaction(NulsDigestData.fromDigestHex(Hex.encode(utxoFromTxHash))).getData();
                             }
