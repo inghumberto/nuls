@@ -20,7 +20,8 @@ public class BlockHeaderDto implements Serializable {
     private long time;
     private long height;
     private long txCount;
-    private byte[] packingAddress;//23 bytes
+    //23 bytes
+    private byte[] packingAddress;
     private String signature ;
     private byte[] stateRoot;
 

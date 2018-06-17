@@ -332,7 +332,7 @@ public class UtxoLedgerServiceImpl implements LedgerService {
                     }
                 } else {
                     fromAddressBytes = fromOfFromCoin.getOwner();
-                    //TODO pierre 非合约转账交易，验证fromAdress是否是合约地址，如果是，则返回失败，非合约转账交易不能转出合约地址资产
+                    //pierre contract 非合约转账交易，验证fromAdress是否是合约地址，如果是，则返回失败，非合约转账交易不能转出合约地址资产
                     if(transaction.getType() != ContractConstant.TX_TYPE_CONTRACT_TRANSFER) {
                         boolean isContractAddress = contractService.isContractAddress(fromAddressBytes);
                         if(isContractAddress) {

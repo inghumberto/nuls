@@ -49,6 +49,10 @@ public class BlockHeader extends BaseNulsData {
     private long txCount;
     private P2PKHScriptSig scriptSign;
     private byte[] extend;
+    /**
+     * 智能合约世界状态根
+     */
+    private byte[] stateRoot;
 
     private transient int size;
     private transient byte[] packingAddress;
@@ -73,6 +77,7 @@ public class BlockHeader extends BaseNulsData {
         size += SerializeUtils.sizeOfUint32();
         size += SerializeUtils.sizeOfBytes(extend);
         size += SerializeUtils.sizeOfNulsData(scriptSign);
+        size += SerializeUtils.sizeOfBytes(stateRoot);
         return size;
     }
 
@@ -85,6 +90,7 @@ public class BlockHeader extends BaseNulsData {
         stream.writeUint32(txCount);
         stream.writeBytesWithLength(extend);
         stream.writeNulsData(scriptSign);
+        stream.writeBytesWithLength(stateRoot);
     }
 
     @Override
@@ -101,6 +107,7 @@ public class BlockHeader extends BaseNulsData {
             Log.error(e);
         }
         this.scriptSign = byteBuffer.readNulsData(new P2PKHScriptSig());
+        this.stateRoot = byteBuffer.readByLengthByte();
     }
 
     private NulsDigestData forceCalcHash() {
@@ -198,5 +205,14 @@ public class BlockHeader extends BaseNulsData {
 
     public void setPackingAddress(byte[] packingAddress) {
         this.packingAddress = packingAddress;
+    }
+
+    public byte[] getStateRoot() {
+        return stateRoot;
+    }
+
+    //TODO pierre 设置智能合约世界状态根
+    public void setStateRoot(byte[] stateRoot) {
+        this.stateRoot = stateRoot;
     }
 }
