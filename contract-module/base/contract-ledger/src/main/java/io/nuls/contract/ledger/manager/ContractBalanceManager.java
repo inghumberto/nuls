@@ -113,7 +113,7 @@ public class ContractBalanceManager {
                 return Result.getFailed(ContractErrorCode.CONTRACT_ADDRESS_NOT_EXIST);
             }
 
-            //TODO pierre 终止合约，销毁合约地址，删除合约地址UTXO
+            //TODO pierre 终止合约，是否销毁合约地址？是否删除合约地址UTXO ？
             List<Entry<byte[], byte[]>> rawList = contractUtxoStorageService.loadAllCoinList();
             Coin coin;
             byte[] address;
@@ -202,7 +202,7 @@ public class ContractBalanceManager {
                     if (coin.usable()) {
                         balance.addUsable(coin.getNa());
                     } else {
-                        //TODO pierre 合约地址是否存在锁定金额
+                        //TODO pierre 合约地址是否存在锁定金额 ？
                         balance.addLocked(coin.getNa());
                     }
                 }
@@ -226,7 +226,7 @@ public class ContractBalanceManager {
                     if (coin.usable()) {
                         balance.minusUsable(coin.getNa());
                     } else {
-                        //TODO pierre 合约地址是否存在锁定金额
+                        //TODO pierre 合约地址是否存在锁定金额 ？
                         balance.minusLocked(coin.getNa());
                     }
                 }

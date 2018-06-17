@@ -81,7 +81,7 @@ public class ContractTransferTransactionStorageImpl implements ContractTransferT
     }
 
     @Override
-    public Result<Transaction> getContractTransferTx(NulsDigestData hash) {
+    public Result<ContractTransferTransaction> getContractTransferTx(NulsDigestData hash) {
         try {
             byte[] txBytes = dbService.get(ContractStorageConstant.DB_NAME_CONTRACT_SPECIAL_TX, hash.serialize());
             if (txBytes == null) {
@@ -96,8 +96,4 @@ public class ContractTransferTransactionStorageImpl implements ContractTransferT
         }
     }
 
-    @Override
-    public Result loadAllContractTransferList() {
-        return Result.getSuccess();
-    }
 }

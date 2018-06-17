@@ -33,6 +33,7 @@ import io.nuls.contract.ledger.manager.ContractBalanceManager;
 import io.nuls.contract.ledger.module.ContractBalance;
 import io.nuls.contract.ledger.service.ContractUtxoService;
 import io.nuls.contract.ledger.util.ContractLedgerUtil;
+import io.nuls.contract.storage.service.ContractTransferTransactionStorageService;
 import io.nuls.contract.storage.service.ContractUtxoStorageService;
 import io.nuls.core.tools.array.ArraysTool;
 import io.nuls.core.tools.crypto.Hex;
@@ -64,6 +65,9 @@ public class ContractUtxoServiceImpl implements ContractUtxoService {
 
     @Autowired
     private ContractUtxoStorageService contractUtxoStorageService;
+
+    @Autowired
+    private ContractTransferTransactionStorageService contractTransferTransactionStorageService;
 
     @Autowired
     private ContractBalanceManager contractBalanceManager;
@@ -114,9 +118,9 @@ public class ContractUtxoServiceImpl implements ContractUtxoService {
                         Transaction sourceTx = null;
                         try {
                             sourceTx = ledgerService.getTx(NulsDigestData.fromDigestHex(Hex.encode(utxoFromTxHash)));
-                            //TODO pierre 特殊合约交易查询连续交易, 这类交易在打包/验证区块时执行, 已代表这是确认交易, 打包时连续特殊交易处理
+                            // 特殊合约交易查询连续交易, 这类交易在打包/验证区块时执行, 已代表这是确认交易, 打包时连续特殊交易处理
                             if (sourceTx == null) {
-                                //TODO sourceTx = accountLedgerService.getUnconfirmedTransaction(NulsDigestData.fromDigestHex(Hex.encode(utxoFromTxHash))).getData();
+                                sourceTx = contractTransferTransactionStorageService.getContractTransferTx(NulsDigestData.fromDigestHex(Hex.encode(utxoFromTxHash))).getData();
                             }
                         } catch (Exception e) {
                             throw new NulsRuntimeException(e);

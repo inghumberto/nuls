@@ -40,6 +40,7 @@ import io.nuls.account.model.Account;
 import io.nuls.account.model.Address;
 import io.nuls.account.model.Balance;
 import io.nuls.account.service.AccountService;
+import io.nuls.contract.service.ContractService;
 import io.nuls.core.tools.crypto.Base58;
 import io.nuls.core.tools.crypto.ECKey;
 import io.nuls.core.tools.crypto.Hex;
@@ -103,6 +104,9 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
 
     @Autowired
     private TransactionInfoService transactionInfoService;
+
+    @Autowired
+    private ContractService contractService;
 
     private Lock lock = new ReentrantLock();
     private Lock saveLock = new ReentrantLock();
@@ -542,14 +546,24 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
             sig.setPublicKey(account.getPubKey());
             sig.setSignData(accountService.signDigest(tx.getHash().getDigestBytes(), account, password));
             tx.setScriptSig(sig.serialize());
+
+            // 保存未确认交易到本地账户
             Result saveResult = verifyAndSaveUnconfirmedTransaction(tx);
             if (saveResult.isFailed()) {
+                return saveResult;
+            }
+
+            // 保存未确认交易到合约账本
+            saveResult = contractService.saveUnconfirmedTransaction(tx);
+            if (saveResult.isFailed()) {
+                rollbackTransaction(tx);
                 return saveResult;
             }
 
             Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
                 this.rollbackTransaction(tx);
+                contractService.rollbackTransaction(tx);
                 return sendResult;
             }
             return Result.getSuccess().setData(tx.getHash().getDigestHex());

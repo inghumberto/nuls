@@ -37,6 +37,7 @@ import io.nuls.contract.entity.txdata.CallContractData;
 import io.nuls.contract.entity.txdata.CreateContractData;
 import io.nuls.contract.entity.txdata.DeleteContractData;
 import io.nuls.contract.helper.VMHelper;
+import io.nuls.contract.service.ContractService;
 import io.nuls.contract.service.ContractTxService;
 import io.nuls.contract.storage.service.ContractAddressStorageService;
 import io.nuls.contract.util.VMContext;
@@ -81,6 +82,8 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
     private TransactionService transactionService;
     @Autowired
     private ContractAddressStorageService contractStorageService;
+    @Autowired
+    private ContractService contractService;
     @Autowired
     private VMHelper vmHelper;
     @Autowired
@@ -227,22 +230,24 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             sig.setSignData(accountService.signData(tx.getHash().serialize(), account, password));
             tx.setScriptSig(sig.serialize());
 
-            // 保存未确认交易
+            // 保存未确认交易到本地账户
             Result saveResult = accountLedgerService.verifyAndSaveUnconfirmedTransaction(tx);
             if (saveResult.isFailed()) {
                 return saveResult;
             }
-            /*// 保存合约账户
-            saveResult = contractStorageService.saveContractAddress(contractAccount);
+
+            // 保存未确认交易到合约账本
+            saveResult = contractService.saveUnconfirmedTransaction(tx);
             if (saveResult.isFailed()) {
                 accountLedgerService.rollbackTransaction(tx);
                 return saveResult;
-            }*/
+            }
+
             // 广播交易
             Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
                 accountLedgerService.rollbackTransaction(tx);
-                //contractStorageService.deleteContractAddress(contractAccount.getAddress().getBase58Bytes());
+                contractService.rollbackTransaction(tx);
                 return sendResult;
             }
 
@@ -257,6 +262,15 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             Log.error(e);
             return Result.getFailed(e.getMessage());
         }
+    }
+
+    private Result saveUnconfirmedTransaction(Transaction tx) {
+        Result saveResult = accountLedgerService.verifyAndSaveUnconfirmedTransaction(tx);
+        if (saveResult.isFailed()) {
+            return saveResult;
+        }
+        saveResult = contractService.saveUnconfirmedTransaction(tx);
+        return saveResult;
     }
 
     /**
@@ -412,16 +426,25 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             sig.setSignData(accountService.signData(tx.getHash().serialize(), account, password));
             tx.setScriptSig(sig.serialize());
 
-            // 保存
+            // 保存未确认交易到本地账户
             Result saveResult = accountLedgerService.verifyAndSaveUnconfirmedTransaction(tx);
             if (saveResult.isFailed()) {
                 return saveResult;
             }
+
+            // 保存未确认交易到合约账本
+            saveResult = contractService.saveUnconfirmedTransaction(tx);
+            if (saveResult.isFailed()) {
+                accountLedgerService.rollbackTransaction(tx);
+                return saveResult;
+            }
+
             // 广播
             Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
                 // 失败则回滚
                 accountLedgerService.rollbackTransaction(tx);
+                contractService.rollbackTransaction(tx);
                 return sendResult;
             }
 
@@ -515,26 +538,16 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             sig.setSignData(accountService.signData(tx.getHash().serialize(), account, password));
             tx.setScriptSig(sig.serialize());
 
-            // 保存删除合约的交易
+            // 保存删除合约的交易到本地账本
             Result saveResult = accountLedgerService.verifyAndSaveUnconfirmedTransaction(tx);
             if (saveResult.isFailed()) {
                 return saveResult;
             }
-            /*// 删除合约账户
-            Result<Account> deleteResult = contractStorageService.deleteContractAddress(contractAddressBytes);
-            if (deleteResult.isFailed()) {
-                // 失败则回滚
-                accountLedgerService.rollbackTransaction(tx);
-                return deleteResult;
-            }*/
             // 广播交易
             Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
                 // 失败则回滚
                 accountLedgerService.rollbackTransaction(tx);
-                /*if(deleteResult.getData() != null) {
-                    contractStorageService.saveContractAddress(deleteResult.getData());
-                }*/
                 return sendResult;
             }
             return Result.getSuccess().setData(tx.getHash().getDigestHex());

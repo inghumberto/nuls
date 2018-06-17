@@ -25,12 +25,21 @@
 
 package io.nuls.contract.dto;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @desription:
  * @author: PierreLuo
  * @date: 2018/4/20
  */
 public class ContractResult {
+
+    /**
+     * 合约地址
+     */
+    private byte[] contractAddress;
+
     /**
      * 合约执行结果
      */
@@ -43,6 +52,25 @@ public class ContractResult {
      * 状态根
      */
     private byte[] stateRoot;
+
+    /**
+     * 合约转账交易
+     */
+    private List<ContractTransfer> transfers = new ArrayList<>();
+
+    /**
+     * 消息事件
+     */
+    private List<String> events = new ArrayList<>();
+
+
+    public byte[] getContractAddress() {
+        return contractAddress;
+    }
+
+    public void setContractAddress(byte[] contractAddress) {
+        this.contractAddress = contractAddress;
+    }
 
     public String getResult() {
         return result;
@@ -68,4 +96,19 @@ public class ContractResult {
         this.gasUsed = gasUsed;
     }
 
+    public List<String> getEvents() {
+        return events;
+    }
+
+    public void setEvents(List<String> events) {
+        this.events = events;
+    }
+
+    public List<ContractTransfer> getTransfers() {
+        return transfers;
+    }
+
+    public void setTransfers(List<ContractTransfer> transfers) {
+        this.transfers = transfers;
+    }
 }

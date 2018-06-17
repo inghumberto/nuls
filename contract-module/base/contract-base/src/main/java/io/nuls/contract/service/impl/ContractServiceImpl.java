@@ -5,6 +5,9 @@ import io.nuls.account.ledger.model.TransactionInfo;
 import io.nuls.account.ledger.service.AccountLedgerService;
 import io.nuls.contract.constant.ContractErrorCode;
 import io.nuls.contract.dto.ContractResult;
+import io.nuls.contract.dto.ContractTransfer;
+import io.nuls.contract.entity.tx.ContractTransferTransaction;
+import io.nuls.contract.entity.tx.CreateContractTransaction;
 import io.nuls.contract.entity.txdata.CallContractData;
 import io.nuls.contract.entity.txdata.CreateContractData;
 import io.nuls.contract.entity.txdata.DeleteContractData;
@@ -15,11 +18,10 @@ import io.nuls.contract.ledger.service.ContractUtxoService;
 import io.nuls.contract.ledger.util.ContractLedgerUtil;
 import io.nuls.contract.service.ContractService;
 import io.nuls.contract.storage.po.TransactionInfoPo;
+import io.nuls.contract.storage.service.ContractAddressStorageService;
+import io.nuls.contract.storage.service.ContractTransferTransactionStorageService;
 import io.nuls.contract.util.ContractCoinComparator;
-import io.nuls.contract.vm.program.ProgramCall;
-import io.nuls.contract.vm.program.ProgramCreate;
-import io.nuls.contract.vm.program.ProgramExecutor;
-import io.nuls.contract.vm.program.ProgramResult;
+import io.nuls.contract.vm.program.*;
 import io.nuls.core.tools.log.Log;
 import io.nuls.kernel.constant.KernelErrorCode;
 import io.nuls.kernel.exception.NulsException;
@@ -55,6 +57,12 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
     private ContractUtxoService contractUtxoService;
 
     @Autowired
+    private ContractTransferTransactionStorageService contractTransferTransactionStorageService;
+
+    @Autowired
+    private ContractAddressStorageService contractAddressStorageService;
+
+    @Autowired
     private ContractBalanceManager contractBalanceManager;
 
     @Autowired
@@ -88,8 +96,9 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             return Result.getFailed(ContractErrorCode.NULL_PARAMETER);
         }
         try {
+            byte[] contractAddress = create.getContractAddress();
             ProgramCreate programCreate = new ProgramCreate();
-            programCreate.setContractAddress(create.getContractAddress());
+            programCreate.setContractAddress(contractAddress);
             programCreate.setSender(create.getSender());
             programCreate.setValue(BigInteger.valueOf(create.getValue()));
             programCreate.setPrice(create.getPrice());
@@ -109,9 +118,12 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             // current state root
             byte[] stateRoot = track.getRoot();
             ContractResult contractResult = new ContractResult();
-            // 返回已使用gas和状态根
+            // 返回已使用gas、状态根、消息事件、合约转账
             contractResult.setGasUsed(programResult.getGasUsed());
             contractResult.setStateRoot(stateRoot);
+            contractResult.setEvents(programResult.getEvents());
+            contractResult.setTransfers(generateContractTransfer(programResult.getTransfers()));
+            contractResult.setContractAddress(contractAddress);
 
             Result<ContractResult> result = Result.getSuccess();
             result.setData(contractResult);
@@ -120,6 +132,22 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             Log.error(e);
             return Result.getFailed(e.getMessage());
         }
+    }
+
+    private List<ContractTransfer> generateContractTransfer(List<ProgramTransfer> transfers) {
+        if(transfers == null || transfers.size() == 0) {
+            return new ArrayList<>(0);
+        }
+        List<ContractTransfer> resultList = new ArrayList<>(transfers.size());
+        ContractTransfer contractTransfer;
+        for(ProgramTransfer transfer : transfers) {
+            contractTransfer = new ContractTransfer();
+            contractTransfer.setFrom(transfer.getFrom());
+            contractTransfer.setTo(transfer.getTo());
+            contractTransfer.setValue(transfer.getValue());
+            resultList.add(contractTransfer);
+        }
+        return resultList;
     }
 
     /**
@@ -137,8 +165,9 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             return Result.getFailed(ContractErrorCode.NULL_PARAMETER);
         }
         try {
+            byte[] contractAddress = call.getContractAddress();
             ProgramCall programCall = new ProgramCall();
-            programCall.setContractAddress(call.getContractAddress());
+            programCall.setContractAddress(contractAddress);
             programCall.setSender(call.getSender());
             programCall.setValue(BigInteger.valueOf(call.getValue()));
             programCall.setPrice(call.getPrice());
@@ -160,10 +189,13 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             // current state root
             byte[] stateRoot = track.getRoot();
             ContractResult contractResult = new ContractResult();
-            // 返回调用结果、已使用Gas和状态根
+            // 返回调用结果、已使用Gas、状态根、消息事件、合约转账
             contractResult.setResult(programResult.getResult());
             contractResult.setGasUsed(programResult.getGasUsed());
             contractResult.setStateRoot(stateRoot);
+            contractResult.setEvents(programResult.getEvents());
+            contractResult.setTransfers(generateContractTransfer(programResult.getTransfers()));
+            contractResult.setContractAddress(contractAddress);
 
             Result<ContractResult> result = Result.getSuccess();
             result.setData(contractResult);
@@ -189,9 +221,9 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             return Result.getFailed(ContractErrorCode.NULL_PARAMETER);
         }
         try {
-
+            byte[] contractAddress = delete.getContractAddress();
             ProgramExecutor track = programExecutor.begin(prevStateRoot);
-            ProgramResult programResult = track.stop(delete.getContractAddress(), delete.getSender());
+            ProgramResult programResult = track.stop(contractAddress, delete.getSender());
             track.commit();
 
             if(programResult.isError()) {
@@ -204,6 +236,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             ContractResult contractResult = new ContractResult();
             // 返回状态根
             contractResult.setStateRoot(stateRoot);
+            contractResult.setContractAddress(contractAddress);
 
             Result<ContractResult> result = Result.getSuccess();
             result.setData(contractResult);
@@ -239,6 +272,21 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
                 return Result.getFailed(ContractErrorCode.NULL_PARAMETER);
             }
 
+            // 如果是创建合约的交易，即刻保存合约地址到DB中，用于后面代码逻辑的校验
+            if(tx instanceof CreateContractTransaction) {
+                CreateContractData txData = ((CreateContractTransaction) tx).getTxData();
+                byte[] contractAddress = txData.getContractAddress();
+                Result result = contractAddressStorageService.saveContractAddress(contractAddress);
+                if(result.isFailed()) {
+                    return result;
+                }
+            }
+
+            // 合约账本不处理非合约相关交易
+            if(!ContractLedgerUtil.isRelatedTransaction(tx)) {
+                return Result.getSuccess().setData(new Integer(0));
+            }
+
             // 获取tx中是智能合约的地址列表
             List<byte[]> addresses = ContractLedgerUtil.getRelatedAddresses(tx);
 
@@ -272,6 +320,11 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             return Result.getFailed(ContractErrorCode.NULL_PARAMETER);
         }
 
+        // 合约账本不处理非合约相关交易
+        if(!ContractLedgerUtil.isRelatedTransaction(tx)) {
+            return Result.getSuccess().setData(new Integer(0));
+        }
+
         // 获取tx中是智能合约的地址列表
         List<byte[]> addresses = ContractLedgerUtil.getRelatedAddresses(tx);
 
@@ -290,8 +343,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             return result;
         }
 
-
-        // 不是创建交易的节点则需要保存UTXO
+        // 不是创建交易的节点则需要保存UTXO，创建交易的节点已经保存UTXO
         if (!isCreateTxNode) {
             result = contractUtxoService.saveUtxoForContractAddress(tx);
             if (result.isFailed()) {
@@ -300,6 +352,15 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             }
         }
 
+        // 合约转账交易需要保存交易信息到合约账本中
+        if(tx instanceof ContractTransferTransaction) {
+            result = contractTransferTransactionStorageService.saveContractTransferTx(tx.getHash(), tx);
+            if (result.isFailed()) {
+                contractUtxoService.deleteUtxoOfTransaction(tx);
+                contractTransactionInfoService.deleteTransactionInfo(txInfoPo);
+                return result;
+            }
+        }
         result.setData(new Integer(1));
         return result;
     }
@@ -342,6 +403,17 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
         if (result.isFailed()) {
             return result;
         }
+
+        // 合约转账交易需要删除交易
+        if(tx instanceof ContractTransferTransaction) {
+            result = contractTransferTransactionStorageService.deleteContractTransferTx(tx.getHash());
+            if (result.isFailed()) {
+                txInfoPo.setStatus(TransactionInfo.CONFIRMED);
+                contractTransactionInfoService.saveTransactionInfo(txInfoPo, addresses);
+                return result;
+            }
+        }
+        // 回滚UTXO并刷新余额
         result = contractUtxoService.deleteUtxoOfTransaction(tx);
 
         return result;
@@ -365,10 +437,6 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
         // 回滚确认交易
         for (int i = txListToRollback.size() - 1; i >= 0; i--) {
             rollbackTransaction(txListToRollback.get(i));
-        }
-        // 还原成未确认交易
-        for (int i = 0, length = txListToRollback.size(); i < length; i++) {
-            saveUnconfirmedTransaction(txListToRollback.get(i));
         }
         return Result.getSuccess().setData(new Integer(txListToRollback.size()));
     }
