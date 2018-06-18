@@ -52,7 +52,7 @@ public class ContractTransferTxProcessor implements TransactionProcessor<Contrac
 
     @Override
     public ValidateResult conflictDetect(List<Transaction> txList) {
-        //TODO pierre auto-generated method stub
-        return null;
+        //TODO pierre 检查冲突???
+        return ValidateResult.getSuccessResult();
     }
 }

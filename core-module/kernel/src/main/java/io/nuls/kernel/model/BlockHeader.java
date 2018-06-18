@@ -50,7 +50,7 @@ public class BlockHeader extends BaseNulsData {
     private P2PKHScriptSig scriptSign;
     private byte[] extend;
     /**
-     * 智能合约世界状态根
+     * pierre add 智能合约世界状态根
      */
     private byte[] stateRoot;
 

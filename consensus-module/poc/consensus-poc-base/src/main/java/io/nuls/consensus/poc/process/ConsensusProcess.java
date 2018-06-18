@@ -45,6 +45,17 @@ import io.nuls.consensus.poc.protocol.tx.RedPunishTransaction;
 import io.nuls.consensus.poc.protocol.tx.YellowPunishTransaction;
 import io.nuls.consensus.poc.provider.BlockQueueProvider;
 import io.nuls.consensus.poc.util.ConsensusTool;
+import io.nuls.contract.constant.ContractConstant;
+import io.nuls.contract.dto.ContractResult;
+import io.nuls.contract.dto.ContractTransfer;
+import io.nuls.contract.entity.tx.CallContractTransaction;
+import io.nuls.contract.entity.tx.ContractTransferTransaction;
+import io.nuls.contract.entity.tx.CreateContractTransaction;
+import io.nuls.contract.entity.tx.DeleteContractTransaction;
+import io.nuls.contract.entity.txdata.CallContractData;
+import io.nuls.contract.entity.txdata.CreateContractData;
+import io.nuls.contract.entity.txdata.DeleteContractData;
+import io.nuls.contract.service.ContractService;
 import io.nuls.core.tools.date.DateUtil;
 import io.nuls.core.tools.log.Log;
 import io.nuls.kernel.constant.TransactionErrorCode;
@@ -255,6 +266,7 @@ public class ConsensusProcess {
     }
 
     private Block doPacking(MeetingMember self, MeetingRound round) throws NulsException, IOException {
+        //TODO pierre 疑问 - 打包时, UTXO 是否已保存？？本地交易的话，已保存UTXO，那非本地交易的打包，UTXO是否已经保存？？？
 
         Block bestBlock = chainManager.getBestBlock();
 
@@ -289,7 +301,22 @@ public class ConsensusProcess {
 
         long time = System.currentTimeMillis();
 
+        /**
+         * pierre add 智能合约相关
+         */
+        byte[] stateRoot = null;
+        Result<ContractResult> callContractResult = null;
+        ContractResult contractResult = null;
+        List<ContractTransfer> transfers = null;
+        List<String> contractEvents = null;
+        List<ContractTransferTransaction> contractTransferTxs = null;
+        Map<String, Coin> toMapsOfContract = new HashMap<>();
+        Set<String> fromSetOfContract = new HashSet<>();
+        boolean isCorrectContractTransfer = true;
+
         while (true) {
+            isCorrectContractTransfer = true;
+
             if ((self.getPackEndTime() - TimeService.currentTimeMillis()) <= 500L) {
                 break;
             }
@@ -346,6 +373,45 @@ public class ConsensusProcess {
                 continue;
             }
 
+            // 打包时发现智能合约交易就调用智能合约
+            callContractResult = ConsensusTool.callContract(tx, bestBlock);
+            if(callContractResult.isFailed()) {
+                //TODO pierre 如果合约调用失败，是否丢弃这笔交易
+                continue;
+            } else {
+                contractResult = callContractResult.getData();
+                stateRoot = contractResult.getStateRoot();
+                transfers = contractResult.getTransfers();
+                contractEvents = contractResult.getEvents();
+                bd.setStateRoot(stateRoot);
+                if(contractEvents != null && contractEvents.size() > 0) {
+                    //TODO pierre 发送合约事件
+                }
+                // 创建合约转账交易
+                if(transfers != null && transfers.size() >0) {
+                    contractTransferTxs = ConsensusTool.createContractTransferTxs(transfers);
+
+                    //TODO pierre 是否出现错误转账，就丢弃整笔合约交易
+                    // 验证合约转账交易
+                    for(ContractTransferTransaction contractTransferTx : contractTransferTxs) {
+                        result = ConsensusTool.verifyContractTransferCoinData(contractTransferTx, toMapsOfContract, fromSetOfContract);
+                        if(result.isFailed()) {
+                            isCorrectContractTransfer = false;
+                            break;
+                        }
+                    }
+
+                    if(!isCorrectContractTransfer) {
+                        Log.warn(result.getMsg());
+                        continue;
+                    }
+                }
+                if(contractTransferTxs != null && contractTransferTxs.size() >0) {
+                    packingTxList.addAll(contractTransferTxs);
+                }
+            }
+
+
             if (!outHashSet.add(tx.getHash())) {
                 Log.warn("重复的交易");
                 continue;
@@ -388,6 +454,8 @@ public class ConsensusProcess {
 
         return newBlock;
     }
+
+
 
     /**
      * CoinBase transaction & Punish transaction

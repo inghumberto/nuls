@@ -40,6 +40,10 @@ public class BlockData {
     private List<Transaction> txList;
     private BlockRoundData roundData;
     private long time;
+    /**
+     * pierre add 合约状态根
+     */
+    private byte[] stateRoot;
 
     public long getHeight() {
         return height;
@@ -79,5 +83,13 @@ public class BlockData {
 
     public void setTime(long time) {
         this.time = time;
+    }
+
+    public byte[] getStateRoot() {
+        return stateRoot;
+    }
+
+    public void setStateRoot(byte[] stateRoot) {
+        this.stateRoot = stateRoot;
     }
 }

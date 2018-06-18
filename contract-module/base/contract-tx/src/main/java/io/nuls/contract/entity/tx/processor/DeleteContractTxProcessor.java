@@ -103,7 +103,7 @@ public class DeleteContractTxProcessor implements TransactionProcessor<DeleteCon
 
     @Override
     public ValidateResult conflictDetect(List<Transaction> txList) {
-        //TODO pierre auto-generated method stub
-        return null;
+        //TODO pierre 检查冲突???
+        return ValidateResult.getSuccessResult();
     }
 }

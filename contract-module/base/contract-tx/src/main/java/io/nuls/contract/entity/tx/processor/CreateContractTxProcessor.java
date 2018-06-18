@@ -65,6 +65,6 @@ public class CreateContractTxProcessor implements TransactionProcessor<CreateCon
     @Override
     public ValidateResult conflictDetect(List<Transaction> txList) {
         //TODO pierre 检查冲突???
-        return null;
+        return ValidateResult.getSuccessResult();
     }
 }

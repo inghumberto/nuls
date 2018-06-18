@@ -50,15 +50,15 @@ import io.nuls.core.tools.log.Log;
 import io.nuls.kernel.constant.KernelErrorCode;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.exception.NulsRuntimeException;
+import io.nuls.kernel.func.TimeService;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Service;
 import io.nuls.kernel.lite.core.bean.InitializingBean;
-import io.nuls.kernel.model.Coin;
-import io.nuls.kernel.model.Na;
-import io.nuls.kernel.model.Result;
-import io.nuls.kernel.model.Transaction;
+import io.nuls.kernel.model.*;
 import io.nuls.kernel.utils.TransactionFeeCalculator;
+import io.nuls.ledger.constant.LedgerErrorCode;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -481,13 +481,49 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
         return resultTxs;
     }
 
+    @Override
+    public Result<ContractTransferTransaction> transfer(byte[] from, byte[] to, Na values) {
+        try {
+            if(!ContractLedgerUtil.isContractAddress(from)) {
+                return Result.getFailed(ContractErrorCode.CONTRACT_ADDRESS_NOT_EXIST);
+            }
+            ContractTransferTransaction tx = new ContractTransferTransaction();
+            tx.setTime(TimeService.currentTimeMillis());
+
+            CoinData coinData = new CoinData();
+            Coin toCoin = new Coin(to, values);
+            coinData.getTo().add(toCoin);
+
+            CoinDataResult coinDataResult = getContractSpecialTransferCoinData(from, values);
+            if (!coinDataResult.isEnough()) {
+                return Result.getFailed(LedgerErrorCode.BALANCE_NOT_ENOUGH);
+            }
+            coinData.setFrom(coinDataResult.getCoinList());
+            if (coinDataResult.getChange() != null) {
+                coinData.getTo().add(coinDataResult.getChange());
+            }
+            tx.setCoinData(coinData);
+            tx.setHash(NulsDigestData.calcDigestData(tx.serializeForHash()));
+
+            // 合约转账交易不需要签名
+            Result result = saveConfirmedTransaction(tx);
+            if (result.isFailed()) {
+                return result;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
     /**
      * @param address
      * @param amount
      * @return
      * @throws NulsException
      */
-    public CoinDataResult getContractSpecialTransferCoinData(byte[] address, Na amount) throws NulsException {
+    public CoinDataResult getContractSpecialTransferCoinData(byte[] address, Na amount) {
         lock.lock();
         try {
             CoinDataResult coinDataResult = new CoinDataResult();

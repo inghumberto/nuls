@@ -27,6 +27,7 @@ import io.nuls.contract.dto.ContractResult;
 import io.nuls.contract.entity.txdata.CallContractData;
 import io.nuls.contract.entity.txdata.CreateContractData;
 import io.nuls.contract.entity.txdata.DeleteContractData;
+import io.nuls.kernel.model.Na;
 import io.nuls.kernel.model.Result;
 import io.nuls.kernel.model.Transaction;
 
@@ -84,6 +85,17 @@ public interface ContractService {
      * @return
      */
     Result<Integer> saveUnconfirmedTransaction(Transaction tx);
+
+
+    /**
+     * 合约转账交易
+     *
+     * @param from
+     * @param to
+     * @param values
+     * @return
+     */
+    Result transfer(byte[] from, byte[] to, Na values);
 
     /**
      * 保存 txInfo : key -> contractAddress + txHash, status is confirmed

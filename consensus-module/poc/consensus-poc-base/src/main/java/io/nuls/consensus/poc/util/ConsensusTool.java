@@ -45,6 +45,17 @@ import io.nuls.consensus.poc.protocol.util.PoConvertUtil;
 import io.nuls.consensus.poc.storage.po.AgentPo;
 import io.nuls.consensus.poc.storage.service.AgentStorageService;
 import io.nuls.consensus.poc.storage.service.DepositStorageService;
+import io.nuls.contract.constant.ContractConstant;
+import io.nuls.contract.dto.ContractResult;
+import io.nuls.contract.dto.ContractTransfer;
+import io.nuls.contract.entity.tx.CallContractTransaction;
+import io.nuls.contract.entity.tx.ContractTransferTransaction;
+import io.nuls.contract.entity.tx.CreateContractTransaction;
+import io.nuls.contract.entity.tx.DeleteContractTransaction;
+import io.nuls.contract.entity.txdata.CallContractData;
+import io.nuls.contract.entity.txdata.CreateContractData;
+import io.nuls.contract.entity.txdata.DeleteContractData;
+import io.nuls.contract.service.ContractService;
 import io.nuls.core.tools.array.ArraysTool;
 import io.nuls.core.tools.calc.DoubleUtils;
 import io.nuls.core.tools.crypto.Base58;
@@ -57,6 +68,7 @@ import io.nuls.kernel.func.TimeService;
 import io.nuls.kernel.model.*;
 import io.nuls.kernel.script.P2PKHScriptSig;
 import io.nuls.kernel.utils.VarInt;
+import io.nuls.kernel.validate.ValidateResult;
 import io.nuls.ledger.service.LedgerService;
 import io.nuls.protocol.constant.ProtocolConstant;
 import io.nuls.protocol.model.SmallBlock;
@@ -75,6 +87,10 @@ public class ConsensusTool {
     private static AgentStorageService agentStorageService = NulsContext.getServiceBean(AgentStorageService.class);
     private static DepositStorageService depositStorageService = NulsContext.getServiceBean(DepositStorageService.class);
     private static LedgerService ledgerService = NulsContext.getServiceBean(LedgerService.class);
+    /**
+     * pierre add 合约服务接口
+     */
+    private static ContractService contractService = NulsContext.getServiceBean(ContractService.class);
 
     public static SmallBlock getSmallBlock(Block block) {
         SmallBlock smallBlock = new SmallBlock();
@@ -357,5 +373,54 @@ public class ConsensusTool {
         return null;
     }
 
+    public static List<ContractTransferTransaction> createContractTransferTxs(List<ContractTransfer> transfers) {
+        //TODO pierre 创建合约转账交易
+        Result<ContractTransferTransaction> result = null;
+        List<ContractTransferTransaction> list = new ArrayList<>();
+        if(transfers != null && transfers.size() > 0) {
+            for(ContractTransfer transfer : transfers) {
+                result = contractService.transfer(transfer.getFrom(), transfer.getTo(), Na.valueOf(transfer.getValue().longValue()));
+                if(result.isSuccess()) {
+                    list.add(result.getData());
+                } else {
+                    Log.warn("contract transfer failed. Info: " + transfer);
+                }
+            }
+        }
+        return list;
+    }
+
+    public static Result<ContractResult> callContract(Transaction tx, Block bestBlock) {
+        long height = bestBlock.getHeader().getHeight();
+        byte[] stateRoot = bestBlock.getHeader().getStateRoot();
+        int tyType = tx.getType();
+        if (tyType == ContractConstant.TX_TYPE_CREATE_CONTRACT) {
+            CreateContractTransaction createContractTransaction = (CreateContractTransaction) tx;
+            CreateContractData createContractData = createContractTransaction.getTxData();
+            Result<ContractResult> contractResult = contractService.createContract(height, stateRoot, createContractData);
+            return contractResult;
+        } else if(tyType == ContractConstant.TX_TYPE_CALL_CONTRACT) {
+            CallContractTransaction callContractTransaction = (CallContractTransaction) tx;
+            CallContractData callContractData = callContractTransaction.getTxData();
+            Result<ContractResult> contractResult = contractService.callContract(height, stateRoot, callContractData);
+            return contractResult;
+        } else if(tyType == ContractConstant.TX_TYPE_DELETE_CONTRACT) {
+            DeleteContractTransaction deleteContractTransaction = (DeleteContractTransaction) tx;
+            DeleteContractData deleteContractData = deleteContractTransaction.getTxData();
+            Result<ContractResult> contractResult = contractService.deleteContract(height, stateRoot, deleteContractData);
+            return contractResult;
+        } else {
+            return Result.getSuccess();
+        }
+    }
+
+    public static ValidateResult verifyContractTransferCoinData(ContractTransferTransaction contractTransferTx, Map<String,Coin> toMapsOfContract, Set<String> fromSetOfContract) {
+        Transaction repeatTx = ledgerService.getTx(contractTransferTx.getHash());
+
+        if (repeatTx != null) {
+            return ValidateResult.getSuccessResult();
+        }
+        return ledgerService.verifyCoinData(contractTransferTx, toMapsOfContract, fromSetOfContract);
+    }
 }
 

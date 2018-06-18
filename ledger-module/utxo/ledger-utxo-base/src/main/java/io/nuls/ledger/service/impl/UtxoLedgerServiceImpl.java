@@ -293,7 +293,7 @@ public class UtxoLedgerServiceImpl implements LedgerService {
             // 公钥hash160
             byte[] user = null;
             // 获取交易的公钥及签名脚本
-            if (fromSize > 0) {
+            if (transaction.needVerifySignature() && fromSize > 0) {
                 try {
                     p2PKHScriptSig = P2PKHScriptSig.createFromBytes(transaction.getScriptSig());
                     user = p2PKHScriptSig.getSignerHash160();
@@ -332,7 +332,7 @@ public class UtxoLedgerServiceImpl implements LedgerService {
                     }
                 } else {
                     fromAddressBytes = fromOfFromCoin.getOwner();
-                    //pierre contract 非合约转账交易，验证fromAdress是否是合约地址，如果是，则返回失败，非合约转账交易不能转出合约地址资产
+                    // pierre add 非合约转账交易，验证fromAdress是否是合约地址，如果是，则返回失败，非合约转账交易不能转出合约地址资产
                     if(transaction.getType() != ContractConstant.TX_TYPE_CONTRACT_TRANSFER) {
                         boolean isContractAddress = contractService.isContractAddress(fromAddressBytes);
                         if(isContractAddress) {

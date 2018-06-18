@@ -23,7 +23,11 @@
  */
 package io.nuls.contract.dto;
 
+import io.nuls.core.tools.crypto.Base58;
+import io.nuls.kernel.model.Na;
+
 import java.math.BigInteger;
+import java.util.Arrays;
 
 /**
  * @desription:
@@ -60,5 +64,14 @@ public class ContractTransfer {
 
     public void setValue(BigInteger value) {
         this.value = value;
+    }
+
+    @Override
+    public String toString() {
+        return "ContractTransfer{" +
+                "from=" + Base58.encode(from) +
+                ", to=" + Base58.encode(to) +
+                ", value=" + Na.valueOf(value.longValue()).toText() +
+                '}';
     }
 }
