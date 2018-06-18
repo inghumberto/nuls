@@ -96,6 +96,7 @@ public class AccountResource {
     private ScheduledThreadPoolExecutor scheduler = new ScheduledThreadPoolExecutor(1);
 
     private Map<String, ScheduledFuture> accountUnlockSchedulerMap = new HashMap<>();
+    private Result rs;
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
@@ -228,6 +229,35 @@ public class AccountResource {
             return Result.getFailed(AccountErrorCode.ADDRESS_ERROR).toRpcClientResult();
         }
         return accountService.isEncrypted(address).toRpcClientResult();
+    }
+
+    @POST
+    @Path("/password/validation/{address}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation("[验证密码] 验证账户密码是否正确")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "success", response = Result.class)
+    })
+    public RpcClientResult validationPassword(@PathParam("address") String address,
+                                              @ApiParam(name = "form", value = "设置别名表单数据", required = true)
+                                                      AccountPasswordForm form) {
+        if (!Address.validAddress(address)) {
+            return Result.getFailed(AccountErrorCode.ADDRESS_ERROR).toRpcClientResult();
+        }
+        if (StringUtils.isBlank(form.getPassword())) {
+            return Result.getFailed(AccountErrorCode.PARAMETER_ERROR).toRpcClientResult();
+        }
+        Result<Account> rs = accountService.getAccount(address);
+        if (rs.isFailed()) {
+            return Result.getFailed(AccountErrorCode.ACCOUNT_NOT_EXIST).toRpcClientResult();
+        }
+        Account account = rs.getData();
+        if (account.validatePassword(form.getPassword())) {
+            return Result.getSuccess().toRpcClientResult();
+        } else {
+            return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG).toRpcClientResult();
+
+        }
     }
 
     @POST
@@ -449,7 +479,7 @@ public class AccountResource {
     @POST
     @Path("/offline/password/")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "[设密码] 设置离线账户账户密码")
+    @ApiOperation(value = "[设密码] 设置离线账户密码")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "success", response = Result.class)
     })
@@ -482,6 +512,7 @@ public class AccountResource {
 
         try {
             Account account = AccountTool.createAccount(priKey);
+            account.encrypt(password);
             return Result.getSuccess().setData(Hex.encode(account.getEncryptedPriKey())).toRpcClientResult();
         } catch (NulsException e) {
             return Result.getFailed(AccountErrorCode.FAILED).toRpcClientResult();
@@ -656,7 +687,7 @@ public class AccountResource {
      * Export file
      */
     private void backUpFile(AccountKeyStoreDto accountKeyStoreDto, HttpServletResponse response) {
-        try{
+        try {
             String fileName = accountKeyStoreDto.getAddress().concat(AccountConstant.ACCOUNTKEYSTORE_FILE_SUFFIX);
             //1.设置文件ContentType类型，这样设置，会自动判断下载文件类型
             response.setContentType("application/octet-stream");
@@ -713,7 +744,7 @@ public class AccountResource {
                 }
             }
         }
-        return Result.getSuccess().setData("The path to the backup file is " +  path + File.separator + fileName);
+        return Result.getSuccess().setData("The path to the backup file is " + path + File.separator + fileName);
     }
 
     @POST
@@ -747,6 +778,7 @@ public class AccountResource {
         Account account = (Account) result.getData();
         return Result.getSuccess().setData(account.getAddress().toString()).toRpcClientResult();
     }
+
     @POST
     @Path("/import/keystore")
     @Produces(MediaType.APPLICATION_JSON)
@@ -766,7 +798,7 @@ public class AccountResource {
             return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG).toRpcClientResult();
         }
         Result<AccountKeyStoreDto> rs = getAccountKeyStoreDto(in);
-        if(rs.isFailed()){
+        if (rs.isFailed()) {
             return rs.toRpcClientResult();
         }
         AccountKeyStoreDto accountKeyStoreDto = rs.getData();
@@ -786,7 +818,7 @@ public class AccountResource {
     }
 
 
-    private Result<AccountKeyStoreDto> getAccountKeyStoreDto(InputStream in){
+    private Result<AccountKeyStoreDto> getAccountKeyStoreDto(InputStream in) {
         StringBuilder ks = new StringBuilder();
         InputStreamReader inputStreamReader = null;
         BufferedReader bufferedReader = null;
