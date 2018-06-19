@@ -156,6 +156,16 @@ public class ProgramExecutorImpl implements ProgramExecutor {
             programResult.setGasUsed(vm.getGasUsed());
             programResult.setTransfers(vm.getTransfers());
             programResult.setEvents(vm.getEvents());
+            programResult.setNonce(repository.getNonce(programInvoke.getAddress()));
+            if (!vm.getResult().isError() && !vm.getResult().isException()) {
+                if (programInvoke.getValue() != null && programInvoke.getValue().compareTo(BigInteger.ZERO) > 0) {
+                    repository.addBalance(programInvoke.getAddress(), programInvoke.getValue());
+                }
+                for (ProgramTransfer programTransfer : vm.getTransfers()) {
+                    repository.addBalance(programTransfer.getFrom(), programTransfer.getValue().negate());
+                }
+            }
+            programResult.setBalance(repository.getBalance(programInvoke.getAddress()));
 
             Object resultValue = vm.getResult().getValue();
             if (resultValue != null) {

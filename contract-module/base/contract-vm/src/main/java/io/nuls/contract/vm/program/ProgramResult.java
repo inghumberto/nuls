@@ -1,5 +1,6 @@
 package io.nuls.contract.vm.program;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,6 +15,10 @@ public class ProgramResult {
     private String errorMessage;
 
     private String stackTrace;
+
+    private BigInteger balance;
+
+    private BigInteger nonce;
 
     private List<ProgramTransfer> transfers = new ArrayList<>();
 
@@ -68,6 +73,22 @@ public class ProgramResult {
         this.stackTrace = stackTrace;
     }
 
+    public BigInteger getBalance() {
+        return balance;
+    }
+
+    public void setBalance(BigInteger balance) {
+        this.balance = balance;
+    }
+
+    public BigInteger getNonce() {
+        return nonce;
+    }
+
+    public void setNonce(BigInteger nonce) {
+        this.nonce = nonce;
+    }
+
     public List<ProgramTransfer> getTransfers() {
         return transfers;
     }
@@ -96,6 +117,8 @@ public class ProgramResult {
         if (result != null ? !result.equals(that.result) : that.result != null) return false;
         if (errorMessage != null ? !errorMessage.equals(that.errorMessage) : that.errorMessage != null) return false;
         if (stackTrace != null ? !stackTrace.equals(that.stackTrace) : that.stackTrace != null) return false;
+        if (balance != null ? !balance.equals(that.balance) : that.balance != null) return false;
+        if (nonce != null ? !nonce.equals(that.nonce) : that.nonce != null) return false;
         if (transfers != null ? !transfers.equals(that.transfers) : that.transfers != null) return false;
         return events != null ? events.equals(that.events) : that.events == null;
     }
@@ -107,6 +130,8 @@ public class ProgramResult {
         result1 = 31 * result1 + (error ? 1 : 0);
         result1 = 31 * result1 + (errorMessage != null ? errorMessage.hashCode() : 0);
         result1 = 31 * result1 + (stackTrace != null ? stackTrace.hashCode() : 0);
+        result1 = 31 * result1 + (balance != null ? balance.hashCode() : 0);
+        result1 = 31 * result1 + (nonce != null ? nonce.hashCode() : 0);
         result1 = 31 * result1 + (transfers != null ? transfers.hashCode() : 0);
         result1 = 31 * result1 + (events != null ? events.hashCode() : 0);
         return result1;
@@ -120,6 +145,8 @@ public class ProgramResult {
                 ", error=" + error +
                 ", errorMessage=" + errorMessage +
                 ", stackTrace=" + stackTrace +
+                ", balance=" + balance +
+                ", nonce=" + nonce +
                 ", transfers=" + transfers +
                 ", events=" + events +
                 '}';
