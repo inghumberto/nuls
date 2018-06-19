@@ -13,11 +13,11 @@ import java.util.Map;
 
 public class JsonUtils {
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public static String toJson(Object value) {
         try {
-            return objectMapper.writeValueAsString(value);
+            return OBJECT_MAPPER.writeValueAsString(value);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -25,7 +25,7 @@ public class JsonUtils {
 
     public static <T> T toObject(String value, Class<T> valueType) {
         try {
-            return objectMapper.readValue(value, valueType);
+            return OBJECT_MAPPER.readValue(value, valueType);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -34,7 +34,7 @@ public class JsonUtils {
     public static <T> T toArray(String value, Class<?> elementType) {
         ArrayType arrayType = TypeFactory.defaultInstance().constructArrayType(elementType);
         try {
-            return objectMapper.readValue(value, arrayType);
+            return OBJECT_MAPPER.readValue(value, arrayType);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

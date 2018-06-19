@@ -252,6 +252,80 @@ public class MethodCode {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        MethodCode that = (MethodCode) o;
+
+        if (access != that.access) return false;
+        if (maxStack != that.maxStack) return false;
+        if (maxLocals != that.maxLocals) return false;
+        if (name != null ? !name.equals(that.name) : that.name != null) return false;
+        if (desc != null ? !desc.equals(that.desc) : that.desc != null) return false;
+        if (signature != null ? !signature.equals(that.signature) : that.signature != null) return false;
+        if (exceptions != null ? !exceptions.equals(that.exceptions) : that.exceptions != null) return false;
+        if (parameters != null ? !parameters.equals(that.parameters) : that.parameters != null) return false;
+        if (visibleAnnotations != null ? !visibleAnnotations.equals(that.visibleAnnotations) : that.visibleAnnotations != null)
+            return false;
+        if (invisibleAnnotations != null ? !invisibleAnnotations.equals(that.invisibleAnnotations) : that.invisibleAnnotations != null)
+            return false;
+        if (visibleTypeAnnotations != null ? !visibleTypeAnnotations.equals(that.visibleTypeAnnotations) : that.visibleTypeAnnotations != null)
+            return false;
+        if (invisibleTypeAnnotations != null ? !invisibleTypeAnnotations.equals(that.invisibleTypeAnnotations) : that.invisibleTypeAnnotations != null)
+            return false;
+        if (attrs != null ? !attrs.equals(that.attrs) : that.attrs != null) return false;
+        if (annotationDefault != null ? !annotationDefault.equals(that.annotationDefault) : that.annotationDefault != null)
+            return false;
+        // Probably incorrect - comparing Object[] arrays with Arrays.equals
+        if (!Arrays.equals(visibleParameterAnnotations, that.visibleParameterAnnotations)) return false;
+        // Probably incorrect - comparing Object[] arrays with Arrays.equals
+        if (!Arrays.equals(invisibleParameterAnnotations, that.invisibleParameterAnnotations)) return false;
+        if (instructions != null ? !instructions.equals(that.instructions) : that.instructions != null) return false;
+        if (tryCatchBlocks != null ? !tryCatchBlocks.equals(that.tryCatchBlocks) : that.tryCatchBlocks != null)
+            return false;
+        if (localVariables != null ? !localVariables.equals(that.localVariables) : that.localVariables != null)
+            return false;
+        if (visibleLocalVariableAnnotations != null ? !visibleLocalVariableAnnotations.equals(that.visibleLocalVariableAnnotations) : that.visibleLocalVariableAnnotations != null)
+            return false;
+        if (invisibleLocalVariableAnnotations != null ? !invisibleLocalVariableAnnotations.equals(that.invisibleLocalVariableAnnotations) : that.invisibleLocalVariableAnnotations != null)
+            return false;
+        if (classCode != null ? !classCode.equals(that.classCode) : that.classCode != null) return false;
+        if (returnVariableType != null ? !returnVariableType.equals(that.returnVariableType) : that.returnVariableType != null)
+            return false;
+        return argsVariableType != null ? argsVariableType.equals(that.argsVariableType) : that.argsVariableType == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = access;
+        result = 31 * result + (name != null ? name.hashCode() : 0);
+        result = 31 * result + (desc != null ? desc.hashCode() : 0);
+        result = 31 * result + (signature != null ? signature.hashCode() : 0);
+        result = 31 * result + (exceptions != null ? exceptions.hashCode() : 0);
+        result = 31 * result + (parameters != null ? parameters.hashCode() : 0);
+        result = 31 * result + (visibleAnnotations != null ? visibleAnnotations.hashCode() : 0);
+        result = 31 * result + (invisibleAnnotations != null ? invisibleAnnotations.hashCode() : 0);
+        result = 31 * result + (visibleTypeAnnotations != null ? visibleTypeAnnotations.hashCode() : 0);
+        result = 31 * result + (invisibleTypeAnnotations != null ? invisibleTypeAnnotations.hashCode() : 0);
+        result = 31 * result + (attrs != null ? attrs.hashCode() : 0);
+        result = 31 * result + (annotationDefault != null ? annotationDefault.hashCode() : 0);
+        result = 31 * result + Arrays.hashCode(visibleParameterAnnotations);
+        result = 31 * result + Arrays.hashCode(invisibleParameterAnnotations);
+        result = 31 * result + (instructions != null ? instructions.hashCode() : 0);
+        result = 31 * result + (tryCatchBlocks != null ? tryCatchBlocks.hashCode() : 0);
+        result = 31 * result + maxStack;
+        result = 31 * result + maxLocals;
+        result = 31 * result + (localVariables != null ? localVariables.hashCode() : 0);
+        result = 31 * result + (visibleLocalVariableAnnotations != null ? visibleLocalVariableAnnotations.hashCode() : 0);
+        result = 31 * result + (invisibleLocalVariableAnnotations != null ? invisibleLocalVariableAnnotations.hashCode() : 0);
+        result = 31 * result + (classCode != null ? classCode.hashCode() : 0);
+        result = 31 * result + (returnVariableType != null ? returnVariableType.hashCode() : 0);
+        result = 31 * result + (argsVariableType != null ? argsVariableType.hashCode() : 0);
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "MethodCode{" +
                 "access=" + access +

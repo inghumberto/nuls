@@ -12,7 +12,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public abstract class Validators {
+public class Validators {
+
+    private Validators() {
+    }
 
     private static final Validator VALIDATOR = Validation.buildDefaultValidatorFactory().getValidator();
 

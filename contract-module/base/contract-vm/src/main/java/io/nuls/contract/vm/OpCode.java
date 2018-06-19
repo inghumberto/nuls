@@ -207,7 +207,7 @@ public enum OpCode {
 
     ;
 
-    private static final int size = 202;
+    private static final int SIZE = 202;
 
     private int opcode;
 
@@ -222,14 +222,14 @@ public enum OpCode {
     public static final OpCode[] OPCODES;
 
     static {
-        OPCODES = new OpCode[size];
+        OPCODES = new OpCode[SIZE];
         for (OpCode opCode : values()) {
             OPCODES[opCode.getOpcode()] = opCode;
         }
     }
 
     public static OpCode valueOf(int opcode) {
-        if (opcode < 0 || opcode >= size) {
+        if (opcode < 0 || opcode >= SIZE) {
             return null;
         } else {
             return OPCODES[opcode];
