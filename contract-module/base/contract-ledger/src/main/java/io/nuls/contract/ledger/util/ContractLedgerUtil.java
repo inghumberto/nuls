@@ -23,6 +23,7 @@
  */
 package io.nuls.contract.ledger.util;
 
+import io.nuls.contract.constant.ContractConstant;
 import io.nuls.contract.storage.service.ContractAddressStorageService;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Component;
@@ -83,6 +84,9 @@ public class ContractLedgerUtil {
     public static boolean isRelatedTransaction(Transaction tx) {
         if (tx == null) {
             return false;
+        }
+        if(tx.getType() == ContractConstant.TX_TYPE_CONTRACT_TRANSFER) {
+            return true;
         }
         List<byte[]> txAddressList = tx.getAllRelativeAddress();
         for (int j = 0, length = txAddressList.size(); j < length; j++) {

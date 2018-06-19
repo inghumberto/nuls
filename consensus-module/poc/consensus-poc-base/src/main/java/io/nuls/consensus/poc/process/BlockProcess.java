@@ -42,6 +42,10 @@ import io.nuls.consensus.poc.protocol.tx.RedPunishTransaction;
 import io.nuls.consensus.poc.provider.OrphanBlockProvider;
 import io.nuls.consensus.poc.util.ConsensusTool;
 import io.nuls.consensus.service.ConsensusService;
+import io.nuls.contract.constant.ContractConstant;
+import io.nuls.contract.dto.ContractResult;
+import io.nuls.contract.dto.ContractTransfer;
+import io.nuls.contract.entity.tx.ContractTransferTransaction;
 import io.nuls.core.tools.log.BlockLog;
 import io.nuls.core.tools.log.ChainLog;
 import io.nuls.core.tools.log.Log;
@@ -183,6 +187,22 @@ public class BlockProcess {
                     Map<String, Coin> toMaps = new HashMap<>();
                     Set<String> fromSet = new HashSet<>();
 
+                    /**
+                     * pierre add 智能合约相关
+                     */
+                    Block bestBlock = chainManager.getBestBlock();
+                    long bestHeight = bestBlock.getHeader().getHeight();
+                    byte[] receiveStateRoot = block.getHeader().getStateRoot();
+                    byte[] stateRoot = bestBlock.getHeader().getStateRoot();
+                    Result<ContractResult> callContractResult = null;
+                    ContractResult contractResult = null;
+                    List<ContractTransfer> transfers = null;
+                    List<String> contractEvents = null;
+                    List<ContractTransferTransaction> contractTransferTxs = null;
+                    List<ContractTransferTransaction> successContractTransferTxs = new ArrayList<>();
+                    List<ContractTransferTransaction> receiveContractTransferTxs = new ArrayList<>();
+                    boolean isCorrectContractTransfer = true;
+
                     for (Transaction tx : block.getTxs()) {
                         if (tx.isSystemTx()) {
                             continue;
@@ -193,7 +213,62 @@ public class BlockProcess {
                             success = false;
                             break;
                         }
+
+                        if(tx.getType() == ContractConstant.TX_TYPE_CONTRACT_TRANSFER) {
+                            receiveContractTransferTxs.add((ContractTransferTransaction) tx);
+                        }
+
+                        // 验证区块时发现智能合约交易就调用智能合约
+                        callContractResult = ConsensusTool.callContract(tx, bestHeight, stateRoot);
+                        if(callContractResult.isFailed()) {
+                            //TODO pierre 如果合约调用失败，则验证区块失败？？？
+                            Log.info("call contract failed message:" + callContractResult.getMsg());
+                            success = false;
+                            break;
+                        } else {
+                            contractResult = callContractResult.getData();
+                            stateRoot = contractResult.getStateRoot();
+                            transfers = contractResult.getTransfers();
+                            contractEvents = contractResult.getEvents();
+                            if(contractEvents != null && contractEvents.size() > 0) {
+                                //TODO pierre 发送合约事件
+                            }
+                            // 创建合约转账交易
+                            if(transfers != null && transfers.size() >0) {
+                                contractTransferTxs = ConsensusTool.createContractTransferTxs(transfers);
+
+                                //TODO pierre 是否出现错误转账，就验证区块失败？？？
+                                // 验证合约转账交易
+                                for(ContractTransferTransaction contractTransferTx : contractTransferTxs) {
+                                    result = ConsensusTool.verifyContractTransferCoinData(contractTransferTx, toMaps, fromSet);
+                                    if(result.isFailed()) {
+                                        // 回滚转账交易
+                                        ConsensusTool.rollbackContractTransferTxs(successContractTransferTxs);
+                                        isCorrectContractTransfer = false;
+                                        break;
+                                    } else {
+                                        successContractTransferTxs.add(contractTransferTx);
+                                    }
+                                }
+
+                                if(!isCorrectContractTransfer) {
+                                    Log.info("contract transfer failed message:" + result.getMsg());
+                                    success = false;
+                                    break;
+                                }
+                            }
+                        }
                     }
+                    // 验证世界状态根
+                    if(!Arrays.equals(receiveStateRoot, stateRoot)) {
+                        Log.info("contract stateRoot incorrect.");
+                        success = false;
+                        break;
+                    }
+
+                    //TODO pierre 验证合约转账交易, 如何比对合约转账交易
+                    // successContractTransferTxs
+                    // receiveContractTransferTxs
 
                     if (!success) {
                         break;

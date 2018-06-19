@@ -274,6 +274,7 @@ public class ConsensusProcess {
         bd.setHeight(bestBlock.getHeader().getHeight() + 1);
         bd.setPreHash(bestBlock.getHeader().getHash());
         bd.setTime(self.getPackEndTime());
+        bd.setStateRoot(bestBlock.getHeader().getStateRoot());
         BlockRoundData roundData = new BlockRoundData();
         roundData.setRoundIndex(round.getIndex());
         roundData.setConsensusMemberCount(round.getMemberCount());
@@ -304,14 +305,16 @@ public class ConsensusProcess {
         /**
          * pierre add 智能合约相关
          */
-        byte[] stateRoot = null;
+        byte[] stateRoot = bestBlock.getHeader().getStateRoot();
+        long height = bestBlock.getHeader().getHeight();
         Result<ContractResult> callContractResult = null;
         ContractResult contractResult = null;
         List<ContractTransfer> transfers = null;
         List<String> contractEvents = null;
         List<ContractTransferTransaction> contractTransferTxs = null;
-        Map<String, Coin> toMapsOfContract = new HashMap<>();
-        Set<String> fromSetOfContract = new HashSet<>();
+        List<ContractTransferTransaction> successContractTransferTxs = null;
+        //Map<String, Coin> toMapsOfContract = new HashMap<>();
+        //Set<String> fromSetOfContract = new HashSet<>();
         boolean isCorrectContractTransfer = true;
 
         while (true) {
@@ -374,7 +377,7 @@ public class ConsensusProcess {
             }
 
             // 打包时发现智能合约交易就调用智能合约
-            callContractResult = ConsensusTool.callContract(tx, bestBlock);
+            callContractResult = ConsensusTool.callContract(tx, height, stateRoot);
             if(callContractResult.isFailed()) {
                 //TODO pierre 如果合约调用失败，是否丢弃这笔交易
                 continue;
@@ -390,14 +393,19 @@ public class ConsensusProcess {
                 // 创建合约转账交易
                 if(transfers != null && transfers.size() >0) {
                     contractTransferTxs = ConsensusTool.createContractTransferTxs(transfers);
+                    successContractTransferTxs = new ArrayList<>();
 
                     //TODO pierre 是否出现错误转账，就丢弃整笔合约交易
                     // 验证合约转账交易
                     for(ContractTransferTransaction contractTransferTx : contractTransferTxs) {
-                        result = ConsensusTool.verifyContractTransferCoinData(contractTransferTx, toMapsOfContract, fromSetOfContract);
+                        result = ConsensusTool.verifyContractTransferCoinData(contractTransferTx, toMaps, fromSet);
                         if(result.isFailed()) {
+                            // 回滚转账交易
+                            ConsensusTool.rollbackContractTransferTxs(successContractTransferTxs);
                             isCorrectContractTransfer = false;
                             break;
+                        } else {
+                            successContractTransferTxs.add(contractTransferTx);
                         }
                     }
 
