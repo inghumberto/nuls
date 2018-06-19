@@ -61,22 +61,22 @@ public class AccountState {
      * retrieval */
     private final byte[] codeHash;
 
-    private final byte[] creater;
+    private final byte[] owner;
 
     public AccountState(BigInteger nonce, BigInteger balance) {
         this(nonce, balance, EMPTY_TRIE_HASH, EMPTY_DATA_HASH, null);
     }
 
-    public AccountState(BigInteger nonce, BigInteger balance, byte[] creater) {
-        this(nonce, balance, EMPTY_TRIE_HASH, EMPTY_DATA_HASH, creater);
+    public AccountState(BigInteger nonce, BigInteger balance, byte[] owner) {
+        this(nonce, balance, EMPTY_TRIE_HASH, EMPTY_DATA_HASH, owner);
     }
 
-    public AccountState(BigInteger nonce, BigInteger balance, byte[] stateRoot, byte[] codeHash, byte[] creater) {
+    public AccountState(BigInteger nonce, BigInteger balance, byte[] stateRoot, byte[] codeHash, byte[] owner) {
         this.nonce = nonce;
         this.balance = balance;
         this.stateRoot = stateRoot == EMPTY_TRIE_HASH || equal(stateRoot, EMPTY_TRIE_HASH) ? EMPTY_TRIE_HASH : stateRoot;
         this.codeHash = codeHash == EMPTY_DATA_HASH || equal(codeHash, EMPTY_DATA_HASH) ? EMPTY_DATA_HASH : codeHash;
-        this.creater = creater == EMPTY_DATA_HASH || equal(creater, EMPTY_DATA_HASH) ? EMPTY_DATA_HASH : creater;
+        this.owner = owner == EMPTY_DATA_HASH || equal(owner, EMPTY_DATA_HASH) ? EMPTY_DATA_HASH : owner;
     }
 
     public AccountState(byte[] rlpData) {
@@ -87,7 +87,7 @@ public class AccountState {
         this.balance = ByteUtil.bytesToBigInteger(items.get(1).getRLPData());
         this.stateRoot = items.get(2).getRLPData();
         this.codeHash = items.get(3).getRLPData();
-        this.creater = items.get(4).getRLPData();
+        this.owner = items.get(4).getRLPData();
     }
 
     public BigInteger getNonce() {
@@ -95,7 +95,7 @@ public class AccountState {
     }
 
     public AccountState withNonce(BigInteger nonce) {
-        return new AccountState(nonce, balance, stateRoot, codeHash, creater);
+        return new AccountState(nonce, balance, stateRoot, codeHash, owner);
     }
 
     public byte[] getStateRoot() {
@@ -103,11 +103,11 @@ public class AccountState {
     }
 
     public AccountState withStateRoot(byte[] stateRoot) {
-        return new AccountState(nonce, balance, stateRoot, codeHash, creater);
+        return new AccountState(nonce, balance, stateRoot, codeHash, owner);
     }
 
     public AccountState withIncrementedNonce() {
-        return new AccountState(nonce.add(BigInteger.ONE), balance, stateRoot, codeHash, creater);
+        return new AccountState(nonce.add(BigInteger.ONE), balance, stateRoot, codeHash, owner);
     }
 
     public byte[] getCodeHash() {
@@ -115,7 +115,7 @@ public class AccountState {
     }
 
     public AccountState withCodeHash(byte[] codeHash) {
-        return new AccountState(nonce, balance, stateRoot, codeHash, creater);
+        return new AccountState(nonce, balance, stateRoot, codeHash, owner);
     }
 
     public BigInteger getBalance() {
@@ -123,15 +123,15 @@ public class AccountState {
     }
 
     public AccountState withBalanceIncrement(BigInteger value) {
-        return new AccountState(nonce, balance.add(value), stateRoot, codeHash, creater);
+        return new AccountState(nonce, balance.add(value), stateRoot, codeHash, owner);
     }
 
-    public byte[] getCreater() {
-        return creater;
+    public byte[] getOwner() {
+        return owner;
     }
 
-    public AccountState withCreater(byte[] creater) {
-        return new AccountState(nonce, balance, stateRoot, codeHash, creater);
+    public AccountState withOwner(byte[] owner) {
+        return new AccountState(nonce, balance, stateRoot, codeHash, owner);
     }
 
     public byte[] getEncoded() {
@@ -140,8 +140,8 @@ public class AccountState {
             byte[] balance = RLP.encodeBigInteger(this.balance);
             byte[] stateRoot = RLP.encodeElement(this.stateRoot);
             byte[] codeHash = RLP.encodeElement(this.codeHash);
-            byte[] creater = RLP.encodeElement(this.creater);
-            this.rlpEncoded = RLP.encodeList(nonce, balance, stateRoot, codeHash, creater);
+            byte[] owner = RLP.encodeElement(this.owner);
+            this.rlpEncoded = RLP.encodeList(nonce, balance, stateRoot, codeHash, owner);
         }
         return rlpEncoded;
     }
@@ -158,7 +158,7 @@ public class AccountState {
                 "  Balance: " + getBalance() + "\n" +
                 "  State Root: " + Hex.toHexString(this.getStateRoot()) + "\n" +
                 "  Code Hash: " + Hex.toHexString(this.getCodeHash()) + "\n" +
-                "  Creater: " + Hex.toHexString(this.getCreater());
+                "  Owner: " + Hex.toHexString(this.getOwner());
         return ret;
     }
 }
