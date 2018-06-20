@@ -28,21 +28,19 @@ package io.nuls.consensus.poc.util;
 import io.nuls.account.constant.AccountErrorCode;
 import io.nuls.account.model.Account;
 import io.nuls.account.service.AccountService;
-import io.nuls.consensus.constant.ConsensusConstant;
 import io.nuls.consensus.poc.constant.PocConsensusConstant;
 import io.nuls.consensus.poc.context.PocConsensusContext;
 import io.nuls.consensus.poc.model.BlockData;
 import io.nuls.consensus.poc.model.BlockRoundData;
 import io.nuls.consensus.poc.model.MeetingMember;
 import io.nuls.consensus.poc.model.MeetingRound;
+import io.nuls.consensus.poc.protocol.constant.PocConsensusErrorCode;
 import io.nuls.consensus.poc.protocol.entity.Agent;
 import io.nuls.consensus.poc.protocol.entity.Deposit;
 import io.nuls.consensus.poc.protocol.entity.YellowPunishData;
 import io.nuls.consensus.poc.protocol.tx.CreateAgentTransaction;
 import io.nuls.consensus.poc.protocol.tx.DepositTransaction;
 import io.nuls.consensus.poc.protocol.tx.YellowPunishTransaction;
-import io.nuls.consensus.poc.protocol.util.PoConvertUtil;
-import io.nuls.consensus.poc.storage.po.AgentPo;
 import io.nuls.consensus.poc.storage.service.AgentStorageService;
 import io.nuls.consensus.poc.storage.service.DepositStorageService;
 import io.nuls.contract.constant.ContractConstant;
@@ -70,7 +68,6 @@ import io.nuls.kernel.script.P2PKHScriptSig;
 import io.nuls.kernel.utils.VarInt;
 import io.nuls.kernel.validate.ValidateResult;
 import io.nuls.ledger.service.LedgerService;
-import io.nuls.protocol.constant.ProtocolConstant;
 import io.nuls.protocol.model.SmallBlock;
 import io.nuls.protocol.model.tx.CoinBaseTransaction;
 
@@ -390,9 +387,10 @@ public class ConsensusTool {
         return list;
     }
 
-    public static Result<ContractResult> callContract(Transaction tx, Block bestBlock) {
-        long height = bestBlock.getHeader().getHeight();
-        byte[] stateRoot = bestBlock.getHeader().getStateRoot();
+    public static Result<ContractResult> callContract(Transaction tx, long height, byte[] stateRoot) {
+        if(height < 0 || stateRoot == null) {
+            return Result.getFailed(KernelErrorCode.PARAMETER_ERROR);
+        }
         int tyType = tx.getType();
         if (tyType == ContractConstant.TX_TYPE_CREATE_CONTRACT) {
             CreateContractTransaction createContractTransaction = (CreateContractTransaction) tx;
@@ -421,6 +419,14 @@ public class ConsensusTool {
             return ValidateResult.getSuccessResult();
         }
         return ledgerService.verifyCoinData(contractTransferTx, toMapsOfContract, fromSetOfContract);
+    }
+
+    public static void rollbackContractTransferTxs(List<ContractTransferTransaction> successContractTransferTxs) {
+        if(successContractTransferTxs != null && successContractTransferTxs.size() > 0) {
+            for(Transaction tx : successContractTransferTxs) {
+                contractService.rollbackTransaction(tx);
+            }
+        }
     }
 }
 
