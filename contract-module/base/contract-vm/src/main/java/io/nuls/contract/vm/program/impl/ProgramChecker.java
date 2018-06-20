@@ -21,7 +21,7 @@ public class ProgramChecker {
     public static void check(List<ClassCode> classCodes) {
         checkJdkVersion(classCodes);
         checkContractNum(classCodes);
-        checkStaticField(classCodes);
+        //checkStaticField(classCodes);
         checkClass(classCodes);
         checkMethod(classCodes);
         checkOpCode(classCodes);
@@ -29,8 +29,8 @@ public class ProgramChecker {
 
     public static void checkJdkVersion(List<ClassCode> classCodes) {
         for (ClassCode classCode : classCodes) {
-            if (classCode.getVersion() != 52) {
-                throw new RuntimeException("can only be compiled using jdk1.8");
+            if (!classCode.isV1_6() && !classCode.isV1_8()) {
+                throw new RuntimeException("class version must be 1.6 or 1.8");
             }
         }
     }

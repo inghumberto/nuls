@@ -34,11 +34,18 @@ public class NativeAddress {
         return result;
     }
 
+    private static BigInteger balance(byte[] address, Frame frame) {
+        BigInteger balance = BigInteger.ZERO;
+        if (frame.getVm().getVmContext() != null) {
+            balance = frame.getVm().getVmContext().getBalance(address);
+        }
+        return balance;
+    }
+
     private static Result balance(MethodCode methodCode, MethodArgs methodArgs, Frame frame) {
         ObjectRef objectRef = methodArgs.getObjectRef();
         String address = (String) frame.getHeap().getObject(objectRef);
-        // TODO: 2018/5/9
-        BigInteger balance = BigInteger.ZERO;
+        BigInteger balance = balance(Hex.decode(address), frame);
         ObjectRef balanceRef = frame.getHeap().newBigInteger(balance.toString());
         Result result = NativeMethod.result(methodCode, balanceRef, frame);
         return result;
@@ -49,12 +56,17 @@ public class NativeAddress {
         ObjectRef valueRef = (ObjectRef) methodArgs.getInvokeArgs()[0];
         String address = (String) frame.getHeap().getObject(addressRef);
         BigInteger value = (BigInteger) frame.getHeap().getObject(valueRef);
-        BigInteger balance = BigInteger.ZERO;
-        // TODO: 2018/5/9
-        ProgramTransfer programTransfer = new ProgramTransfer();
-        programTransfer.setFrom(frame.getVm().getProgramInvoke().getAddress());
-        programTransfer.setTo(Hex.decode(address));
-        programTransfer.setValue(value);
+        byte[] from = frame.getVm().getProgramInvoke().getAddress();
+        byte[] to = Hex.decode(address);
+        if (frame.getHeap().existContract(to)) {
+            throw new RuntimeException("Cannot transfer to contract");
+        }
+        BigInteger balance = balance(from, frame);
+        if (balance.compareTo(value) < 0) {
+            throw new RuntimeException("Not enough balance");
+        }
+
+        ProgramTransfer programTransfer = new ProgramTransfer(from, to, value);
         frame.getVm().setGasUsed(frame.getVm().getGasUsed() + GasCost.TRANSFER);
         frame.getVm().getTransfers().add(programTransfer);
         Result result = NativeMethod.result(methodCode, null, frame);
@@ -90,6 +102,10 @@ public class NativeAddress {
 
         frame.getVm().setGasUsed(frame.getVm().getGasUsed() + programResult.getGasUsed());
         if (!programResult.isError()) {
+            if (programCall.getValue().compareTo(BigInteger.ZERO) > 0) {
+                ProgramTransfer programTransfer = new ProgramTransfer(programInvoke.getAddress(), Hex.decode(address), programCall.getValue());
+                frame.getVm().getTransfers().add(programTransfer);
+            }
             frame.getVm().getTransfers().addAll(programResult.getTransfers());
             frame.getVm().getEvents().addAll(programResult.getEvents());
         } else {

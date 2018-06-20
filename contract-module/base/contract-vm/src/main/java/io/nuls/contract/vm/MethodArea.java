@@ -37,7 +37,7 @@ public class MethodArea {
         ClassCode classCode = loadClass(className);
         MethodCode methodCode = classCode.getMethodCode(methodName, methodDesc);
         if (methodCode == null && classCode.getSuperName() != null) {
-            methodCode = loadMethod(classCode.getSuperName(), methodName, methodDesc);
+            methodCode = loadSuperMethod(classCode.getSuperName(), methodName, methodDesc);
         }
         if (methodCode == null) {
             for (String interfaceName : classCode.getInterfaces()) {
@@ -46,6 +46,15 @@ public class MethodArea {
                     break;
                 }
             }
+        }
+        return methodCode;
+    }
+
+    private MethodCode loadSuperMethod(String className, String methodName, String methodDesc) {
+        ClassCode classCode = loadClass(className);
+        MethodCode methodCode = classCode.getMethodCode(methodName, methodDesc);
+        if (methodCode == null && classCode.getSuperName() != null) {
+            methodCode = loadSuperMethod(classCode.getSuperName(), methodName, methodDesc);
         }
         return methodCode;
     }

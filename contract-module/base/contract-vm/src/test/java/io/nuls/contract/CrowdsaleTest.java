@@ -24,11 +24,11 @@ public class CrowdsaleTest {
     private DBService dbService;
     private ProgramExecutor programExecutor;
 
-    private static final String CROWDSALE_ADDRESS = "crowdsale_address1";
-    private static final String TOKEN_ADDRESS = "token_address1";
-    private static final String WALLET_ADDRESS = "wallet_address1";
-    private static final String SENDER = "ccc_address1";
-    private static final String BUYER = "buyer_address1";
+    private static final String CROWDSALE_ADDRESS = "crowdsale_address";
+    private static final String TOKEN_ADDRESS = "token_address";
+    private static final String WALLET_ADDRESS = "wallet_address";
+    private static final String SENDER = "ccc_address";
+    private static final String BUYER = "buyer_address";
 
     @Before
     public void setUp() {
@@ -51,7 +51,7 @@ public class CrowdsaleTest {
         programCreate.args("0", "20000", "10", Hex.toHexString(WALLET_ADDRESS.getBytes()), "20000000", Hex.toHexString(TOKEN_ADDRESS.getBytes()), "10000000");
         System.out.println(programCreate);
 
-        byte[] prevStateRoot = Hex.decode("3aa38588e2d53b3751f308724e23a9267b03603b652073a41492072b4336119d");
+        byte[] prevStateRoot = Hex.decode("08cf9c62806d73378bf64f03ea401fbbd08a318ec580d2bfc4c45641b0921a9e");
 
         ProgramExecutor track = programExecutor.begin(prevStateRoot);
         ProgramResult programResult = track.create(programCreate);
@@ -76,10 +76,28 @@ public class CrowdsaleTest {
         programCall.args(Hex.toHexString(BUYER.getBytes()));
         System.out.println(programCall);
 
-        byte[] prevStateRoot = Hex.decode("4736adde34d8f29123c5dbf511bf64299d1a16a9a60377b8921575fb79ed3621");
+        byte[] prevStateRoot = Hex.decode("f50a59ea0cde312187e49cdebb30f7c79d6c69c336a897efa534584e81fc48d4");
 
         ProgramExecutor track = programExecutor.begin(prevStateRoot);
         ProgramResult programResult = track.call(programCall);
+        track.commit();
+
+        System.out.println(programResult);
+        System.out.println("stateRoot: " + Hex.toHexString(track.getRoot()));
+        System.out.println();
+
+        ProgramCall programCall1 = new ProgramCall();
+        programCall1.setContractAddress(TOKEN_ADDRESS.getBytes());
+        programCall1.setSender(SENDER.getBytes());
+        programCall1.setPrice(0);
+        programCall1.setNaLimit(1000000);
+        programCall1.setNumber(1);
+        programCall1.setMethodName("balanceOf");
+        programCall1.setMethodDesc("");
+        programCall1.args(Hex.toHexString(BUYER.getBytes()));
+
+        track = programExecutor.begin(track.getRoot());
+        programResult = track.call(programCall1);
         track.commit();
 
         System.out.println(programResult);

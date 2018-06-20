@@ -243,4 +243,16 @@ public class ClassCode {
         return (access & Opcodes.ACC_INTERFACE) != 0;
     }
 
+    public boolean isV1_6() {
+        return (version & Opcodes.V1_6) != 0;
+    }
+
+    public boolean isV1_7() {
+        return (version & Opcodes.V1_7) != 0;
+    }
+
+    public boolean isV1_8() {
+        return (version & Opcodes.V1_8) != 0;
+    }
+
 }

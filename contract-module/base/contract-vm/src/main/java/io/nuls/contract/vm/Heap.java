@@ -22,8 +22,6 @@ public class Heap {
 
     private final VM vm;
 
-    private final Map<String, Map<String, Object>> staticFields = new LinkedHashMap();
-
     private final Map<ObjectRef, Map<String, Object>> objects = new LinkedHashMap<>();
 
     private final Map<String, Object> arrays = new LinkedHashMap<>();
@@ -46,20 +44,17 @@ public class Heap {
 
     public Heap(VM vm, Heap heap) {
         this.vm = vm;
-        for (String key : heap.staticFields.keySet()) {
-            this.staticFields.put(key, CloneUtils.clone(heap.staticFields.get(key)));
-        }
         for (ObjectRef objectRef : heap.objects.keySet()) {
             this.objects.put(objectRef, CloneUtils.clone(heap.objects.get(objectRef)));
         }
         CloneUtils.clone(heap.arrays, this.arrays);
         this.changes.addAll(heap.changes);
-        this.objectRefCount = heap.objectRefCount;
+        this.objectRefCount = new BigInteger(heap.objectRefCount.toString());
     }
 
     public ObjectRef newObjectRef(String ref, String desc, int... dimensions) {
-        objectRefCount = objectRefCount.add(BigInteger.ONE);
         if (StringUtils.isEmpty(ref)) {
+            objectRefCount = objectRefCount.add(BigInteger.ONE);
             ref = objectRefCount.toString();
         }
         ObjectRef objectRef = new ObjectRef(ref, desc, dimensions);
@@ -122,21 +117,23 @@ public class Heap {
     }
 
     public Object getStatic(String className, String fieldName) {
-        ClassCode classCode = this.vm.getMethodArea().loadClass(className);
-        Object value = getStatic(classCode.getName()).get(fieldName);
-        return value;
+        ObjectRef objectRef = getStaticObjectRef(className);
+        return getField(objectRef, fieldName);
     }
 
     public void putStatic(String className, String fieldName, Object value) {
-        ClassCode classCode = this.vm.getMethodArea().loadClass(className);
-        getStatic(classCode.getName()).put(fieldName, value);
+        ObjectRef objectRef = getStaticObjectRef(className);
+        putField(objectRef, fieldName, value);
     }
 
-    public Map<String, Object> getStatic(String className) {
-        if (!staticFields.containsKey(className)) {
-            staticFields.put(className, new LinkedHashMap<>());
+    private ObjectRef getStaticObjectRef(String className) {
+        ClassCode classCode = this.vm.getMethodArea().loadClass(className);
+        ObjectRef objectRef = new ObjectRef(classCode.getName(), classCode.getVariableType().getDesc());
+        Map<String, Object> map = objects.get(objectRef);
+        if (map == null) {
+            objectRef = newObjectRef(classCode.getName(), classCode.getVariableType().getDesc());
         }
-        return staticFields.get(className);
+        return objectRef;
     }
 
     public ObjectRef newArray(VariableType type, int... dimensions) {
@@ -415,12 +412,21 @@ public class Heap {
         this.address = address;
         this.repository = repository;
         this.objectRefCount = this.repository.getStorageValue(this.address, OBJECT_REF_COUNT).toBigInteger();
+        String className = this.contract.getVariableType().getType();
+        ObjectRef staticObjectRef = getStaticObjectRef(className);
+        Map<String, Object> fields = getFieldsFromState(staticObjectRef);
+        if (fields != null) {
+            objects.put(staticObjectRef, fields);
+        }
         return this.contract;
     }
 
     public void contractState() {
         this.repository.addStorageRow(this.address, OBJECT_REF_COUNT, new DataWord(this.objectRefCount));
         Set<ObjectRef> stateObjectRefs = new LinkedHashSet<>();
+        String className = this.contract.getVariableType().getType();
+        ObjectRef staticObjectRef = getStaticObjectRef(className);
+        stateObjectRefs(stateObjectRefs, staticObjectRef);
         stateObjectRefs(stateObjectRefs, this.contract);
         for (ObjectRef objectRef : stateObjectRefs) {
             if (!this.changes.contains(objectRef)) {
@@ -525,6 +531,14 @@ public class Heap {
     private int getArrayLength(ObjectRef arrayRef) {
         int length = arrayRef.getDimensions()[0];
         return length;
+    }
+
+    public boolean existContract(byte[] address) {
+        if (this.repository != null && this.repository.isExist(address)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
 }
