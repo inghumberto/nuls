@@ -25,7 +25,6 @@
 
 package io.nuls.account.rpc.cmd;
 
-import io.nuls.kernel.constant.KernelErrorCode;
 import io.nuls.kernel.model.CommandResult;
 import io.nuls.kernel.model.RpcClientResult;
 import io.nuls.kernel.processor.CommandProcessor;
@@ -81,10 +80,10 @@ public class ResetPasswordProcessor implements CommandProcessor {
         if(!res.isSuccess()){
             return CommandResult.getFailed(res);
         }
-        if(res.isSuccess() && !res.dataToBooleanValue()){
+        if(res.isSuccess() && null == res.getData()){
             return CommandResult.getFailed("No password has been set up yet");
         }
-        String password = res.isSuccess() ? (String)res.getData() : null;
+        String password = (String)res.getData();
         String newPassword = CommandHelper.getNewPwd();
         CommandHelper.confirmPwd(newPassword);
         Map<String, Object> parameters = new HashMap<>();
@@ -94,6 +93,6 @@ public class ResetPasswordProcessor implements CommandProcessor {
         if(result.isFailed()){
             return CommandResult.getFailed(result);
         }
-        return CommandResult.getResult(result);
+        return CommandResult.getSuccess("Success");
     }
 }

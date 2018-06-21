@@ -90,7 +90,7 @@ public class DepositProcessor implements CommandProcessor {
         if(!res.isSuccess()){
             return CommandResult.getFailed(res);
         }
-        String password = res.isSuccess() ? (String)res.getData() : null;
+        String password = (String)res.getData();
         Long amount = Na.parseNuls(args[3]).getValue();
         Map<String, Object> parameters = new HashMap<>(4);
         parameters.put("address", address);
@@ -101,6 +101,6 @@ public class DepositProcessor implements CommandProcessor {
         if (result.isFailed()) {
             return CommandResult.getFailed(result);
         }
-        return CommandResult.getResult(result);
+        return CommandResult.getResult(CommandResult.dataTransformValue(result));
     }
 }
