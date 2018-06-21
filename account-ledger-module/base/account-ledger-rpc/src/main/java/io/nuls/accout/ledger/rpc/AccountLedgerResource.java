@@ -158,9 +158,16 @@ public class AccountLedgerResource {
         }
 
         Na value = Na.valueOf(form.getAmount());
-        return accountLedgerService.transfer(AddressTool.getAddress(form.getAddress()),
+
+        Result result = accountLedgerService.transfer(AddressTool.getAddress(form.getAddress()),
                 AddressTool.getAddress(form.getToAddress()),
-                value, form.getPassword(), form.getRemark(), TransactionFeeCalculator.MIN_PRECE_PRE_1024_BYTES).toRpcClientResult();
+                value, form.getPassword(), form.getRemark(), TransactionFeeCalculator.MIN_PRECE_PRE_1024_BYTES);
+        if(result.isSuccess()) {
+            Map<String, String> map = new HashMap<>();
+            map.put("value", (String)result.getData());
+            result.setData(map);
+        }
+        return result.toRpcClientResult();
     }
 
 
@@ -189,8 +196,14 @@ public class AccountLedgerResource {
         }
 
         Na value = Na.valueOf(form.getAmount());
-        return accountLedgerService.transferFee(AddressTool.getAddress(form.getAddress()),
-                AddressTool.getAddress(form.getToAddress()), value, form.getRemark(), TransactionFeeCalculator.MIN_PRECE_PRE_1024_BYTES).toRpcClientResult();
+        Result result = accountLedgerService.transferFee(AddressTool.getAddress(form.getAddress()),
+                AddressTool.getAddress(form.getToAddress()), value, form.getRemark(), TransactionFeeCalculator.MIN_PRECE_PRE_1024_BYTES);
+        if(result.isSuccess()) {
+            Map<String, String> map = new HashMap<>();
+            map.put("value", (String)result.getData());
+            result.setData(map);
+        }
+        return result.toRpcClientResult();
     }
 
 
@@ -228,8 +241,12 @@ public class AccountLedgerResource {
             } catch (Exception e) {
                 return Result.getFailed(AccountErrorCode.ADDRESS_ERROR).toRpcClientResult();
             }
+            try {
+                to.setNa(Na.valueOf(outputDto.getValue()));
+            } catch (Exception e) {
+                return Result.getFailed(LedgerErrorCode.DATA_PARSE_ERROR).toRpcClientResult();
+            }
 
-            to.setNa(Na.valueOf(outputDto.getValue()));
             if (outputDto.getLockTime() < 0) {
                 return RpcClientResult.getFailed("lockTime error");
             }
@@ -244,8 +261,13 @@ public class AccountLedgerResource {
             byte[] key = Arrays.concatenate(Hex.decode(inputDto.getFromHash()), new VarInt(inputDto.getFromIndex()).encode());
             inputsKey.add(key);
         }
-
-        return accountLedgerService.createTransaction(inputsKey, outputs, remark).toRpcClientResult();
+        Result result = accountLedgerService.createTransaction(inputsKey, outputs, remark);
+        if(result.isSuccess()) {
+            Map<String, String> map = new HashMap<>();
+            map.put("value", (String)result.getData());
+            result.setData(map);
+        }
+        return result.toRpcClientResult();
     }
 
     @POST
@@ -283,7 +305,6 @@ public class AccountLedgerResource {
             }
         }
 
-
         if (!ECKey.isValidPrivteHex(priKey)) {
             return Result.getFailed(AccountErrorCode.PARAMETER_ERROR).toRpcClientResult();
         }
@@ -308,13 +329,14 @@ public class AccountLedgerResource {
                 return Result.getFailed(validateResult.getErrorCode()).toRpcClientResult();
             }
 
-            return Result.getSuccess().setData(Hex.encode(tx.serialize())).toRpcClientResult();
+            Map<String, String> map = new HashMap<>();
+            map.put("value", Hex.encode(tx.serialize()));
+            return Result.getSuccess().setData(map).toRpcClientResult();
         } catch (Exception e) {
             Log.error(e);
             return Result.getFailed(LedgerErrorCode.DATA_PARSE_ERROR).toRpcClientResult();
         }
     }
-
 
     @POST
     @Path("/transaction/broadcast")
@@ -335,10 +357,11 @@ public class AccountLedgerResource {
                 return Result.getFailed(validateResult.getErrorCode()).toRpcClientResult();
             }
             Result result = accountLedgerService.broadcast(tx);
-            if (result.isFailed()) {
-                return result.toRpcClientResult();
+            if(result.isSuccess()) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("value", tx.getHash());
+                result.setData(map);
             }
-            result.setData(tx.getHash());
             return result.toRpcClientResult();
         } catch (Exception e) {
             Log.error(e);

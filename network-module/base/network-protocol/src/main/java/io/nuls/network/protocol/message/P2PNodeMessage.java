@@ -22,34 +22,31 @@
  * SOFTWARE.
  *
  */
-package io.nuls.protocol.message;
+
+package io.nuls.network.protocol.message;
+
 
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.utils.NulsByteBuffer;
-import io.nuls.protocol.constant.ProtocolConstant;
-import io.nuls.protocol.model.GetBlocksHashParam;
+import io.nuls.network.constant.NetworkConstant;
 
-/**
- * 从对等节点处获取区块头摘要列表的消息
- * The message of gets the block header summary list from the peer node.
- *
- * @author Niels
- * @date 2018/1/15
- */
-public class GetBlocksHashMessage extends BaseProtocolMessage<GetBlocksHashParam> {
+public class P2PNodeMessage extends BaseNetworkMessage<P2PNodeBody> {
+    /**
+     * 初始化基础消息的消息头
+     */
 
-    public GetBlocksHashMessage() {
-        super(ProtocolConstant.PROTOCOL_GET_BLOCKS_HASH);
+    public P2PNodeMessage() {
+        super(NetworkConstant.NETWORK_P2P_NODE);
     }
 
     @Override
-    protected GetBlocksHashParam parseMessageBody(NulsByteBuffer byteBuffer) throws NulsException {
-        return byteBuffer.readNulsData(new GetBlocksHashParam());
+    protected P2PNodeBody parseMessageBody(NulsByteBuffer byteBuffer) throws NulsException {
+        return byteBuffer.readNulsData(new P2PNodeBody());
     }
 
-    public GetBlocksHashMessage(long startHeight, long endHeight) {
+    public P2PNodeMessage(P2PNodeBody body) {
         this();
-        GetBlocksHashParam param = new GetBlocksHashParam(startHeight, endHeight);
-        this.setMsgBody(param);
+        this.setMsgBody(body);
     }
+
 }

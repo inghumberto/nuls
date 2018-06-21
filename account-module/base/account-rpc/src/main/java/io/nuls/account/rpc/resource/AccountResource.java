@@ -47,7 +47,6 @@ import io.nuls.core.tools.json.JSONUtils;
 import io.nuls.core.tools.log.Log;
 import io.nuls.core.tools.page.Page;
 import io.nuls.core.tools.str.StringUtils;
-import io.nuls.kernel.constant.KernelErrorCode;
 import io.nuls.kernel.context.NulsContext;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.lite.annotation.Autowired;
@@ -120,7 +119,9 @@ public class AccountResource {
         for (Account account : listAccount) {
             list.add(account.getAddress().toString());
         }
-        return Result.getSuccess().setData(list).toRpcClientResult();
+        Map<String, List<String>> map = new HashMap<>();
+        map.put("list", list);
+        return Result.getSuccess().setData(map).toRpcClientResult();
     }
 
     @POST
@@ -153,7 +154,9 @@ public class AccountResource {
         } catch (NulsException e) {
             return Result.getFailed().toRpcClientResult();
         }
-        return Result.getSuccess().setData(accounts).toRpcClientResult();
+        Map<String, List<AccountDto>> map = new HashMap<>();
+        map.put("list", accounts);
+        return Result.getSuccess().setData(map).toRpcClientResult();
     }
 
     @GET
@@ -197,6 +200,7 @@ public class AccountResource {
         return Result.getSuccess().setData(resultPage).toRpcClientResult();
     }
 
+
     @GET
     @Path("/{address}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -213,6 +217,7 @@ public class AccountResource {
         if (null == account) {
             return Result.getFailed(AccountErrorCode.ACCOUNT_NOT_EXIST).toRpcClientResult();
         }
+
         return Result.getSuccess().setData(new AccountDto(account)).toRpcClientResult();
     }
 
@@ -228,7 +233,11 @@ public class AccountResource {
         if (!Address.validAddress(address)) {
             return Result.getFailed(AccountErrorCode.ADDRESS_ERROR).toRpcClientResult();
         }
-        return accountService.isEncrypted(address).toRpcClientResult();
+        Result result = accountService.isEncrypted(address);
+        Map<String, Boolean> map = new HashMap<>();
+        map.put("value", (Boolean)result.getData());
+        result.setData(map);
+        return result.toRpcClientResult();
     }
 
     @POST
@@ -248,16 +257,14 @@ public class AccountResource {
             return Result.getFailed(AccountErrorCode.PARAMETER_ERROR).toRpcClientResult();
         }
         Result<Account> rs = accountService.getAccount(address);
-        if (rs.isFailed()) {
+        if (rs.isFailed() || null == rs.getData()) {
             return Result.getFailed(AccountErrorCode.ACCOUNT_NOT_EXIST).toRpcClientResult();
         }
         Account account = rs.getData();
-        if (account.validatePassword(form.getPassword())) {
-            return Result.getSuccess().toRpcClientResult();
-        } else {
-            return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG).toRpcClientResult();
-
-        }
+        boolean result = account.validatePassword(form.getPassword());
+        Map<String, Boolean> map = new HashMap<>();
+        map.put("value", result);
+        return Result.getSuccess().setData(map).toRpcClientResult();
     }
 
     @POST
@@ -276,7 +283,13 @@ public class AccountResource {
         if (StringUtils.isBlank(form.getAlias())) {
             return Result.getFailed(AccountErrorCode.PARAMETER_ERROR).toRpcClientResult();
         }
-        return aliasService.setAlias(address, form.getAlias().trim(), form.getPassword()).toRpcClientResult();
+        Result result = aliasService.setAlias(address, form.getAlias().trim(), form.getPassword());
+        if(result.isSuccess()) {
+            Map<String, String> map = new HashMap<>();
+            map.put("value", (String)result.getData());
+            result.setData(map);
+        }
+        return result.toRpcClientResult();
     }
 
     @GET
@@ -293,7 +306,13 @@ public class AccountResource {
         if (StringUtils.isBlank(form.getAlias())) {
             return Result.getFailed(AccountErrorCode.PARAMETER_ERROR).toRpcClientResult();
         }
-        return accountService.getAliasFee(form.getAddress(), form.getAlias()).toRpcClientResult();
+        Result result = accountService.getAliasFee(form.getAddress(), form.getAlias());
+        if(result.isSuccess()) {
+            Map<String, Long> map = new HashMap<>();
+            map.put("value", (Long)result.getData());
+            result.setData(map);
+        }
+        return result.toRpcClientResult();
     }
 
     @GET
@@ -307,8 +326,9 @@ public class AccountResource {
         if (StringUtils.isBlank(alias)) {
             return Result.getFailed(AccountErrorCode.PARAMETER_ERROR).toRpcClientResult();
         }
-        RpcClientResult result = new RpcClientResult(aliasService.isAliasUsable(alias), KernelErrorCode.SUCCESS);
-        return result;
+        Map<String, Boolean> map = new HashMap<>();
+        map.put("value", aliasService.isAliasUsable(alias));
+        return Result.getSuccess().setData(map).toRpcClientResult();
     }
 
     @GET
@@ -326,7 +346,9 @@ public class AccountResource {
         if (null == aliasObj) {
             return new RpcClientResult(false, AccountErrorCode.ALIAS_NOT_EXIST);
         }
-        return Result.getSuccess().setData(Base58.encode(aliasObj.getAddress())).toRpcClientResult();
+        Map<String, String> map = new HashMap<>();
+        map.put("value", Base58.encode(aliasObj.getAddress()));
+        return Result.getSuccess().setData(map).toRpcClientResult();
     }
 
     @GET
@@ -365,7 +387,10 @@ public class AccountResource {
             Balance balance = result.getData();
             List<AssetDto> dtoList = new ArrayList<>();
             dtoList.add(new AssetDto("NULS", balance));
-            return Result.getSuccess().setData(dtoList).toRpcClientResult();
+
+            Map<String, List<AssetDto>> map = new HashMap<>();
+            map.put("list", dtoList);
+            return Result.getSuccess().setData(map).toRpcClientResult();
         } catch (NulsException e) {
             Log.error(e);
             return Result.getFailed(AccountErrorCode.FAILED).toRpcClientResult();
@@ -384,7 +409,13 @@ public class AccountResource {
         if (!Address.validAddress(address)) {
             return Result.getFailed(AccountErrorCode.ADDRESS_ERROR).toRpcClientResult();
         }
-        return accountBaseService.getPrivateKey(address, form.getPassword()).toRpcClientResult();
+        Result result = accountBaseService.getPrivateKey(address, form.getPassword());
+        if(result.isSuccess()) {
+            Map<String, String> map = new HashMap<>();
+            map.put("value", (String)result.getData());
+            result.setData(map);
+        }
+        return result.toRpcClientResult();
     }
 
     @POST
@@ -404,7 +435,9 @@ public class AccountResource {
             scheduler.remove(scheduledFuture);
             accountUnlockSchedulerMap.remove(addr);
         }
-        return Result.getSuccess().toRpcClientResult();
+        Map<String, Boolean> map = new HashMap<>();
+        map.put("value", true);
+        return Result.getSuccess().setData(map).toRpcClientResult();
     }
 
 
@@ -449,7 +482,9 @@ public class AccountResource {
         } catch (NulsException e) {
             return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG).toRpcClientResult();
         }
-        return Result.getSuccess().toRpcClientResult();
+        Map<String, Boolean> map = new HashMap<>();
+        map.put("value", true);
+        return Result.getSuccess().setData(map).toRpcClientResult();
     }
 
     @POST
@@ -473,7 +508,13 @@ public class AccountResource {
         if (!StringUtils.validPassword(password)) {
             return Result.getFailed(AccountErrorCode.PASSWORD_FORMAT_WRONG).toRpcClientResult();
         }
-        return accountBaseService.setPassword(address, password).toRpcClientResult();
+        Result result = accountBaseService.setPassword(address, password);
+        if(result.isSuccess()) {
+            Map<String, Boolean> map = new HashMap<>();
+            map.put("value", (Boolean)result.getData());
+            result.setData(map);
+        }
+        return result.toRpcClientResult();
     }
 
     @POST
@@ -513,7 +554,9 @@ public class AccountResource {
         try {
             Account account = AccountTool.createAccount(priKey);
             account.encrypt(password);
-            return Result.getSuccess().setData(Hex.encode(account.getEncryptedPriKey())).toRpcClientResult();
+            Map<String, String> map = new HashMap<>();
+            map.put("value", Hex.encode(account.getEncryptedPriKey()));
+            return Result.getSuccess().setData(map).toRpcClientResult();
         } catch (NulsException e) {
             return Result.getFailed(AccountErrorCode.FAILED).toRpcClientResult();
         }
@@ -548,7 +591,13 @@ public class AccountResource {
 
         try {
             byte[] priKeyBytes = AESEncrypt.decrypt(Hex.decode(priKey), password);
-            return getEncryptedPrivateKey(address, Hex.encode(priKeyBytes), newPassword).toRpcClientResult();
+            Result result = getEncryptedPrivateKey(address, Hex.encode(priKeyBytes), newPassword);
+            if(result.isSuccess()) {
+                Map<String, Boolean> map = new HashMap<>();
+                map.put("value", (Boolean)result.getData());
+                result.setData(map);
+            }
+            return result.toRpcClientResult();
         } catch (Exception e) {
             return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG).toRpcClientResult();
         }
@@ -599,7 +648,13 @@ public class AccountResource {
         if (!StringUtils.validPassword(newPassword)) {
             return Result.getFailed(AccountErrorCode.PASSWORD_FORMAT_WRONG).toRpcClientResult();
         }
-        return this.accountBaseService.changePassword(address, password, newPassword).toRpcClientResult();
+        Result result = accountBaseService.changePassword(address, password, newPassword);
+        if(result.isSuccess()) {
+            Map<String, Boolean> map = new HashMap<>();
+            map.put("value", (Boolean) result.getData());
+            result.setData(map);
+        }
+        return result.toRpcClientResult();
     }
 
 
@@ -625,11 +680,13 @@ public class AccountResource {
             return Result.getFailed(AccountErrorCode.PASSWORD_FORMAT_WRONG).toRpcClientResult();
         }
         Result result = accountService.importAccount(prikey, newPassword);
-        if (result.isFailed()) {
-            return result.toRpcClientResult();
+        if(result.isSuccess()) {
+            Account account = (Account) result.getData();
+            Map<String, String> map = new HashMap<>();
+            map.put("value", account.getAddress().toString());
+            result.setData(map);
         }
-        Account account = (Account) result.getData();
-        return Result.getSuccess().setData(account.getAddress().toString()).toRpcClientResult();
+        return result.toRpcClientResult();
     }
 
     @POST
@@ -652,11 +709,13 @@ public class AccountResource {
             return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG).toRpcClientResult();
         }
         Result result = accountService.updatePasswordByAccountKeyStore(accountKeyStoreDto.toAccountKeyStore(), password);
-        if (result.isFailed()) {
-            return result.toRpcClientResult();
+        if(result.isSuccess()) {
+            Account account = (Account) result.getData();
+            Map<String, String> map = new HashMap<>();
+            map.put("value", account.getAddress().toString());
+            result.setData(map);
         }
-        Account account = (Account) result.getData();
-        return Result.getSuccess().setData(account.getAddress().toString()).toRpcClientResult();
+        return result.toRpcClientResult();
     }
 
     @POST
@@ -772,11 +831,13 @@ public class AccountResource {
             return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG).toRpcClientResult();
         }
         Result result = accountService.importAccountFormKeyStore(accountKeyStoreDto.toAccountKeyStore(), password);
-        if (result.isFailed()) {
-            return result.toRpcClientResult();
+        if(result.isSuccess()) {
+            Account account = (Account) result.getData();
+            Map<String, String> map = new HashMap<>();
+            map.put("value", account.getAddress().toString());
+            result.setData(map);
         }
-        Account account = (Account) result.getData();
-        return Result.getSuccess().setData(account.getAddress().toString()).toRpcClientResult();
+        return result.toRpcClientResult();
     }
 
     @POST
@@ -810,11 +871,13 @@ public class AccountResource {
         }
 
         Result result = accountService.importAccountFormKeyStore(accountKeyStoreDto.toAccountKeyStore(), password);
-        if (result.isFailed()) {
-            return result.toRpcClientResult();
+        if(result.isSuccess()) {
+            Account account = (Account) result.getData();
+            Map<String, String> map = new HashMap<>();
+            map.put("value", account.getAddress().toString());
+            result.setData(map);
         }
-        Account account = (Account) result.getData();
-        return Result.getSuccess().setData(account.getAddress().toString()).toRpcClientResult();
+        return result.toRpcClientResult();
     }
 
 
@@ -864,7 +927,7 @@ public class AccountResource {
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "[导入] 根据私钥导入账户", notes = "返回账户地址")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "success", response = Result.class)
+            @ApiResponse(code = 200, message = "success", response = RpcClientResult.class)
     })
     public RpcClientResult importAccountByPriKey(@ApiParam(name = "form", value = "导入账户表单数据", required = true) AccountPriKeyPasswordForm form) {
 
@@ -896,11 +959,13 @@ public class AccountResource {
             return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG).toRpcClientResult();
         }
         Result result = accountService.importAccount(priKey, password);
-        if (result.isFailed()) {
-            return result.toRpcClientResult();
+        if(result.isSuccess()) {
+            Account account = (Account) result.getData();
+            Map<String, String> map = new HashMap<>();
+            map.put("value", account.getAddress().toString());
+            result.setData(map);
         }
-        Account account = (Account) result.getData();
-        return Result.getSuccess().setData(account.getAddress().toString()).toRpcClientResult();
+        return result.toRpcClientResult();
     }
 
     @POST
@@ -908,7 +973,7 @@ public class AccountResource {
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "[移除] 移除账户", notes = "Nuls_RPC_API文档[3.4.9]")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "success", response = Result.class)
+            @ApiResponse(code = 200, message = "success", response = RpcClientResult.class)
     })
     public RpcClientResult removeAccount(@ApiParam(name = "address", value = "账户地址", required = true)
                                          @PathParam("address") String address,
@@ -917,6 +982,12 @@ public class AccountResource {
         if (!Address.validAddress(address)) {
             return Result.getFailed(AccountErrorCode.ADDRESS_ERROR).toRpcClientResult();
         }
-        return accountService.removeAccount(address, form.getPassword()).toRpcClientResult();
+        Result result = accountService.removeAccount(address, form.getPassword());
+        if(result.isSuccess()) {
+            Map<String, Boolean> map = new HashMap<>();
+            map.put("value", (Boolean)result.getData());
+            result.setData(map);
+        }
+        return result.toRpcClientResult();
     }
 }
