@@ -373,13 +373,13 @@ public class ConsensusTool {
         return null;
     }
 
-    public static List<ContractTransferTransaction> createContractTransferTxs(List<ContractTransfer> transfers) {
+    public static List<ContractTransferTransaction> createContractTransferTxs(List<ContractTransfer> transfers, long blockTime) {
         //TODO pierre 创建合约转账交易
         Result<ContractTransferTransaction> result = null;
         List<ContractTransferTransaction> list = new ArrayList<>();
         if(transfers != null && transfers.size() > 0) {
             for(ContractTransfer transfer : transfers) {
-                result = contractService.transfer(transfer.getFrom(), transfer.getTo(), Na.valueOf(transfer.getValue().longValue()));
+                result = contractService.transfer(transfer.getFrom(), transfer.getTo(), Na.valueOf(transfer.getValue().longValue()), blockTime);
                 if(result.isSuccess()) {
                     list.add(result.getData());
                 } else {
@@ -424,9 +424,10 @@ public class ConsensusTool {
         return ledgerService.verifyCoinData(contractTransferTx, toMapsOfContract, fromSetOfContract);
     }
 
-    public static void rollbackContractTransferTxs(List<ContractTransferTransaction> successContractTransferTxs) {
+    public static void rollbackContractTransferTxs(Map<String, ContractTransferTransaction> successContractTransferTxs) {
         if(successContractTransferTxs != null && successContractTransferTxs.size() > 0) {
-            for(Transaction tx : successContractTransferTxs) {
+            Collection<ContractTransferTransaction> values = successContractTransferTxs.values();
+            for(Transaction tx : values) {
                 contractService.rollbackTransaction(tx);
             }
         }

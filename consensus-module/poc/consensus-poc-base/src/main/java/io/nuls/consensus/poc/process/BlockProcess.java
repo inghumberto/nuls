@@ -199,8 +199,8 @@ public class BlockProcess {
                     List<ContractTransfer> transfers = null;
                     List<String> contractEvents = null;
                     List<ContractTransferTransaction> contractTransferTxs = null;
-                    List<ContractTransferTransaction> successContractTransferTxs = new ArrayList<>();
-                    List<ContractTransferTransaction> receiveContractTransferTxs = new ArrayList<>();
+                    Map<String, ContractTransferTransaction> successContractTransferTxs = new HashMap<>();
+                    Map<String, ContractTransferTransaction> receiveContractTransferTxs = new HashMap<>();
                     boolean isCorrectContractTransfer = true;
 
                     for (Transaction tx : block.getTxs()) {
@@ -215,7 +215,7 @@ public class BlockProcess {
                         }
 
                         if(tx.getType() == ContractConstant.TX_TYPE_CONTRACT_TRANSFER) {
-                            receiveContractTransferTxs.add((ContractTransferTransaction) tx);
+                            receiveContractTransferTxs.put(tx.getHash().getDigestHex(), (ContractTransferTransaction) tx);
                         }
 
                         // 验证区块时发现智能合约交易就调用智能合约
@@ -235,7 +235,7 @@ public class BlockProcess {
                             }
                             // 创建合约转账交易
                             if(transfers != null && transfers.size() >0) {
-                                contractTransferTxs = ConsensusTool.createContractTransferTxs(transfers);
+                                contractTransferTxs = ConsensusTool.createContractTransferTxs(transfers, block.getHeader().getTime());
 
                                 //TODO pierre 是否出现错误转账，就验证区块失败？？？
                                 // 验证合约转账交易
@@ -247,7 +247,7 @@ public class BlockProcess {
                                         isCorrectContractTransfer = false;
                                         break;
                                     } else {
-                                        successContractTransferTxs.add(contractTransferTx);
+                                        successContractTransferTxs.put(contractTransferTx.getHash().getDigestHex(), contractTransferTx);
                                     }
                                 }
 
@@ -266,9 +266,20 @@ public class BlockProcess {
                         break;
                     }
 
-                    //TODO pierre 验证合约转账交易, 如何比对合约转账交易
-                    // successContractTransferTxs
-                    // receiveContractTransferTxs
+                    // 验证合约转账交易, 比对合约转账交易
+                    if(successContractTransferTxs.size() != receiveContractTransferTxs.size()) {
+                        Log.info("number of contract transfer tx is incorrect.");
+                        success = false;
+                        break;
+                    }
+                    Set<String> receiveContractTransferTxHashsSet = receiveContractTransferTxs.keySet();
+                    for(String txHash : receiveContractTransferTxHashsSet) {
+                        if(!successContractTransferTxs.containsKey(txHash)) {
+                            Log.info("data of contract transfer tx is error.");
+                            success = false;
+                            break;
+                        }
+                    }
 
                     if (!success) {
                         break;

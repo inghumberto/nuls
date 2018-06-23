@@ -233,7 +233,12 @@ public class BlockServiceImpl implements BlockService {
             return result;
         }
         try {
+            //TODO pierre 如果普通转账可以向合约地址转账，合约地址在花费资产时，查询的余额可能会出现问题
+            //TODO 合约账本相当于一个全网账本，合约交易广播到各节点时，未刷新余额，打包或者验证区块时，合约执行并查询余额，
+            //TODO 而刷新余额是在保存区块时，打包或者验证区块之后
+            //TODO 综上，导致查询合约地址余额时会有问题
             accountLedgerService.saveConfirmedTransactionList(block.getTxs());
+            //TODO pierre 处理合约相关交易, 另外何处退换剩余的Gas？？？
         } catch (Exception e) {
             Log.warn("save local tx failed", e);
         }

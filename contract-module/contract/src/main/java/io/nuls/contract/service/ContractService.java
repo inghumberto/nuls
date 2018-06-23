@@ -95,7 +95,7 @@ public interface ContractService {
      * @param values
      * @return
      */
-    Result transfer(byte[] from, byte[] to, Na values);
+    Result transfer(byte[] from, byte[] to, Na values, long blockTime);
 
     /**
      * 保存 txInfo : key -> contractAddress + txHash, status is confirmed

@@ -312,7 +312,7 @@ public class ConsensusProcess {
         List<ContractTransfer> transfers = null;
         List<String> contractEvents = null;
         List<ContractTransferTransaction> contractTransferTxs = null;
-        List<ContractTransferTransaction> successContractTransferTxs = null;
+        Map<String, ContractTransferTransaction> successContractTransferTxs = null;
         //Map<String, Coin> toMapsOfContract = new HashMap<>();
         //Set<String> fromSetOfContract = new HashSet<>();
         boolean isCorrectContractTransfer = true;
@@ -392,8 +392,9 @@ public class ConsensusProcess {
                 }
                 // 创建合约转账交易
                 if(transfers != null && transfers.size() >0) {
-                    contractTransferTxs = ConsensusTool.createContractTransferTxs(transfers);
-                    successContractTransferTxs = new ArrayList<>();
+                    // 合约转账使用的交易时间为区块时间
+                    contractTransferTxs = ConsensusTool.createContractTransferTxs(transfers, bd.getTime());
+                    successContractTransferTxs = new HashMap<>();
 
                     //TODO pierre 是否出现错误转账，就丢弃整笔合约交易
                     // 验证合约转账交易
@@ -405,7 +406,7 @@ public class ConsensusProcess {
                             isCorrectContractTransfer = false;
                             break;
                         } else {
-                            successContractTransferTxs.add(contractTransferTx);
+                            successContractTransferTxs.put(contractTransferTx.getHash().getDigestHex(), contractTransferTx);
                         }
                     }
 

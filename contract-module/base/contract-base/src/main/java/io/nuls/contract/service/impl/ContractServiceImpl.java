@@ -296,16 +296,6 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
                 return Result.getFailed(ContractErrorCode.NULL_PARAMETER);
             }
 
-            // 如果是创建合约的交易，即刻保存合约地址到DB中，用于后面代码逻辑的校验
-            if(tx instanceof CreateContractTransaction) {
-                CreateContractData txData = ((CreateContractTransaction) tx).getTxData();
-                byte[] contractAddress = txData.getContractAddress();
-                Result result = contractAddressStorageService.saveContractAddress(contractAddress);
-                if(result.isFailed()) {
-                    return result;
-                }
-            }
-
             // 合约账本不处理非合约相关交易
             if(!ContractLedgerUtil.isRelatedTransaction(tx)) {
                 return Result.getSuccess().setData(new Integer(0));
@@ -482,13 +472,13 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
     }
 
     @Override
-    public Result<ContractTransferTransaction> transfer(byte[] from, byte[] to, Na values) {
+    public Result<ContractTransferTransaction> transfer(byte[] from, byte[] to, Na values, long blockTime) {
         try {
             if(!ContractLedgerUtil.isContractAddress(from)) {
                 return Result.getFailed(ContractErrorCode.CONTRACT_ADDRESS_NOT_EXIST);
             }
             ContractTransferTransaction tx = new ContractTransferTransaction();
-            tx.setTime(TimeService.currentTimeMillis());
+            tx.setTime(blockTime);
 
             CoinData coinData = new CoinData();
             Coin toCoin = new Coin(to, values);

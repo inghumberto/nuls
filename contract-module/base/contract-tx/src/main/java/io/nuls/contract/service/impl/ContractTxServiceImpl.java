@@ -81,7 +81,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
     @Autowired
     private TransactionService transactionService;
     @Autowired
-    private ContractAddressStorageService contractStorageService;
+    private ContractAddressStorageService contractAddressStorageService;
     @Autowired
     private ContractService contractService;
     @Autowired
@@ -230,24 +230,33 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             sig.setSignData(accountService.signData(tx.getHash().serialize(), account, password));
             tx.setScriptSig(sig.serialize());
 
+            // 如果是创建合约的交易，即刻保存合约地址到DB中，用于后面代码逻辑的校验
+            Result result = contractAddressStorageService.saveContractAddress(contractAddressBytes);
+            if(result.isFailed()) {
+                return result;
+            }
+
             // 保存未确认交易到本地账户
             Result saveResult = accountLedgerService.verifyAndSaveUnconfirmedTransaction(tx);
             if (saveResult.isFailed()) {
+                contractAddressStorageService.deleteContractAddress(contractAddressBytes);
                 return saveResult;
             }
 
-            // 保存未确认交易到合约账本
-            saveResult = contractService.saveUnconfirmedTransaction(tx);
+            //TODO pierre 是否保存未确认交易到合约账本，只有打包调用合约时，才有可能花费合约地址的资产
+            /*saveResult = contractService.saveUnconfirmedTransaction(tx);
             if (saveResult.isFailed()) {
                 accountLedgerService.rollbackTransaction(tx);
+                contractAddressStorageService.deleteContractAddress(contractAddressBytes);
                 return saveResult;
-            }
+            }*/
 
             // 广播交易
             Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
-                accountLedgerService.rollbackTransaction(tx);
                 contractService.rollbackTransaction(tx);
+                accountLedgerService.rollbackTransaction(tx);
+                contractAddressStorageService.deleteContractAddress(contractAddressBytes);
                 return sendResult;
             }
 
@@ -262,15 +271,6 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             Log.error(e);
             return Result.getFailed(e.getMessage());
         }
-    }
-
-    private Result saveUnconfirmedTransaction(Transaction tx) {
-        Result saveResult = accountLedgerService.verifyAndSaveUnconfirmedTransaction(tx);
-        if (saveResult.isFailed()) {
-            return saveResult;
-        }
-        saveResult = contractService.saveUnconfirmedTransaction(tx);
-        return saveResult;
     }
 
     /**
