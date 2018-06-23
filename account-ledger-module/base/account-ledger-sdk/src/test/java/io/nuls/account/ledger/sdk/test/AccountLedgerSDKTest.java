@@ -12,6 +12,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class AccountLedgerSDKTest {
 
@@ -33,29 +34,31 @@ public class AccountLedgerSDKTest {
             List<OutputDto> outputs = new ArrayList<>();
 
             InputDto input = new InputDto();
-            input.setFromHash("002023c66d10cf9047dbcca12aee2235ff9dfe0f13db3c921a2ec22e0dd63331cb85");
-            input.setFromIndex(1);
+            input.setFromHash("002028d2cc1701fa85c489178aefb55352e34ffc04d0a057ae56bb96b9559c0d2a5b");
+            input.setFromIndex(0);
+            input.setValue(10000000000000L);
             inputs.add(input);
 
             OutputDto output = new OutputDto();
-            output.setAddress("2CjPVMKST7h4Q5Dqa8Q9P9CwYSmN7mG");
-            output.setValue(1000000L);
+            output.setAddress("2Cht55uh8JR5ZAQkp1CVyNPwmFvNuLS");
+            output.setValue(1234000000L);
             output.setLockTime(0L);
             outputs.add(output);
 
             output = new OutputDto();
-            output.setAddress("2ChDcC1nvki521xXhYAUzYXt4RLNuLs");
-            output.setValue(1000000000L - 1000000 - fee);
+            output.setAddress("2CbtLw2Z4LugrdvPNdvAphNBBSpjpAr");
+            output.setValue(10000000000000L - 1234000000L - fee);
             output.setLockTime(0L);
             outputs.add(output);
 
             Result result = service.createTransaction(inputs, outputs, remark);
-
-            String txHex = (String) result.getData();
-            String prikey = "1f9d3ad044e0e1201e117b041f3d2ceedacb44688e57969620f3ad7a4d6e9d24";
-            String address = "2ChDcC1nvki521xXhYAUzYXt4RLNuLs";
+            Map<String, Object> resultMap = (Map<String, Object>) result.getData();
+            String txHex = resultMap.get("value").toString();
+            String prikey = "00cba38a6c67d3fa55ea1aff2a2a0796894666ad8f9b4e63f43199f7eba8fe1d92";
+            String address = "2CbtLw2Z4LugrdvPNdvAphNBBSpjpAr";
             result = service.signTransaction(txHex, prikey, address, null);
-            txHex = (String) result.getData();
+            resultMap = (Map<String, Object>) result.getData();
+            txHex = resultMap.get("value").toString();
             result = service.broadcastTransaction(txHex);
 
             System.out.println(result.getData());

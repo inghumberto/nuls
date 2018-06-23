@@ -398,7 +398,7 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
     @Override
     public CoinDataResult getCoinData(byte[] address, Na amount, int size, Na price) throws NulsException {
         if (null == price) {
-            throw new NulsRuntimeException(KernelErrorCode.FAILED, "the price is null!");
+            throw new NulsRuntimeException(KernelErrorCode.PARAMETER_ERROR);
         }
 
         lock.lock();
@@ -571,7 +571,7 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
             return Result.getSuccess().setData(tx.getHash().getDigestHex());
         } catch (IOException e) {
             Log.error(e);
-            return Result.getFailed(e.getMessage());
+            return Result.getFailed(KernelErrorCode.IO_ERROR);
         } catch (NulsException e) {
             Log.error(e);
             return Result.getFailed(e.getErrorCode());
@@ -615,7 +615,7 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
                 owner = coin.getOwner();
             } else {
                 if (!Arrays.equals(coin.getOwner(), owner)) {
-                    return Result.getFailed(LedgerErrorCode.INVALID_INPUT, "utxo not from same address");
+                    return Result.getFailed(LedgerErrorCode.INVALID_INPUT);
                 }
             }
             coin.setOwner(inputsKey.get(i));
@@ -644,7 +644,7 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
             return Result.getSuccess().setData(txHex);
         } catch (IOException e) {
             Log.error(e);
-            return Result.getFailed(e.getMessage());
+            return Result.getFailed(KernelErrorCode.IO_ERROR);
         }
     }
 
