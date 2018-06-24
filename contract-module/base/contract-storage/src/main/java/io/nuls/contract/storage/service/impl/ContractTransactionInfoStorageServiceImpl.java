@@ -36,6 +36,7 @@ import io.nuls.kernel.lite.annotation.Service;
 import io.nuls.kernel.lite.core.bean.InitializingBean;
 import io.nuls.kernel.model.Result;
 import io.nuls.kernel.utils.AddressTool;
+import io.nuls.kernel.utils.NulsByteBuffer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -85,7 +86,7 @@ public class ContractTransactionInfoStorageServiceImpl implements ContractTransa
             if (Arrays.equals(addressKey, address)) {
                 values = dbService.get(ContractStorageConstant.DB_NAME_CONTRACT_LEDGER_TX_INDEX, key);
                 transactionInfoPo = new TransactionInfoPo();
-                transactionInfoPo.parse(values);
+                transactionInfoPo.parse(values, 0);
                 infoPoList.add(transactionInfoPo);
             }
         }

@@ -41,6 +41,7 @@ import io.nuls.kernel.lite.annotation.Component;
 import io.nuls.kernel.model.Coin;
 import io.nuls.kernel.model.Result;
 import io.nuls.kernel.utils.AddressTool;
+import io.nuls.kernel.utils.NulsByteBuffer;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -82,7 +83,7 @@ public class ContractBalanceManager {
         for (Entry<byte[], byte[]> coinEntry : rawList) {
             coin = new Coin();
             try {
-                coin.parse(coinEntry.getValue());
+                coin.parse(coinEntry.getValue(), 0);
                 strAddress = asString(coin.getOwner());
             } catch (NulsException e) {
                 Log.error("parse contract coin error form db", e);
@@ -123,7 +124,7 @@ public class ContractBalanceManager {
             for (Entry<byte[], byte[]> coinEntry : rawList) {
                 coin = new Coin();
                 try {
-                    coin.parse(coinEntry.getValue());
+                    coin.parse(coinEntry.getValue(), 0);
                 } catch (NulsException e) {
                     Log.error("parse contract coin error form db", e);
                     continue;
@@ -188,7 +189,7 @@ public class ContractBalanceManager {
                 for (Entry<byte[], byte[]> addUtxo : addUtxoList) {
                     coin = new Coin();
                     try {
-                        coin.parse(addUtxo.getValue());
+                        coin.parse(addUtxo.getValue(), 0);
                     } catch (NulsException e) {
                         Log.error("parse contract coin error form db", e);
                         continue;
@@ -212,7 +213,7 @@ public class ContractBalanceManager {
                 for (Entry<byte[], byte[]> deleteUtxo : deleteUtxoList) {
                     coin = new Coin();
                     try {
-                        coin.parse(deleteUtxo.getValue());
+                        coin.parse(deleteUtxo.getValue(), 0);
                     } catch (NulsException e) {
                         Log.error("parse contract coin error form db", e);
                         continue;
@@ -242,7 +243,7 @@ public class ContractBalanceManager {
         for (Entry<byte[], byte[]> coinEntry : rawList) {
             Coin coin = new Coin();
             try {
-                coin.parse(coinEntry.getValue());
+                coin.parse(coinEntry.getValue(), 0);
             } catch (NulsException e) {
                 Log.info("parse coin form db error");
                 continue;

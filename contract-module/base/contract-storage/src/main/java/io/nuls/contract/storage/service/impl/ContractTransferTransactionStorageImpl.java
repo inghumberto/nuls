@@ -38,6 +38,7 @@ import io.nuls.kernel.lite.core.bean.InitializingBean;
 import io.nuls.kernel.model.NulsDigestData;
 import io.nuls.kernel.model.Result;
 import io.nuls.kernel.model.Transaction;
+import io.nuls.kernel.utils.NulsByteBuffer;
 
 /**
  * @desription:
@@ -88,7 +89,7 @@ public class ContractTransferTransactionStorageImpl implements ContractTransferT
                 return Result.getSuccess();
             }
             ContractTransferTransaction contractTransferTransaction = new ContractTransferTransaction();
-            contractTransferTransaction.parse(txBytes);
+            contractTransferTransaction.parse(txBytes, 0);
             return Result.getSuccess().setData(contractTransferTransaction);
         } catch (Exception e) {
             Log.error(e);
