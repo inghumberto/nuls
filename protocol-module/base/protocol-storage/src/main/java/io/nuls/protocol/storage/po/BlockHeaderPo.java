@@ -99,7 +99,7 @@ public class BlockHeaderPo extends BaseNulsData {
     }
 
     @Override
-    protected void parse(NulsByteBuffer byteBuffer) throws NulsException {
+    public void parse(NulsByteBuffer byteBuffer) throws NulsException {
         this.preHash = byteBuffer.readHash();
         this.merkleHash = byteBuffer.readHash();
         this.time = byteBuffer.readVarInt();

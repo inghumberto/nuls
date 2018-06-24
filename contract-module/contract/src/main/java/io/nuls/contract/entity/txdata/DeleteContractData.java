@@ -58,7 +58,7 @@ public class DeleteContractData extends TransactionLogicData {
     }
 
     @Override
-    protected void parse(NulsByteBuffer byteBuffer) throws NulsException {
+    public void parse(NulsByteBuffer byteBuffer) throws NulsException {
         this.sender = byteBuffer.readByLengthByte();
         this.contractAddress = byteBuffer.readByLengthByte();
     }

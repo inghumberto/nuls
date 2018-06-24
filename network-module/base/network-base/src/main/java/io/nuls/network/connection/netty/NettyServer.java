@@ -53,6 +53,8 @@ public class NettyServer {
                 .option(ChannelOption.SO_BACKLOG, 128)
                 .childOption(ChannelOption.TCP_NODELAY, true)            //Send messages immediately
                 .childOption(ChannelOption.SO_KEEPALIVE, true)
+                .childOption(ChannelOption.SO_SNDBUF, 128*1024)
+                .childOption(ChannelOption.SO_RCVBUF, 128*1024)
                 .childHandler(new NulsChannelInitializer<>(new ServerChannelHandler()));
     }
 

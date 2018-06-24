@@ -25,11 +25,13 @@
 
 package io.nuls.network.manager;
 
+import io.netty.buffer.ByteBuf;
 import io.nuls.core.tools.log.Log;
 import io.nuls.kernel.constant.KernelErrorCode;
 import io.nuls.kernel.context.NulsContext;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.thread.manager.TaskManager;
+import io.nuls.kernel.utils.NulsByteBuffer;
 import io.nuls.message.bus.service.MessageBusService;
 import io.nuls.network.connection.netty.NettyClient;
 import io.nuls.network.connection.netty.NettyServer;
@@ -43,7 +45,6 @@ import io.nuls.protocol.message.base.BaseMessage;
 import io.nuls.protocol.message.base.MessageHeader;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -103,31 +104,19 @@ public class ConnectionManager {
         }, true);
     }
 
-    public void receiveMessage(ByteBuffer buffer, Node node) throws NulsException {
+    public void receiveMessage(ByteBuf buffer, Node node) throws NulsException {
         List<BaseMessage> list;
         try {
-            buffer.flip();
-            if (!node.isAlive()) {
-                buffer.clear();
-                return;
-            }
             list = new ArrayList<>();
-            byte[] bytes = buffer.array();
-            int offset = 0;
-            while (offset < bytes.length - 1) {
-                MessageHeader header = new MessageHeader();
-                header.parse(bytes);
+            byte[] bytes = new byte[buffer.readableBytes()];
+            buffer.readBytes(bytes);
+            NulsByteBuffer byteBuffer = new NulsByteBuffer(bytes);
+            while (!byteBuffer.isFinished()) {
+                MessageHeader header = byteBuffer.readNulsData(new MessageHeader());
+                byteBuffer.setCursor(byteBuffer.getCursor() - header.size());
                 BaseMessage message = getMessageBusService().getMessageInstance(header.getModuleId(), header.getMsgType()).getData();
-                message.parse(bytes);
-
+                message = byteBuffer.readNulsData(message);
                 list.add(message);
-                offset = message.serialize().length;
-                if (bytes.length > offset) {
-                    byte[] subBytes = new byte[bytes.length - offset];
-                    System.arraycopy(bytes, offset, subBytes, 0, subBytes.length);
-                    bytes = subBytes;
-                    offset = 0;
-                }
             }
             for (BaseMessage message : list) {
                 if (MessageFilterChain.getInstance().doFilter(message)) {
@@ -140,7 +129,7 @@ public class ConnectionManager {
                     processMessage(message, node);
                 } else {
                     node.setStatus(Node.BAD);
-                    Log.info("-------------------- receive message filter remove node ---------------------------" + node.getId());
+                    Log.debug("-------------------- receive message filter remove node ---------------------------" + node.getId());
                     nodeManager.removeNode(node.getId());
                 }
             }
