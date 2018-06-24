@@ -23,6 +23,7 @@
  */
 package io.nuls.contract.storage.service;
 
+import io.nuls.contract.dto.ContractResult;
 import io.nuls.kernel.model.NulsDigestData;
 import io.nuls.kernel.model.Result;
 
@@ -41,7 +42,7 @@ public interface ContractExecuteResultStorageService {
      * @param result
      * @return
      */
-    Result saveContractExecuteResult(NulsDigestData hash, byte[] result);
+    Result saveContractExecuteResult(NulsDigestData hash, ContractResult result);
 
     /**
      * 删除合约执行结果
@@ -58,5 +59,13 @@ public interface ContractExecuteResultStorageService {
      * @return
      */
     boolean isExistContractExecuteResult(NulsDigestData hash);
+
+    /**
+     * 获取合约执行结果
+     *
+     * @param hash
+     * @return
+     */
+    public ContractResult getContractExecuteResult(NulsDigestData hash);
 
 }

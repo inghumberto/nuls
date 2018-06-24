@@ -43,6 +43,7 @@ import io.nuls.contract.ledger.util.ContractLedgerUtil;
 import io.nuls.contract.service.ContractService;
 import io.nuls.contract.storage.po.TransactionInfoPo;
 import io.nuls.contract.storage.service.ContractAddressStorageService;
+import io.nuls.contract.storage.service.ContractExecuteResultStorageService;
 import io.nuls.contract.storage.service.ContractTransferTransactionStorageService;
 import io.nuls.contract.util.ContractCoinComparator;
 import io.nuls.contract.vm.program.*;
@@ -85,6 +86,9 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
 
     @Autowired
     private ContractAddressStorageService contractAddressStorageService;
+
+    @Autowired
+    private ContractExecuteResultStorageService contractExecuteResultStorageService;
 
     @Autowired
     private ContractBalanceManager contractBalanceManager;
@@ -444,6 +448,38 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
         Result result = Result.getSuccess().setData(txs.size());
         result = rollbackTransaction(txs, true);
         return result;
+    }
+
+    @Override
+    public Result saveContractExecuteResult(NulsDigestData hash, ContractResult result) {
+        if (hash == null || result == null) {
+            return Result.getFailed(ContractErrorCode.NULL_PARAMETER);
+        }
+        return contractExecuteResultStorageService.saveContractExecuteResult(hash, result);
+    }
+
+    @Override
+    public Result deleteContractExecuteResult(NulsDigestData hash) {
+        if (hash == null) {
+            return Result.getFailed(ContractErrorCode.NULL_PARAMETER);
+        }
+        return contractExecuteResultStorageService.deleteContractExecuteResult(hash);
+    }
+
+    @Override
+    public boolean isExistContractExecuteResult(NulsDigestData hash) {
+        if (hash == null) {
+            return false;
+        }
+        return contractExecuteResultStorageService.isExistContractExecuteResult(hash);
+    }
+
+    @Override
+    public ContractResult getContractExecuteResult(NulsDigestData hash) {
+        if (hash == null) {
+            return null;
+        }
+        return contractExecuteResultStorageService.getContractExecuteResult(hash);
     }
 
     private Result<Integer> rollbackTransaction(List<Transaction> txs, boolean isCheckContract) {

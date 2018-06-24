@@ -236,11 +236,12 @@ public class BlockProcess {
 
                         // 验证区块时发现智能合约交易就调用智能合约
                         callContractResult = ConsensusTool.callContract(tx, bestHeight, stateRoot);
+                        //TODO 合约执行结果保存在DB中???
+                        ConsensusTool.saveContractExecuteResult(tx.getHash(), callContractResult.getData());
                         if(callContractResult.isFailed()) {
-                            //TODO pierre 如果合约调用失败，则验证区块失败？？？
+                            //TODO pierre 合约调用失败需要处理什么逻辑？
                             Log.info("call contract failed message:" + callContractResult.getMsg());
-                            success = false;
-                            break;
+
                         } else {
                             contractResult = callContractResult.getData();
                             stateRoot = contractResult.getStateRoot();
@@ -253,25 +254,27 @@ public class BlockProcess {
                             if(transfers != null && transfers.size() >0) {
                                 contractTransferTxs = ConsensusTool.createContractTransferTxs(transfers, block.getHeader().getTime());
 
-                                //TODO pierre 是否出现错误转账，就验证区块失败？？？
                                 // 验证合约转账交易
                                 for(ContractTransferTransaction contractTransferTx : contractTransferTxs) {
+
                                     result = ConsensusTool.verifyContractTransferCoinData(contractTransferTx, toMaps, fromSet);
                                     if(result.isFailed()) {
+                                        //TODO pierre 是否出现错误转账，如何处理这类执行结果
                                         // 回滚转账交易
-                                        ConsensusTool.rollbackContractTransferTxs(successContractTransferTxs);
-                                        isCorrectContractTransfer = false;
-                                        break;
-                                    } else {
+                                        ConsensusTool.rollbackContractTransferTx(contractTransferTx);
+                                        //isCorrectContractTransfer = false;
+                                        //break;
+                                    }
+                                    else {
                                         successContractTransferTxs.put(contractTransferTx.getHash().getDigestHex(), contractTransferTx);
                                     }
                                 }
 
-                                if(!isCorrectContractTransfer) {
-                                    Log.info("contract transfer failed message:" + result.getMsg());
-                                    success = false;
-                                    break;
-                                }
+                                //if(!isCorrectContractTransfer) {
+                                //    Log.info("contract transfer failed message:" + result.getMsg());
+                                //    success = false;
+                                //    break;
+                                //}
                             }
                         }
                     }
@@ -282,12 +285,13 @@ public class BlockProcess {
                         break;
                     }
 
-                    // 验证合约转账交易, 比对合约转账交易
+                    // 验证合约转账交易, 比对合约转账交易的成功数目
                     if(successContractTransferTxs.size() != receiveContractTransferTxs.size()) {
                         Log.info("number of contract transfer tx is incorrect.");
                         success = false;
                         break;
                     }
+                    // 验证合约转账交易, 比对合约转账交易的hash值
                     Set<String> receiveContractTransferTxHashsSet = receiveContractTransferTxs.keySet();
                     for(String txHash : receiveContractTransferTxHashsSet) {
                         if(!successContractTransferTxs.containsKey(txHash)) {

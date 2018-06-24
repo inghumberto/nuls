@@ -432,5 +432,15 @@ public class ConsensusTool {
             }
         }
     }
+
+    public static void rollbackContractTransferTx(ContractTransferTransaction tx) {
+        if(tx != null) {
+            contractService.rollbackTransaction(tx);
+        }
+    }
+
+    public static Result saveContractExecuteResult(NulsDigestData hash, ContractResult contractResult) {
+        return contractService.saveContractExecuteResult(hash, contractResult);
+    }
 }
 

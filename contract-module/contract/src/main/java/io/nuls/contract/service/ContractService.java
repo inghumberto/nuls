@@ -28,6 +28,7 @@ import io.nuls.contract.entity.txdata.CallContractData;
 import io.nuls.contract.entity.txdata.CreateContractData;
 import io.nuls.contract.entity.txdata.DeleteContractData;
 import io.nuls.kernel.model.Na;
+import io.nuls.kernel.model.NulsDigestData;
 import io.nuls.kernel.model.Result;
 import io.nuls.kernel.model.Transaction;
 
@@ -116,5 +117,39 @@ public interface ContractService {
      */
     Result<Integer> rollbackTransaction(Transaction tx);
     Result<Integer> rollbackTransaction(List<Transaction> txs);
+
+
+    /**
+     * 保存合约执行结果
+     *
+     * @param hash
+     * @param result
+     * @return
+     */
+    Result saveContractExecuteResult(NulsDigestData hash, ContractResult contractResult);
+
+    /**
+     * 删除合约执行结果
+     *
+     * @param hash
+     * @return
+     */
+    Result deleteContractExecuteResult(NulsDigestData hash);
+
+    /**
+     * 根据地址检查是否存在这个合约执行结果
+     *
+     * @param hash
+     * @return
+     */
+    boolean isExistContractExecuteResult(NulsDigestData hash);
+
+    /**
+     * 获取合约执行结果
+     *
+     * @param hash
+     * @return
+     */
+    public ContractResult getContractExecuteResult(NulsDigestData hash);
 
 }

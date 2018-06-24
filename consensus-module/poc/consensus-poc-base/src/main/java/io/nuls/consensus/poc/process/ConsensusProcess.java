@@ -312,8 +312,6 @@ public class ConsensusProcess {
         List<String> contractEvents = null;
         List<ContractTransferTransaction> contractTransferTxs = null;
         Map<String, ContractTransferTransaction> successContractTransferTxs = null;
-        //Map<String, Coin> toMapsOfContract = new HashMap<>();
-        //Set<String> fromSetOfContract = new HashSet<>();
         boolean isCorrectContractTransfer = true;
 
         while (true) {
@@ -382,11 +380,18 @@ public class ConsensusProcess {
                 continue;
             }
 
+            if (!outHashSet.add(tx.getHash())) {
+                Log.warn("重复的交易");
+                continue;
+            }
+
             // 打包时发现智能合约交易就调用智能合约
             callContractResult = ConsensusTool.callContract(tx, height, stateRoot);
+            //TODO pierre 这笔交易的合约执行结果保存在何处？
+            //TODO 保存在DB中???
+            ConsensusTool.saveContractExecuteResult(tx.getHash(), callContractResult.getData());
             if(callContractResult.isFailed()) {
-                //TODO pierre 如果合约调用失败，这笔交易的合约执行结果保存在何处？
-                //TODO 保存在DB中???
+                //TODO pierre 合约调用失败需要处理什么逻辑？
 
             } else {
                 contractResult = callContractResult.getData();
@@ -403,35 +408,29 @@ public class ConsensusProcess {
                     contractTransferTxs = ConsensusTool.createContractTransferTxs(transfers, bd.getTime());
                     successContractTransferTxs = new HashMap<>();
 
-                    //TODO pierre 如果转账出现错误，如何存储这类执行结果
-                    //TODO 保存在DB中???
                     // 验证合约转账交易
                     for(ContractTransferTransaction contractTransferTx : contractTransferTxs) {
                         result = ConsensusTool.verifyContractTransferCoinData(contractTransferTx, toMaps, fromSet);
                         if(result.isFailed()) {
+                            //TODO pierre 如果转账出现错误，如何处理这类交易，是否还要打包到区块中???
                             // 回滚转账交易
-                            ConsensusTool.rollbackContractTransferTxs(successContractTransferTxs);
-                            isCorrectContractTransfer = false;
-                            break;
-                        } else {
+                            ConsensusTool.rollbackContractTransferTx(contractTransferTx);
+                            //isCorrectContractTransfer = false;
+                            //break;
+                        }
+                        else {
                             successContractTransferTxs.put(contractTransferTx.getHash().getDigestHex(), contractTransferTx);
                         }
                     }
 
-                    if(!isCorrectContractTransfer) {
-                        Log.warn(result.getMsg());
-                        continue;
-                    }
+                    //if(!isCorrectContractTransfer) {
+                    //    Log.warn(result.getMsg());
+                    //    continue;
+                    //}
                 }
-                if(contractTransferTxs != null && contractTransferTxs.size() >0) {
-                    packingTxList.addAll(contractTransferTxs);
+                if(successContractTransferTxs != null && successContractTransferTxs.size() >0) {
+                    packingTxList.addAll(successContractTransferTxs.values());
                 }
-            }
-
-
-            if (!outHashSet.add(tx.getHash())) {
-                Log.warn("重复的交易");
-                continue;
             }
 
             tx.setBlockHeight(bd.getHeight());
