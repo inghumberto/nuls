@@ -63,6 +63,7 @@ public class DeleteContractTxProcessor implements TransactionProcessor<DeleteCon
      */
     @Override
     public Result onRollback(DeleteContractTransaction tx, Object secondaryData) {
+        /*
         DeleteContractData txData = tx.getTxData();
         byte[] contractAddress = txData.getContractAddress();
         // 还原地址
@@ -77,6 +78,8 @@ public class DeleteContractTxProcessor implements TransactionProcessor<DeleteCon
             }
         }
         return result;
+        */
+        return null;
     }
 
     /**
@@ -88,6 +91,7 @@ public class DeleteContractTxProcessor implements TransactionProcessor<DeleteCon
      */
     @Override
     public Result onCommit(DeleteContractTransaction tx, Object secondaryData) {
+        /*
         Result<List<Entry<byte[], byte[]>>> listResult = null;
         DeleteContractData txData = tx.getTxData();
         byte[] contractAddress = txData.getContractAddress();
@@ -99,6 +103,8 @@ public class DeleteContractTxProcessor implements TransactionProcessor<DeleteCon
             tx.setDeleteList(listResult.getData());
         }
         return listResult;
+        */
+        return null;
     }
 
     @Override

@@ -266,7 +266,6 @@ public class ConsensusProcess {
     }
 
     private Block doPacking(MeetingMember self, MeetingRound round) throws NulsException, IOException {
-        //TODO pierre 疑问 - 打包时, UTXO 是否已保存？？本地交易的话，已保存UTXO，那非本地交易的打包，UTXO是否已经保存？？？
 
         Block bestBlock = chainManager.getBestBlock();
 
@@ -386,8 +385,9 @@ public class ConsensusProcess {
             // 打包时发现智能合约交易就调用智能合约
             callContractResult = ConsensusTool.callContract(tx, height, stateRoot);
             if(callContractResult.isFailed()) {
-                //TODO pierre 如果合约调用失败，是否丢弃这笔交易
-                continue;
+                //TODO pierre 如果合约调用失败，这笔交易的合约执行结果保存在何处？
+                //TODO 保存在DB中???
+
             } else {
                 contractResult = callContractResult.getData();
                 stateRoot = contractResult.getStateRoot();
@@ -403,7 +403,8 @@ public class ConsensusProcess {
                     contractTransferTxs = ConsensusTool.createContractTransferTxs(transfers, bd.getTime());
                     successContractTransferTxs = new HashMap<>();
 
-                    //TODO pierre 是否出现错误转账，就丢弃整笔合约交易
+                    //TODO pierre 如果转账出现错误，如何存储这类执行结果
+                    //TODO 保存在DB中???
                     // 验证合约转账交易
                     for(ContractTransferTransaction contractTransferTx : contractTransferTxs) {
                         result = ConsensusTool.verifyContractTransferCoinData(contractTransferTx, toMaps, fromSet);

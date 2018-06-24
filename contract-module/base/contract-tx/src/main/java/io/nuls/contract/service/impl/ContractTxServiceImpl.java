@@ -203,8 +203,8 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             ProgramExecutor track = programExecutor.begin(prevStateRoot);
             ProgramResult programResult = track.create(programCreate);
             if(programResult.isError()) {
-                Result result = Result.getFailed(programResult.getErrorMessage());
-                result.setErrorCode(ContractErrorCode.DATA_ERROR);
+                Result result = Result.getFailed(ContractErrorCode.DATA_ERROR);
+                result.setMsg(programResult.getErrorMessage());
                 return result;
             }
             long gasUsed = programResult.getGasUsed();
@@ -263,13 +263,17 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             return Result.getSuccess().setData(tx.getHash().getDigestHex());
         } catch (IOException e) {
             Log.error(e);
-            return Result.getFailed(e.getMessage());
+            Result result = Result.getFailed(ContractErrorCode.CONTRACT_TX_CREATE_ERROR);
+            result.setMsg(e.getMessage());
+            return result;
         } catch (NulsException e) {
             Log.error(e);
             return Result.getFailed(e.getErrorCode());
         } catch (Exception e) {
             Log.error(e);
-            return Result.getFailed(e.getMessage());
+            Result result = Result.getFailed(ContractErrorCode.CONTRACT_TX_CREATE_ERROR);
+            result.setMsg(e.getMessage());
+            return result;
         }
     }
 
@@ -343,8 +347,8 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
                 ProgramResult programResult = track.call(programCall);
                 Result result = null;
                 if(programResult.isError()) {
-                    result = Result.getFailed(programResult.getErrorMessage());
-                    result.setErrorCode(ContractErrorCode.DATA_ERROR);
+                    result = Result.getFailed(ContractErrorCode.DATA_ERROR);
+                    result.setMsg(programResult.getErrorMessage());
                 } else {
                     result = Result.getSuccess();
                     result.setData(programResult.getResult());
@@ -399,8 +403,8 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             ProgramResult programResult = track.call(programCall);
 
             if(programResult.isError()) {
-                Result result = Result.getFailed(programResult.getErrorMessage());
-                result.setErrorCode(ContractErrorCode.DATA_ERROR);
+                Result result = Result.getFailed(ContractErrorCode.DATA_ERROR);
+                result.setMsg(programResult.getErrorMessage());
                 return result;
             }
             long gasUsed = programResult.getGasUsed();
@@ -451,13 +455,17 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             return Result.getSuccess().setData(tx.getHash().getDigestHex());
         } catch (IOException e) {
             Log.error(e);
-            return Result.getFailed(e.getMessage());
+            Result result = Result.getFailed(ContractErrorCode.CONTRACT_TX_CREATE_ERROR);
+            result.setMsg(e.getMessage());
+            return result;
         } catch (NulsException e) {
             Log.error(e);
             return Result.getFailed(e.getErrorCode());
         } catch (Exception e) {
             Log.error(e);
-            return Result.getFailed(e.getMessage());
+            Result result = Result.getFailed(ContractErrorCode.CONTRACT_TX_CREATE_ERROR);
+            result.setMsg(e.getMessage());
+            return result;
         }
     }
 
@@ -553,13 +561,17 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             return Result.getSuccess().setData(tx.getHash().getDigestHex());
         } catch (IOException e) {
             Log.error(e);
-            return Result.getFailed(e.getMessage());
+            Result result = Result.getFailed(ContractErrorCode.CONTRACT_TX_CREATE_ERROR);
+            result.setMsg(e.getMessage());
+            return result;
         } catch (NulsException e) {
             Log.error(e);
             return Result.getFailed(e.getErrorCode());
         } catch (Exception e) {
             Log.error(e);
-            return Result.getFailed(e.getMessage());
+            Result result = Result.getFailed(ContractErrorCode.CONTRACT_TX_CREATE_ERROR);
+            result.setMsg(e.getMessage());
+            return result;
         }
     }
 

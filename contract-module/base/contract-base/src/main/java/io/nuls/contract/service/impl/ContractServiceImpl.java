@@ -135,8 +135,8 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             track.commit();
 
             if(programResult.isError()) {
-                Result result = Result.getFailed(programResult.getErrorMessage());
-                result.setErrorCode(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
+                Result result = Result.getFailed(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
+                result.setMsg(programResult.getErrorMessage());
                 return result;
             }
             // current state root
@@ -154,7 +154,9 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             return result;
         } catch (Exception e) {
             Log.error(e);
-            return Result.getFailed(e.getMessage());
+            Result result = Result.getFailed(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
+            result.setMsg(e.getMessage());
+            return result;
         }
     }
 
@@ -206,8 +208,8 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             track.commit();
 
             if(programResult.isError()) {
-                Result result = Result.getFailed(programResult.getErrorMessage());
-                result.setErrorCode(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
+                Result result = Result.getFailed(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
+                result.setMsg(programResult.getErrorMessage());
                 return result;
             }
             // current state root
@@ -226,7 +228,9 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             return result;
         } catch (Exception e) {
             Log.error(e);
-            return Result.getFailed(e.getMessage());
+            Result result = Result.getFailed(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
+            result.setMsg(e.getMessage());
+            return result;
         }
     }
 
@@ -251,8 +255,8 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             track.commit();
 
             if(programResult.isError()) {
-                Result result = Result.getFailed(programResult.getErrorMessage());
-                result.setErrorCode(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
+                Result result = Result.getFailed(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
+                result.setMsg(programResult.getErrorMessage());
                 return result;
             }
             // current state root
@@ -267,7 +271,9 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             return result;
         } catch (Exception e) {
             Log.error(e);
-            return Result.getFailed(e.getMessage());
+            Result result = Result.getFailed(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
+            result.setMsg(e.getMessage());
+            return result;
         }
     }
 

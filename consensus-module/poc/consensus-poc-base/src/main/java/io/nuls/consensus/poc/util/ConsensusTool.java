@@ -144,6 +144,7 @@ public class ConsensusTool {
         scriptSig.setSignData(signData);
         scriptSig.setPublicKey(account.getPubKey());
         header.setScriptSig(scriptSig);
+        header.setStateRoot(blockData.getStateRoot());
 
         return block;
     }
@@ -374,7 +375,6 @@ public class ConsensusTool {
     }
 
     public static List<ContractTransferTransaction> createContractTransferTxs(List<ContractTransfer> transfers, long blockTime) {
-        //TODO pierre 创建合约转账交易
         Result<ContractTransferTransaction> result = null;
         List<ContractTransferTransaction> list = new ArrayList<>();
         if(transfers != null && transfers.size() > 0) {

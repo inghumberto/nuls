@@ -46,6 +46,8 @@ public class PoConvertUtil {
         header.setMerkleHash(po.getMerkleHash());
         header.setTxCount(po.getTxCount());
         header.setScriptSig(po.getScriptSign());
+        //pierre add contract stateRoot
+        header.setStateRoot(po.getStateRoot());
         return header;
     }
 
@@ -62,6 +64,7 @@ public class PoConvertUtil {
         po.setScriptSign(block.getHeader().getScriptSig());
         po.setExtend(block.getHeader().getExtend());
         po.setTxHashList(block.getTxHashList());
+        po.setStateRoot(block.getHeader().getStateRoot());
         return po;
     }
 }

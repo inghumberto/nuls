@@ -39,4 +39,6 @@ public interface ContractErrorCode extends TransactionErrorCode, KernelErrorCode
 
     ErrorCode CONTRACT_ADDRESS_NOT_EXIST = ErrorCode.init("CONTRACT002", "100002");
 
+    ErrorCode CONTRACT_TX_CREATE_ERROR = ErrorCode.init("CONTRACT003", "100003");
+
 }

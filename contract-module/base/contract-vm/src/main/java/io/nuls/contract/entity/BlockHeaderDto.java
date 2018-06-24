@@ -36,8 +36,7 @@ public class BlockHeaderDto implements Serializable {
         this.txCount = header.getTxCount();
         this.packingAddress = header.getPackingAddress();
         this.signature = Hex.encode(header.getScriptSig().serialize());
-        //TODO pierre BlockHeader需加入状态根，用于智能合约
-        this.stateRoot = null;
+        this.stateRoot = header.getStateRoot();
     }
 
     public String getHash() {
