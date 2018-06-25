@@ -117,9 +117,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
         try {
             AssertUtil.canNotEmpty(sender, "the sender address can not be empty");
             AssertUtil.canNotEmpty(contractCode, "the contractCode can not be empty");
-            if (value == null) {
-                value = Na.ZERO;
-            }
+            value = Na.ZERO;
 
             Result<Account> accountResult = accountService.getAccount(sender);
             if (accountResult.isFailed()) {

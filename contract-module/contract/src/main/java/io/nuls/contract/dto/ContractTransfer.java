@@ -25,6 +25,7 @@ package io.nuls.contract.dto;
 
 import io.nuls.core.tools.crypto.Base58;
 import io.nuls.kernel.model.Na;
+import io.nuls.kernel.model.NulsDigestData;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -41,6 +42,8 @@ public class ContractTransfer {
     private byte[] to;
 
     private BigInteger value;
+
+    private NulsDigestData hash;
 
     public byte[] getFrom() {
         return from;
@@ -66,12 +69,21 @@ public class ContractTransfer {
         this.value = value;
     }
 
+    public NulsDigestData getHash() {
+        return hash;
+    }
+
+    public void setHash(NulsDigestData hash) {
+        this.hash = hash;
+    }
+
     @Override
     public String toString() {
         return "ContractTransfer{" +
-                "from=" + Base58.encode(from) +
-                ", to=" + Base58.encode(to) +
-                ", value=" + Na.valueOf(value.longValue()).toText() +
+                "from=" + Arrays.toString(from) +
+                ", to=" + Arrays.toString(to) +
+                ", value=" + value +
+                ", hash=" + hash +
                 '}';
     }
 }

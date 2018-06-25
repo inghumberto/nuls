@@ -24,6 +24,7 @@
 package io.nuls.contract.entity.tx;
 
 import io.nuls.contract.constant.ContractConstant;
+import io.nuls.contract.dto.ContractTransfer;
 import io.nuls.contract.entity.txdata.CreateContractData;
 import io.nuls.kernel.constant.NulsConstant;
 import io.nuls.kernel.exception.NulsException;
@@ -37,6 +38,8 @@ import io.nuls.kernel.utils.NulsByteBuffer;
  * @date: 2018/6/7
  */
 public class ContractTransferTransaction extends Transaction {
+
+    private ContractTransfer transfer;
 
     public ContractTransferTransaction() {
         super(ContractConstant.TX_TYPE_CONTRACT_TRANSFER);
@@ -57,5 +60,14 @@ public class ContractTransferTransaction extends Transaction {
     @Override
     public boolean needVerifySignature() {
         return false;
+    }
+
+    public ContractTransfer getTransfer() {
+        return transfer;
+    }
+
+    public ContractTransferTransaction setTransfer(ContractTransfer transfer) {
+        this.transfer = transfer;
+        return this;
     }
 }

@@ -381,7 +381,7 @@ public class ConsensusTool {
             for(ContractTransfer transfer : transfers) {
                 result = contractService.transfer(transfer.getFrom(), transfer.getTo(), Na.valueOf(transfer.getValue().longValue()), blockTime);
                 if(result.isSuccess()) {
-                    list.add(result.getData());
+                    list.add(result.getData().setTransfer(transfer));
                 } else {
                     Log.warn("contract transfer failed. Info: " + transfer);
                 }
@@ -415,13 +415,13 @@ public class ConsensusTool {
         }
     }
 
-    public static ValidateResult verifyContractTransferCoinData(ContractTransferTransaction contractTransferTx, Map<String,Coin> toMapsOfContract, Set<String> fromSetOfContract) {
+    public static ValidateResult verifyContractTransferCoinData(ContractTransferTransaction contractTransferTx, Map<String,Coin> toMaps, Set<String> fromSet) {
         Transaction repeatTx = ledgerService.getTx(contractTransferTx.getHash());
 
         if (repeatTx != null) {
             return ValidateResult.getSuccessResult();
         }
-        return ledgerService.verifyCoinData(contractTransferTx, toMapsOfContract, fromSetOfContract);
+        return ledgerService.verifyCoinData(contractTransferTx, toMaps, fromSet);
     }
 
     public static void rollbackContractTransferTxs(Map<String, ContractTransferTransaction> successContractTransferTxs) {

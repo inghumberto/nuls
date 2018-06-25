@@ -313,6 +313,7 @@ public class ConsensusProcess {
         List<ContractTransferTransaction> contractTransferTxs = null;
         Map<String, ContractTransferTransaction> successContractTransferTxs = null;
         boolean isCorrectContractTransfer = true;
+        long txSize = 0L;
 
         while (true) {
             isCorrectContractTransfer = true;
@@ -387,21 +388,18 @@ public class ConsensusProcess {
 
             // 打包时发现智能合约交易就调用智能合约
             callContractResult = ConsensusTool.callContract(tx, height, stateRoot);
-            // 这笔交易的合约执行结果保存在DB中
-            ConsensusTool.saveContractExecuteResult(tx.getHash(), callContractResult.getData());
-            //TODO pierre 如果保存内部转账结果
+            contractResult = callContractResult.getData();
+            stateRoot = contractResult.getStateRoot();
             if(callContractResult.isSuccess()) {
-                contractResult = callContractResult.getData();
-                stateRoot = contractResult.getStateRoot();
                 transfers = contractResult.getTransfers();
                 contractEvents = contractResult.getEvents();
-                bd.setStateRoot(stateRoot);
                 if(contractEvents != null && contractEvents.size() > 0) {
                     //TODO pierre 发送合约事件
                 }
                 // 创建合约转账交易
                 if(transfers != null && transfers.size() >0) {
                     // 合约转账使用的交易时间为区块时间
+                    // TODO pierre 考虑是否一笔一笔创建，检查使用的utxo -> toMaps 中（浅复制一份，创建了一笔交易就删掉使用的），
                     contractTransferTxs = ConsensusTool.createContractTransferTxs(transfers, bd.getTime());
                     successContractTransferTxs = new HashMap<>();
 
@@ -410,13 +408,14 @@ public class ConsensusProcess {
                         result = ConsensusTool.verifyContractTransferCoinData(contractTransferTx, toMaps, fromSet);
                         if(result.isFailed()) {
                             // 如果转账出现错误，跳过整笔合约交易
-                            // 回滚转账交易
+                            // 回滚内部转账交易
                             ConsensusTool.rollbackContractTransferTx(contractTransferTx);
                             ConsensusTool.rollbackContractTransferTxs(successContractTransferTxs);
                             isCorrectContractTransfer = false;
                             break;
-                        }
-                        else {
+                        } else {
+                            // 保存内部转账交易hash
+                            contractTransferTx.getTransfer().setHash(contractTransferTx.getHash());
                             successContractTransferTxs.put(contractTransferTx.getHash().getDigestHex(), contractTransferTx);
                         }
                     }
@@ -426,12 +425,23 @@ public class ConsensusProcess {
                         Log.warn(result.getMsg());
                         continue;
                     }
-                }
-                if(successContractTransferTxs != null && successContractTransferTxs.size() >0) {
-                    packingTxList.addAll(successContractTransferTxs.values());
-                }
 
+                    for(ContractTransferTransaction contractTransferTx : contractTransferTxs) {
+                        txSize = contractTransferTx.size();
+                        if ((totalSize + txSize) > ProtocolConstant.MAX_BLOCK_SIZE) {
+                            ConsensusTool.rollbackContractTransferTxs(successContractTransferTxs);
+                            txMemoryPool.addInFirst(txContainer, false);
+                            break;
+                        }
+                        totalSize += txSize;
+                    }
+                    packingTxList.addAll(contractTransferTxs);
+                }
             }
+            // 更新世界状态根
+            bd.setStateRoot(stateRoot);
+            // 这笔交易的合约执行结果保存在DB中
+            ConsensusTool.saveContractExecuteResult(tx.getHash(), contractResult);
 
             tx.setBlockHeight(bd.getHeight());
             packingTxList.add(tx);

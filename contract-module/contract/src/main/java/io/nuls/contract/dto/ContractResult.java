@@ -25,6 +25,7 @@
 
 package io.nuls.contract.dto;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,6 +53,16 @@ public class ContractResult {
      * 状态根
      */
     private byte[] stateRoot;
+
+    private boolean error;
+
+    private String errorMessage;
+
+    private String stackTrace;
+
+    private BigInteger balance;
+
+    private BigInteger nonce;
 
     /**
      * 合约转账交易
