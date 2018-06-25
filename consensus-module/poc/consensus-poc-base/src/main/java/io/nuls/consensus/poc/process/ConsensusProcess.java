@@ -387,13 +387,10 @@ public class ConsensusProcess {
 
             // 打包时发现智能合约交易就调用智能合约
             callContractResult = ConsensusTool.callContract(tx, height, stateRoot);
-            //TODO pierre 这笔交易的合约执行结果保存在何处？
-            //TODO 保存在DB中???
+            // 这笔交易的合约执行结果保存在DB中
             ConsensusTool.saveContractExecuteResult(tx.getHash(), callContractResult.getData());
-            if(callContractResult.isFailed()) {
-                //TODO pierre 合约调用失败需要处理什么逻辑？
-
-            } else {
+            //TODO pierre 如果保存内部转账结果
+            if(callContractResult.isSuccess()) {
                 contractResult = callContractResult.getData();
                 stateRoot = contractResult.getStateRoot();
                 transfers = contractResult.getTransfers();
@@ -412,25 +409,28 @@ public class ConsensusProcess {
                     for(ContractTransferTransaction contractTransferTx : contractTransferTxs) {
                         result = ConsensusTool.verifyContractTransferCoinData(contractTransferTx, toMaps, fromSet);
                         if(result.isFailed()) {
-                            //TODO pierre 如果转账出现错误，如何处理这类交易，是否还要打包到区块中???
+                            // 如果转账出现错误，跳过整笔合约交易
                             // 回滚转账交易
                             ConsensusTool.rollbackContractTransferTx(contractTransferTx);
-                            //isCorrectContractTransfer = false;
-                            //break;
+                            ConsensusTool.rollbackContractTransferTxs(successContractTransferTxs);
+                            isCorrectContractTransfer = false;
+                            break;
                         }
                         else {
                             successContractTransferTxs.put(contractTransferTx.getHash().getDigestHex(), contractTransferTx);
                         }
                     }
 
-                    //if(!isCorrectContractTransfer) {
-                    //    Log.warn(result.getMsg());
-                    //    continue;
-                    //}
+                    // 如果转账出现错误，跳过整笔合约交易
+                    if(!isCorrectContractTransfer) {
+                        Log.warn(result.getMsg());
+                        continue;
+                    }
                 }
                 if(successContractTransferTxs != null && successContractTransferTxs.size() >0) {
                     packingTxList.addAll(successContractTransferTxs.values());
                 }
+
             }
 
             tx.setBlockHeight(bd.getHeight());

@@ -115,6 +115,7 @@ public class ContractBalanceManager {
             }
 
             //TODO pierre 终止合约，是否销毁合约地址？是否删除合约地址UTXO ？
+            // 不删
             List<Entry<byte[], byte[]>> rawList = contractUtxoStorageService.loadAllCoinList();
             Coin coin;
             byte[] address;
@@ -204,6 +205,7 @@ public class ContractBalanceManager {
                         balance.addUsable(coin.getNa());
                     } else {
                         //TODO pierre 合约地址是否存在锁定金额 ？
+                        // 存在
                         balance.addLocked(coin.getNa());
                     }
                 }
@@ -227,7 +229,6 @@ public class ContractBalanceManager {
                     if (coin.usable()) {
                         balance.minusUsable(coin.getNa());
                     } else {
-                        //TODO pierre 合约地址是否存在锁定金额 ？
                         balance.minusLocked(coin.getNa());
                     }
                 }
