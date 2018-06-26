@@ -127,4 +127,9 @@ public class KVStorageServiceImpl implements DBService {
         return new File(file);
     }
 
+    @Override
+    public Result destroyArea(String areaName) {
+        return null;
+    }
+
 }
