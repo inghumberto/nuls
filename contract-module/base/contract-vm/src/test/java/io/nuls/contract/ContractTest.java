@@ -13,6 +13,7 @@ import org.spongycastle.util.encoders.Hex;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -93,6 +94,21 @@ public class ContractTest {
 
         System.out.println(programResult);
         System.out.println("pierre - stateRoot: " + Hex.toHexString(track.getRoot()));
+        System.out.println();
+    }
+
+    @Test
+    public void testAddBalance() throws IOException {
+        byte[] prevStateRoot = Hex.decode("08cf9c62806d73378bf64f03ea401fbbd08a318ec580d2bfc4c45641b0921a9e");
+        byte[] address = ADDRESS.getBytes();
+        byte[] sender = SENDER.getBytes();
+
+        ProgramExecutor track = programExecutor.begin(prevStateRoot);
+        ProgramResult programResult = track.addBalance(address, new BigInteger("100"));
+        track.commit();
+
+        System.out.println(programResult);
+        System.out.println("stateRoot: " + Hex.toHexString(track.getRoot()));
         System.out.println();
     }
 
