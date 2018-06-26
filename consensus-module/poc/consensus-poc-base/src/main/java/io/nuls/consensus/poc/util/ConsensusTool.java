@@ -65,6 +65,7 @@ import io.nuls.kernel.exception.NulsRuntimeException;
 import io.nuls.kernel.func.TimeService;
 import io.nuls.kernel.model.*;
 import io.nuls.kernel.script.P2PKHScriptSig;
+import io.nuls.kernel.utils.AddressTool;
 import io.nuls.kernel.utils.VarInt;
 import io.nuls.kernel.validate.ValidateResult;
 import io.nuls.ledger.service.LedgerService;
@@ -313,7 +314,7 @@ public class ConsensusTool {
         for (int index = 0; index < transaction.getCoinData().getTo().size(); index++) {
             Coin coin = transaction.getCoinData().getTo().get(index);
             if (coin.getNa().equals(agent.getDeposit()) && coin.getLockTime() == -1L) {
-                coin.setOwner(ArraysTool.joinintTogether(transaction.getHash().serialize(), new VarInt(index).encode()));
+                coin.setOwner(ArraysTool.concatenate(transaction.getHash().serialize(), new VarInt(index).encode()));
                 fromList.add(coin);
                 break;
             }
@@ -339,12 +340,12 @@ public class ConsensusTool {
                 if (!coin.getNa().equals(deposit.getDeposit()) || coin.getLockTime() != -1L) {
                     continue;
                 }
-                fromCoin = new Coin(ArraysTool.joinintTogether(dtx.getHash().serialize(), new VarInt(0).encode()), coin.getNa(), coin.getLockTime());
+                fromCoin = new Coin(ArraysTool.concatenate(dtx.getHash().serialize(), new VarInt(0).encode()), coin.getNa(), coin.getLockTime());
                 fromCoin.setLockTime(-1L);
                 fromList.add(fromCoin);
                 break;
             }
-            String address = Base58.encode(deposit.getAddress());
+            String address = AddressTool.getStringAddressByBytes(deposit.getAddress());
             Coin coin = toMap.get(address);
             if (null == coin) {
                 coin = new Coin(deposit.getAddress(), deposit.getDeposit(), 0);

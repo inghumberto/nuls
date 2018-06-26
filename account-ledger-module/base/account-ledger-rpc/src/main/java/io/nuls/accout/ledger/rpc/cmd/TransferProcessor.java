@@ -25,10 +25,11 @@
 
 package io.nuls.accout.ledger.rpc.cmd;
 
-import io.nuls.account.model.Address;
+import io.nuls.kernel.model.Address;
 import io.nuls.accout.ledger.rpc.form.TransferForm;
 import io.nuls.kernel.constant.KernelErrorCode;
 import io.nuls.kernel.model.RpcClientResult;
+import io.nuls.kernel.utils.AddressTool;
 import io.nuls.kernel.utils.CommandBuilder;
 import io.nuls.kernel.utils.CommandHelper;
 import io.nuls.core.tools.str.StringUtils;
@@ -84,7 +85,7 @@ public class TransferProcessor implements CommandProcessor {
                 result = false;
                 break;
             }
-            if (!Address.validAddress(args[1]) || !Address.validAddress(args[2])) {
+            if (!AddressTool.validAddress(args[1]) || !AddressTool.validAddress(args[2])) {
                 return false;
             }
             if (!StringUtils.isNuls(args[3])) {
@@ -92,6 +93,10 @@ public class TransferProcessor implements CommandProcessor {
                 break;
             }
             TransferForm form = getTransferForm(args);
+            if(null == form){
+                result = false;
+                break;
+            }
             paramsData.set(form);
             result = StringUtils.isNotBlank(form.getToAddress());
             if (!result) {
