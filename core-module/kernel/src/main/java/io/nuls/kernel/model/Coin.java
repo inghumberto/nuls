@@ -51,6 +51,12 @@ public class Coin extends BaseNulsData {
 
     private transient Coin from;
 
+
+    /**
+     * 合约组装CoinData时使用
+     */
+    private transient String key;
+
     public Coin() {
     }
 
@@ -121,6 +127,15 @@ public class Coin extends BaseNulsData {
 
     public void setLockTime(long lockTime) {
         this.lockTime = lockTime;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public Coin setKey(String key) {
+        this.key = key;
+        return this;
     }
 
     /**

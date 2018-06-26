@@ -410,7 +410,7 @@ public class UtxoLedgerServiceImpl implements LedgerService {
     /**
      * 双花验证不通过的交易需要放入result的data中，一次只验证一对双花的交易
      *
-     * @return ValidateResult<List       <       Transaction>>
+     * @return ValidateResult<List<Transaction>>
      */
     @Override
     public ValidateResult<List<Transaction>> verifyDoubleSpend(Block block) {

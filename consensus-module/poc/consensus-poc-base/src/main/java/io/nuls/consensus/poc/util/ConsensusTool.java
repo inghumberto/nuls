@@ -374,12 +374,12 @@ public class ConsensusTool {
         return null;
     }
 
-    public static List<ContractTransferTransaction> createContractTransferTxs(List<ContractTransfer> transfers, long blockTime) {
+    public static List<ContractTransferTransaction> createContractTransferTxs(List<ContractTransfer> transfers, long blockTime, Map<String, Coin> toMaps, Map<String, Coin> contractUsedCoinMap) {
         Result<ContractTransferTransaction> result = null;
         List<ContractTransferTransaction> list = new ArrayList<>();
         if(transfers != null && transfers.size() > 0) {
             for(ContractTransfer transfer : transfers) {
-                result = contractService.transfer(transfer.getFrom(), transfer.getTo(), Na.valueOf(transfer.getValue().longValue()), blockTime);
+                result = contractService.transfer(transfer.getFrom(), transfer.getTo(), Na.valueOf(transfer.getValue().longValue()), blockTime, toMaps, contractUsedCoinMap);
                 if(result.isSuccess()) {
                     list.add(result.getData().setTransfer(transfer));
                 } else {
@@ -441,6 +441,19 @@ public class ConsensusTool {
 
     public static Result saveContractExecuteResult(NulsDigestData hash, ContractResult contractResult) {
         return contractService.saveContractExecuteResult(hash, contractResult);
+    }
+
+    public static Result<ContractTransferTransaction> createContractTransferTx(ContractTransfer transfer, long blockTime, Map<String, Coin> toMaps, Map<String, Coin> contractUsedCoinMap) {
+        Result<ContractTransferTransaction> result = null;
+        result = contractService.transfer(transfer.getFrom(), transfer.getTo(), Na.valueOf(transfer.getValue().longValue()), blockTime, toMaps, contractUsedCoinMap);
+        if(result.isSuccess()) {
+            result.getData().setTransfer(transfer);
+        } else {
+            Log.warn("contract transfer failed. Info: " + transfer);
+        }
+        return result;
+
+
     }
 }
 

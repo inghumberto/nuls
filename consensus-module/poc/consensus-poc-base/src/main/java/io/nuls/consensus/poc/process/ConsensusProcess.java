@@ -293,6 +293,7 @@ public class ConsensusProcess {
         Set<NulsDigestData> outHashSet = new HashSet<>();
 
         long totalSize = 0L;
+        long txSize = 0L;
 
         Map<String, Coin> toMaps = new HashMap<>();
         Set<String> fromSet = new HashSet<>();
@@ -313,7 +314,8 @@ public class ConsensusProcess {
         List<ContractTransferTransaction> contractTransferTxs = null;
         Map<String, ContractTransferTransaction> successContractTransferTxs = null;
         boolean isCorrectContractTransfer = true;
-        long txSize = 0L;
+        long contractTransferTxTotalSize = 0L;
+        Map<String, Coin> contractUsedCoinMap = new HashMap<>();
 
         while (true) {
             isCorrectContractTransfer = true;
@@ -336,8 +338,9 @@ public class ConsensusProcess {
             }
 
             Transaction tx = txContainer.getTx();
+            txSize = tx.size();
 
-            if ((totalSize + tx.size()) > ProtocolConstant.MAX_BLOCK_SIZE) {
+            if ((totalSize + txSize) > ProtocolConstant.MAX_BLOCK_SIZE) {
                 txMemoryPool.addInFirst(txContainer, false);
                 break;
             }
@@ -399,12 +402,17 @@ public class ConsensusProcess {
                 // 创建合约转账交易
                 if(transfers != null && transfers.size() >0) {
                     // 合约转账使用的交易时间为区块时间
-                    // TODO pierre 考虑是否一笔一笔创建，检查使用的utxo -> toMaps 中（浅复制一份，创建了一笔交易就删掉使用的），
-                    contractTransferTxs = ConsensusTool.createContractTransferTxs(transfers, bd.getTime());
                     successContractTransferTxs = new HashMap<>();
+                    Result<ContractTransferTransaction> contractTransferResult;
+                    ContractTransferTransaction contractTransferTx;
+                    for(ContractTransfer transfer : transfers) {
+                        contractTransferResult = ConsensusTool.createContractTransferTx(transfer, bd.getTime(), toMaps, contractUsedCoinMap);
+                        if(contractTransferResult.isFailed()) {
+                            isCorrectContractTransfer = false;
+                            break;
+                        }
 
-                    // 验证合约转账交易
-                    for(ContractTransferTransaction contractTransferTx : contractTransferTxs) {
+                        contractTransferTx = contractTransferResult.getData();
                         result = ConsensusTool.verifyContractTransferCoinData(contractTransferTx, toMaps, fromSet);
                         if(result.isFailed()) {
                             // 如果转账出现错误，跳过整笔合约交易
@@ -417,7 +425,9 @@ public class ConsensusProcess {
                             // 保存内部转账交易hash
                             contractTransferTx.getTransfer().setHash(contractTransferTx.getHash());
                             successContractTransferTxs.put(contractTransferTx.getHash().getDigestHex(), contractTransferTx);
+                            contractTransferTxTotalSize += contractTransferTx.size();
                         }
+
                     }
 
                     // 如果转账出现错误，跳过整笔合约交易
@@ -426,15 +436,14 @@ public class ConsensusProcess {
                         continue;
                     }
 
-                    for(ContractTransferTransaction contractTransferTx : contractTransferTxs) {
-                        txSize = contractTransferTx.size();
-                        if ((totalSize + txSize) > ProtocolConstant.MAX_BLOCK_SIZE) {
-                            ConsensusTool.rollbackContractTransferTxs(successContractTransferTxs);
-                            txMemoryPool.addInFirst(txContainer, false);
-                            break;
-                        }
-                        totalSize += txSize;
+                    // 整笔合约交易的大小 = 合约交易的大小 + 合约内部产生的转账交易的大小
+                    if ((totalSize + contractTransferTxTotalSize + txSize) > ProtocolConstant.MAX_BLOCK_SIZE) {
+                        ConsensusTool.rollbackContractTransferTxs(successContractTransferTxs);
+                        txMemoryPool.addInFirst(txContainer, false);
+                        break;
                     }
+                    totalSize += contractTransferTxTotalSize;
+
                     packingTxList.addAll(contractTransferTxs);
                 }
             }
@@ -446,7 +455,7 @@ public class ConsensusProcess {
             tx.setBlockHeight(bd.getHeight());
             packingTxList.add(tx);
 
-            totalSize += tx.size();
+            totalSize += txSize;
         }
         ValidateResult validateResult = null;
         while (null == validateResult || validateResult.isFailed()) {

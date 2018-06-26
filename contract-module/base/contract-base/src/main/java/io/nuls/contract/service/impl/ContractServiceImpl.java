@@ -48,6 +48,7 @@ import io.nuls.contract.storage.service.ContractTransferTransactionStorageServic
 import io.nuls.contract.util.ContractCoinComparator;
 import io.nuls.contract.vm.program.*;
 import io.nuls.core.tools.log.Log;
+import io.nuls.core.tools.str.StringUtils;
 import io.nuls.kernel.constant.KernelErrorCode;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.exception.NulsRuntimeException;
@@ -61,9 +62,7 @@ import io.nuls.ledger.constant.LedgerErrorCode;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -514,7 +513,9 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
     }
 
     @Override
-    public Result<ContractTransferTransaction> transfer(byte[] from, byte[] to, Na values, long blockTime) {
+    public Result<ContractTransferTransaction> transfer(byte[] from, byte[] to, Na values, long blockTime,
+                                                        Map<String, Coin> toMaps,
+                                                        Map<String, Coin> contractUsedCoinMap) {
         try {
             if(!ContractLedgerUtil.isContractAddress(from)) {
                 return Result.getFailed(ContractErrorCode.CONTRACT_ADDRESS_NOT_EXIST);
@@ -526,7 +527,9 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             Coin toCoin = new Coin(to, values);
             coinData.getTo().add(toCoin);
 
-            CoinDataResult coinDataResult = getContractSpecialTransferCoinData(from, values);
+            // 加入toMaps、contractUsedCoinMap组装UTXO
+            // 组装时不操作toMaps, 用contractUsedCoinList(是否使用Map)来检查UTXO是否已经被使用，如果已使用则跳过
+            CoinDataResult coinDataResult = getContractSpecialTransferCoinData(from, values, toMaps, contractUsedCoinMap);
             if (!coinDataResult.isEnough()) {
                 return Result.getFailed(LedgerErrorCode.BALANCE_NOT_ENOUGH);
             }
@@ -555,11 +558,27 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
      * @return
      * @throws NulsException
      */
-    public CoinDataResult getContractSpecialTransferCoinData(byte[] address, Na amount) {
+    public CoinDataResult getContractSpecialTransferCoinData(byte[] address, Na amount, Map<String, Coin> toMaps, Map<String, Coin> contractUsedCoinMap) {
         lock.lock();
         try {
             CoinDataResult coinDataResult = new CoinDataResult();
             List<Coin> coinList = contractBalanceManager.getCoinListByAddress(address);
+            //pierre add toMaps
+            Collection<Coin> coinCollection = toMaps.values();
+
+            Set<Map.Entry<String, Coin>> entries = toMaps.entrySet();
+            Coin toCoin;
+            String key;
+            for(Map.Entry<String, Coin> entry : entries) {
+                key = entry.getKey();
+                toCoin = entry.getValue();
+                if (Arrays.equals(toCoin.getOwner(), address)) {
+                    toCoin.setOwner(Base64.getDecoder().decode(key));
+                    toCoin.setKey(key);
+                    coinList.add(toCoin);
+                }
+            }
+
             if (coinList.isEmpty()) {
                 coinDataResult.setEnough(false);
                 return coinDataResult;
@@ -578,7 +597,15 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
                 if (!coin.usable()) {
                     continue;
                 }
+                // for contract, 使用过的UTXO不能再使用
+                if(StringUtils.isNotBlank(coin.getKey())) {
+                    if(contractUsedCoinMap.containsKey(coin.getKey())) {
+                        continue;
+                    }
+                    contractUsedCoinMap.put(coin.getKey(), coin);
+                }
                 coins.add(coin);
+
                 // 每次累加一条未花费余额
                 values = values.add(coin.getNa());
                 if (values.isGreaterOrEquals(amount)) {

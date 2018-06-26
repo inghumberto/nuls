@@ -207,9 +207,10 @@ public class BlockProcess {
                     List<ContractTransfer> transfers = null;
                     List<String> contractEvents = null;
                     List<ContractTransferTransaction> contractTransferTxs = null;
-                    Map<String, ContractTransferTransaction> successContractTransferTxs = new HashMap<>();
                     Map<String, ContractTransferTransaction> receiveContractTransferTxs = new HashMap<>();
+                    Map<String, ContractTransferTransaction> successContractTransferTxs = new HashMap<>();
                     boolean isCorrectContractTransfer = true;
+                    Map<String, Coin> contractUsedCoinMap = new HashMap<>();
 
                     for (Transaction tx : block.getTxs()) {
                         if (tx.isSystemTx()) {
@@ -228,15 +229,9 @@ public class BlockProcess {
 
                         // 验证区块时发现智能合约交易就调用智能合约
                         callContractResult = ConsensusTool.callContract(tx, bestHeight, stateRoot);
-                        //TODO 合约执行结果保存在DB中???
-                        ConsensusTool.saveContractExecuteResult(tx.getHash(), callContractResult.getData());
-                        if(callContractResult.isFailed()) {
-                            //TODO pierre 合约调用失败需要处理什么逻辑？
-                            Log.info("call contract failed message:" + callContractResult.getMsg());
-
-                        } else {
-                            contractResult = callContractResult.getData();
-                            stateRoot = contractResult.getStateRoot();
+                        contractResult = callContractResult.getData();
+                        stateRoot = contractResult.getStateRoot();
+                        if(callContractResult.isSuccess()) {
                             transfers = contractResult.getTransfers();
                             contractEvents = contractResult.getEvents();
                             if(contractEvents != null && contractEvents.size() > 0) {
@@ -244,31 +239,43 @@ public class BlockProcess {
                             }
                             // 创建合约转账交易
                             if(transfers != null && transfers.size() >0) {
-                                contractTransferTxs = ConsensusTool.createContractTransferTxs(transfers, block.getHeader().getTime());
+                                Result<ContractTransferTransaction> contractTransferResult;
+                                ContractTransferTransaction contractTransferTx;
+                                for(ContractTransfer transfer : transfers) {
+                                    contractTransferResult = ConsensusTool.createContractTransferTx(transfer, block.getHeader().getTime(), toMaps, contractUsedCoinMap);
+                                    if(contractTransferResult.isFailed()) {
+                                        isCorrectContractTransfer = false;
+                                        break;
+                                    }
 
-                                // 验证合约转账交易
-                                for(ContractTransferTransaction contractTransferTx : contractTransferTxs) {
-
+                                    contractTransferTx = contractTransferResult.getData();
                                     result = ConsensusTool.verifyContractTransferCoinData(contractTransferTx, toMaps, fromSet);
                                     if(result.isFailed()) {
-                                        //TODO pierre 是否出现错误转账，如何处理这类执行结果
-                                        // 回滚转账交易
+                                        // 如果转账出现错误，跳过整笔合约交易
+                                        // 回滚内部转账交易
                                         ConsensusTool.rollbackContractTransferTx(contractTransferTx);
-                                        //isCorrectContractTransfer = false;
-                                        //break;
-                                    }
-                                    else {
+                                        ConsensusTool.rollbackContractTransferTxs(successContractTransferTxs);
+                                        isCorrectContractTransfer = false;
+                                        break;
+                                    } else {
+                                        // 保存内部转账交易hash
+                                        contractTransferTx.getTransfer().setHash(contractTransferTx.getHash());
                                         successContractTransferTxs.put(contractTransferTx.getHash().getDigestHex(), contractTransferTx);
                                     }
+
                                 }
 
-                                //if(!isCorrectContractTransfer) {
-                                //    Log.info("contract transfer failed message:" + result.getMsg());
-                                //    success = false;
-                                //    break;
-                                //}
+                                // 如果转账出现错误，验证区块失败
+                                if(!isCorrectContractTransfer) {
+                                    Log.info(result.getMsg());
+                                    success = false;
+                                    break;
+                                }
+
                             }
                         }
+                        // 这笔交易的合约执行结果保存在DB中
+                        ConsensusTool.saveContractExecuteResult(tx.getHash(), contractResult);
                     }
                     // 验证世界状态根
                     if(!Arrays.equals(receiveStateRoot, stateRoot)) {
@@ -296,6 +303,9 @@ public class BlockProcess {
                     if (!success) {
                         break;
                     }
+
+
+
                     ValidateResult validateResult1 = tansactionService.conflictDetect(block.getTxs());
                     if (validateResult1.isFailed()) {
                         success = false;

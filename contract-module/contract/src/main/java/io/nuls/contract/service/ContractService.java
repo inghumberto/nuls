@@ -27,12 +27,10 @@ import io.nuls.contract.dto.ContractResult;
 import io.nuls.contract.entity.txdata.CallContractData;
 import io.nuls.contract.entity.txdata.CreateContractData;
 import io.nuls.contract.entity.txdata.DeleteContractData;
-import io.nuls.kernel.model.Na;
-import io.nuls.kernel.model.NulsDigestData;
-import io.nuls.kernel.model.Result;
-import io.nuls.kernel.model.Transaction;
+import io.nuls.kernel.model.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @desription:
@@ -94,9 +92,14 @@ public interface ContractService {
      * @param from
      * @param to
      * @param values
+     * @param blockTime
+     * @param toMaps
+     * @param contractUsedCoinMap
      * @return
      */
-    Result transfer(byte[] from, byte[] to, Na values, long blockTime);
+    Result transfer(byte[] from, byte[] to, Na values, long blockTime,
+                                                Map<String, Coin> toMaps,
+                                                Map<String, Coin> contractUsedCoinMap);
 
     /**
      * 保存 txInfo : key -> contractAddress + txHash, status is confirmed
