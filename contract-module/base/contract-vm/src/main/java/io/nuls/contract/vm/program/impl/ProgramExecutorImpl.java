@@ -193,23 +193,6 @@ public class ProgramExecutorImpl implements ProgramExecutor {
     }
 
     @Override
-    public ProgramResult addBalance(byte[] address, BigInteger value) {
-        ProgramResult programResult = new ProgramResult();
-        if (value == null || value.compareTo(BigInteger.ZERO) <= 0) {
-            return programResult.error("value must be great than zero");
-        }
-        AccountState accountState = repository.getAccountState(address);
-        if (accountState == null) {
-            return programResult.error("can't find contract");
-        } else {
-            repository.addBalance(address, value);
-            BigInteger balance = repository.getBalance(address);
-            programResult.setBalance(balance);
-        }
-        return programResult;
-    }
-
-    @Override
     public ProgramResult stop(byte[] address, byte[] sender) {
         ProgramResult programResult = new ProgramResult();
         AccountState accountState = repository.getAccountState(address);

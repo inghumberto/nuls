@@ -99,16 +99,25 @@ public class ContractTest {
 
     @Test
     public void testAddBalance() throws IOException {
+        ProgramCall programCall = new ProgramCall();
+        programCall.setContractAddress(ADDRESS.getBytes());
+        programCall.setSender(SENDER.getBytes());
+        programCall.setPrice(0);
+        programCall.setNaLimit(1000000);
+        programCall.setNumber(1);
+        programCall.setMethodName("_payable");
+        programCall.setMethodDesc("()V");
+        programCall.setValue(new BigInteger("100"));
+        System.out.println(programCall);
+
         byte[] prevStateRoot = Hex.decode("08cf9c62806d73378bf64f03ea401fbbd08a318ec580d2bfc4c45641b0921a9e");
-        byte[] address = ADDRESS.getBytes();
-        byte[] sender = SENDER.getBytes();
 
         ProgramExecutor track = programExecutor.begin(prevStateRoot);
-        ProgramResult programResult = track.addBalance(address, new BigInteger("100"));
+        ProgramResult programResult = track.call(programCall);
         track.commit();
 
         System.out.println(programResult);
-        System.out.println("stateRoot: " + Hex.toHexString(track.getRoot()));
+        System.out.println("pierre - stateRoot: " + Hex.toHexString(track.getRoot()));
         System.out.println();
     }
 
