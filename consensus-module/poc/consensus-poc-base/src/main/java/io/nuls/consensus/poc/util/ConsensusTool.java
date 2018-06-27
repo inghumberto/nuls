@@ -34,7 +34,6 @@ import io.nuls.consensus.poc.model.BlockData;
 import io.nuls.consensus.poc.model.BlockRoundData;
 import io.nuls.consensus.poc.model.MeetingMember;
 import io.nuls.consensus.poc.model.MeetingRound;
-import io.nuls.consensus.poc.protocol.constant.PocConsensusErrorCode;
 import io.nuls.consensus.poc.protocol.entity.Agent;
 import io.nuls.consensus.poc.protocol.entity.Deposit;
 import io.nuls.consensus.poc.protocol.entity.YellowPunishData;
@@ -43,20 +42,9 @@ import io.nuls.consensus.poc.protocol.tx.DepositTransaction;
 import io.nuls.consensus.poc.protocol.tx.YellowPunishTransaction;
 import io.nuls.consensus.poc.storage.service.AgentStorageService;
 import io.nuls.consensus.poc.storage.service.DepositStorageService;
-import io.nuls.contract.constant.ContractConstant;
-import io.nuls.contract.dto.ContractResult;
-import io.nuls.contract.dto.ContractTransfer;
-import io.nuls.contract.entity.tx.CallContractTransaction;
-import io.nuls.contract.entity.tx.ContractTransferTransaction;
-import io.nuls.contract.entity.tx.CreateContractTransaction;
-import io.nuls.contract.entity.tx.DeleteContractTransaction;
-import io.nuls.contract.entity.txdata.CallContractData;
-import io.nuls.contract.entity.txdata.CreateContractData;
-import io.nuls.contract.entity.txdata.DeleteContractData;
 import io.nuls.contract.service.ContractService;
 import io.nuls.core.tools.array.ArraysTool;
 import io.nuls.core.tools.calc.DoubleUtils;
-import io.nuls.core.tools.crypto.Base58;
 import io.nuls.core.tools.log.Log;
 import io.nuls.kernel.constant.KernelErrorCode;
 import io.nuls.kernel.context.NulsContext;
@@ -67,7 +55,6 @@ import io.nuls.kernel.model.*;
 import io.nuls.kernel.script.P2PKHScriptSig;
 import io.nuls.kernel.utils.AddressTool;
 import io.nuls.kernel.utils.VarInt;
-import io.nuls.kernel.validate.ValidateResult;
 import io.nuls.ledger.service.LedgerService;
 import io.nuls.protocol.model.SmallBlock;
 import io.nuls.protocol.model.tx.CoinBaseTransaction;
@@ -375,86 +362,5 @@ public class ConsensusTool {
         return null;
     }
 
-    public static List<ContractTransferTransaction> createContractTransferTxs(List<ContractTransfer> transfers, long blockTime, Map<String, Coin> toMaps, Map<String, Coin> contractUsedCoinMap) {
-        Result<ContractTransferTransaction> result = null;
-        List<ContractTransferTransaction> list = new ArrayList<>();
-        if(transfers != null && transfers.size() > 0) {
-            for(ContractTransfer transfer : transfers) {
-                result = contractService.transfer(transfer.getFrom(), transfer.getTo(), Na.valueOf(transfer.getValue().longValue()), blockTime, toMaps, contractUsedCoinMap);
-                if(result.isSuccess()) {
-                    list.add(result.getData().setTransfer(transfer));
-                } else {
-                    Log.warn("contract transfer failed. Info: " + transfer);
-                }
-            }
-        }
-        return list;
-    }
-
-    public static Result<ContractResult> callContract(Transaction tx, long height, byte[] stateRoot) {
-        if(height < 0 || stateRoot == null) {
-            return Result.getFailed(KernelErrorCode.PARAMETER_ERROR);
-        }
-        int tyType = tx.getType();
-        if (tyType == ContractConstant.TX_TYPE_CREATE_CONTRACT) {
-            CreateContractTransaction createContractTransaction = (CreateContractTransaction) tx;
-            CreateContractData createContractData = createContractTransaction.getTxData();
-            Result<ContractResult> contractResult = contractService.createContract(height, stateRoot, createContractData);
-            return contractResult;
-        } else if(tyType == ContractConstant.TX_TYPE_CALL_CONTRACT) {
-            CallContractTransaction callContractTransaction = (CallContractTransaction) tx;
-            CallContractData callContractData = callContractTransaction.getTxData();
-            Result<ContractResult> contractResult = contractService.callContract(height, stateRoot, callContractData);
-            return contractResult;
-        } else if(tyType == ContractConstant.TX_TYPE_DELETE_CONTRACT) {
-            DeleteContractTransaction deleteContractTransaction = (DeleteContractTransaction) tx;
-            DeleteContractData deleteContractData = deleteContractTransaction.getTxData();
-            Result<ContractResult> contractResult = contractService.deleteContract(height, stateRoot, deleteContractData);
-            return contractResult;
-        } else {
-            return Result.getSuccess();
-        }
-    }
-
-    public static ValidateResult verifyContractTransferCoinData(ContractTransferTransaction contractTransferTx, Map<String,Coin> toMaps, Set<String> fromSet) {
-        Transaction repeatTx = ledgerService.getTx(contractTransferTx.getHash());
-
-        if (repeatTx != null) {
-            return ValidateResult.getSuccessResult();
-        }
-        return ledgerService.verifyCoinData(contractTransferTx, toMaps, fromSet);
-    }
-
-    public static void rollbackContractTransferTxs(Map<String, ContractTransferTransaction> successContractTransferTxs) {
-        if(successContractTransferTxs != null && successContractTransferTxs.size() > 0) {
-            Collection<ContractTransferTransaction> values = successContractTransferTxs.values();
-            for(Transaction tx : values) {
-                contractService.rollbackTransaction(tx);
-            }
-        }
-    }
-
-    public static void rollbackContractTransferTx(ContractTransferTransaction tx) {
-        if(tx != null) {
-            contractService.rollbackTransaction(tx);
-        }
-    }
-
-    public static Result saveContractExecuteResult(NulsDigestData hash, ContractResult contractResult) {
-        return contractService.saveContractExecuteResult(hash, contractResult);
-    }
-
-    public static Result<ContractTransferTransaction> createContractTransferTx(ContractTransfer transfer, long blockTime, Map<String, Coin> toMaps, Map<String, Coin> contractUsedCoinMap) {
-        Result<ContractTransferTransaction> result = null;
-        result = contractService.transfer(transfer.getFrom(), transfer.getTo(), Na.valueOf(transfer.getValue().longValue()), blockTime, toMaps, contractUsedCoinMap);
-        if(result.isSuccess()) {
-            result.getData().setTransfer(transfer);
-        } else {
-            Log.warn("contract transfer failed. Info: " + transfer);
-        }
-        return result;
-
-
-    }
 }
 

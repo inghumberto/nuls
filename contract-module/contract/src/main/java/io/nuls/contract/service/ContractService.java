@@ -24,13 +24,17 @@
 package io.nuls.contract.service;
 
 import io.nuls.contract.dto.ContractResult;
+import io.nuls.contract.dto.ContractTransfer;
+import io.nuls.contract.entity.tx.ContractTransferTransaction;
 import io.nuls.contract.entity.txdata.CallContractData;
 import io.nuls.contract.entity.txdata.CreateContractData;
 import io.nuls.contract.entity.txdata.DeleteContractData;
 import io.nuls.kernel.model.*;
+import io.nuls.kernel.validate.ValidateResult;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @desription:
@@ -45,7 +49,7 @@ public interface ContractService {
      * @param create 创建智能合约的参数
      * @return
      */
-    Result<ContractResult> createContract(long number, byte[] prevStateRoot, CreateContractData create);
+    //Result<ContractResult> createContract(long number, byte[] prevStateRoot, CreateContractData create);
 
     /**
      * @param number 当前块编号
@@ -53,7 +57,7 @@ public interface ContractService {
      * @param call 调用智能合约的参数
      * @return
      */
-    Result<ContractResult> callContract(long number, byte[] prevStateRoot, CallContractData call);
+    //Result<ContractResult> callContract(long number, byte[] prevStateRoot, CallContractData call);
 
     /**
      * @param number 当前块编号
@@ -61,7 +65,7 @@ public interface ContractService {
      * @param delete 删除智能合约的参数
      * @return
      */
-    Result<ContractResult> deleteContract(long number, byte[] prevStateRoot, DeleteContractData delete);
+    //Result<ContractResult> deleteContract(long number, byte[] prevStateRoot, DeleteContractData delete);
 
     /**
      * @param address
@@ -83,7 +87,7 @@ public interface ContractService {
      * @param tx
      * @return
      */
-    Result<Integer> saveUnconfirmedTransaction(Transaction tx);
+    //Result<Integer> saveUnconfirmedTransaction(Transaction tx);
 
 
     /**
@@ -97,9 +101,9 @@ public interface ContractService {
      * @param contractUsedCoinMap
      * @return
      */
-    Result transfer(byte[] from, byte[] to, Na values, long blockTime,
+    /*Result transfer(byte[] from, byte[] to, Na values, long blockTime,
                                                 Map<String, Coin> toMaps,
-                                                Map<String, Coin> contractUsedCoinMap);
+                                                Map<String, Coin> contractUsedCoinMap);*/
 
     /**
      * 保存 txInfo : key -> contractAddress + txHash, status is confirmed
@@ -119,7 +123,7 @@ public interface ContractService {
      * @return
      */
     Result<Integer> rollbackTransaction(Transaction tx);
-    Result<Integer> rollbackTransaction(List<Transaction> txs);
+    Result<Integer> rollbackTransactionList(List<Transaction> txs);
 
 
     /**
@@ -153,6 +157,15 @@ public interface ContractService {
      * @param hash
      * @return
      */
-    public ContractResult getContractExecuteResult(NulsDigestData hash);
+    ContractResult getContractExecuteResult(NulsDigestData hash);
+
+    /*****************************************************************************/
+    Result<ContractResult> callContract(Transaction tx, long height, byte[] stateRoot);
+    void rollbackContractTempBalance(Transaction tx, ContractResult contractResult);
+    void removeContractTempBalance();
+    ValidateResult verifyContractTransferCoinData(ContractTransferTransaction contractTransferTx, Map<String,Coin> toMaps, Set<String> fromSet);
+    Result<ContractTransferTransaction> createContractTransferTx(ContractTransfer transfer, long blockTime, Map<String, Coin> toMaps, Map<String, Coin> contractUsedCoinMap);
+    void rollbackContractTransferTxs(Map<String, ContractTransferTransaction> successContractTransferTxs);
+    void rollbackContractTransferTx(ContractTransferTransaction tx);
 
 }

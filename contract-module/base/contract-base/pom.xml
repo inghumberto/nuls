@@ -37,6 +37,12 @@
         </dependency>
 
         <dependency>
+            <groupId>io.nuls.ledger-module</groupId>
+            <artifactId>ledger</artifactId>
+            <version>0.9.11</version>
+        </dependency>
+
+        <dependency>
             <groupId>io.nuls.contract-module</groupId>
             <artifactId>contract-vm</artifactId>
             <version>0.9.11</version>

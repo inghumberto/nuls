@@ -160,7 +160,7 @@ public class ContractUtxoServiceImpl implements ContractUtxoService {
                     continue;
                 }
                 try {
-                    outKey = ArraysTool.joinintTogether(txHashBytes, new VarInt(i).encode());
+                    outKey = ArraysTool.concatenate(txHashBytes, new VarInt(i).encode());
                     toList.add(new Entry<byte[], byte[]>(outKey, to.serialize()));
                 } catch (IOException e) {
                     throw new NulsRuntimeException(e);
@@ -203,7 +203,7 @@ public class ContractUtxoServiceImpl implements ContractUtxoService {
                 if(!ContractLedgerUtil.isContractAddress(toAddress)) {
                     continue;
                 }
-                outKey = ArraysTool.joinintTogether(txHashBytes, new VarInt(i).encode());
+                outKey = ArraysTool.concatenate(txHashBytes, new VarInt(i).encode());
                 toList.add(outKey);
             }
 
@@ -270,7 +270,7 @@ public class ContractUtxoServiceImpl implements ContractUtxoService {
 
     @Override
     public Result<BigInteger> getBalance(byte[] address) {
-        if (address == null || address.length != AddressTool.HASH_LENGTH) {
+        if (address == null || address.length != Address.ADDRESS_LENGTH) {
             return Result.getFailed(ContractErrorCode.PARAMETER_ERROR);
         }
 

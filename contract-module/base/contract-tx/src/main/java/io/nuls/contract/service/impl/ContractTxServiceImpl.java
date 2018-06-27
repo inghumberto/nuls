@@ -135,11 +135,10 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
                 }
             }
 
-            // 生成一个地址作为智能合约账户
-            //TODO pierre 账户接口
-            Account contractAccount = AccountTool.createAccount();
+            // 生成一个地址作为智能合约地址
+            Address contractAddress = AccountTool.createContractAddress();
 
-            byte[] contractAddressBytes = contractAccount.getAddress().getBase58Bytes();
+            byte[] contractAddressBytes = contractAddress.getAddressBytes();
             byte[] senderBytes = Base58.decode(sender);
 
             CreateContractTransaction tx = new CreateContractTransaction();

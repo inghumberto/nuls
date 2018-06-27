@@ -47,6 +47,7 @@ import io.nuls.contract.constant.ContractConstant;
 import io.nuls.contract.dto.ContractResult;
 import io.nuls.contract.dto.ContractTransfer;
 import io.nuls.contract.entity.tx.ContractTransferTransaction;
+import io.nuls.contract.service.ContractService;
 import io.nuls.core.tools.log.BlockLog;
 import io.nuls.core.tools.log.ChainLog;
 import io.nuls.core.tools.log.Log;
@@ -83,6 +84,7 @@ public class BlockProcess {
 
     private LedgerService ledgerService = NulsContext.getServiceBean(LedgerService.class);
     private TransactionService tansactionService = NulsContext.getServiceBean(TransactionService.class);
+    private ContractService contractService  = NulsContext.getServiceBean(ContractService.class);
 
     private ExecutorService signExecutor = TaskManager.createThreadPool(Runtime.getRuntime().availableProcessors(), Integer.MAX_VALUE, new NulsThreadFactory(ConsensusConstant.MODULE_ID_CONSENSUS, ""));
 
@@ -228,7 +230,7 @@ public class BlockProcess {
                         }
 
                         // 验证区块时发现智能合约交易就调用智能合约
-                        callContractResult = ConsensusTool.callContract(tx, bestHeight, stateRoot);
+                        callContractResult = contractService.callContract(tx, bestHeight, stateRoot);
                         contractResult = callContractResult.getData();
                         stateRoot = contractResult.getStateRoot();
                         if(callContractResult.isSuccess()) {
@@ -242,19 +244,19 @@ public class BlockProcess {
                                 Result<ContractTransferTransaction> contractTransferResult;
                                 ContractTransferTransaction contractTransferTx;
                                 for(ContractTransfer transfer : transfers) {
-                                    contractTransferResult = ConsensusTool.createContractTransferTx(transfer, block.getHeader().getTime(), toMaps, contractUsedCoinMap);
+                                    contractTransferResult = contractService.createContractTransferTx(transfer, block.getHeader().getTime(), toMaps, contractUsedCoinMap);
                                     if(contractTransferResult.isFailed()) {
                                         isCorrectContractTransfer = false;
                                         break;
                                     }
 
                                     contractTransferTx = contractTransferResult.getData();
-                                    result = ConsensusTool.verifyContractTransferCoinData(contractTransferTx, toMaps, fromSet);
+                                    result = contractService.verifyContractTransferCoinData(contractTransferTx, toMaps, fromSet);
                                     if(result.isFailed()) {
                                         // 如果转账出现错误，跳过整笔合约交易
                                         // 回滚内部转账交易
-                                        ConsensusTool.rollbackContractTransferTx(contractTransferTx);
-                                        ConsensusTool.rollbackContractTransferTxs(successContractTransferTxs);
+                                        contractService.rollbackContractTransferTx(contractTransferTx);
+                                        contractService.rollbackContractTransferTxs(successContractTransferTxs);
                                         isCorrectContractTransfer = false;
                                         break;
                                     } else {
@@ -267,6 +269,9 @@ public class BlockProcess {
 
                                 // 如果转账出现错误，验证区块失败
                                 if(!isCorrectContractTransfer) {
+                                    // 清除临时余额
+                                    contractService.rollbackContractTempBalance(tx, contractResult);
+
                                     Log.info(result.getMsg());
                                     success = false;
                                     break;
@@ -275,8 +280,11 @@ public class BlockProcess {
                             }
                         }
                         // 这笔交易的合约执行结果保存在DB中
-                        ConsensusTool.saveContractExecuteResult(tx.getHash(), contractResult);
+                        contractService.saveContractExecuteResult(tx.getHash(), contractResult);
                     }
+                    // 验证区块交易结束后移除临时余额区
+                    contractService.removeContractTempBalance();
+
                     // 验证世界状态根
                     if(!Arrays.equals(receiveStateRoot, stateRoot)) {
                         Log.info("contract stateRoot incorrect.");

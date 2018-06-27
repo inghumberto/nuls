@@ -85,6 +85,11 @@ public class AccountTool {
         return createAccount(null);
     }
 
+    public static Address createContractAddress() throws NulsException {
+        ECKey key = new ECKey();
+        return new Address(NulsContext.DEFAULT_CHAIN_ID, NulsContext.CONTRACT_ADDRESS_TYPE, SerializeUtils.sha256hash160(key.getPubKey()));
+    }
+
     /**
      * Generate the corresponding account management private key or transaction private key according to the seed private key and password
      */

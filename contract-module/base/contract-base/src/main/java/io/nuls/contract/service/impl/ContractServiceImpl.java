@@ -27,16 +27,20 @@ package io.nuls.contract.service.impl;
 import io.nuls.account.ledger.model.CoinDataResult;
 import io.nuls.account.ledger.model.TransactionInfo;
 import io.nuls.account.ledger.service.AccountLedgerService;
+import io.nuls.contract.constant.ContractConstant;
 import io.nuls.contract.constant.ContractErrorCode;
 import io.nuls.contract.dto.ContractResult;
 import io.nuls.contract.dto.ContractTransfer;
+import io.nuls.contract.entity.tx.CallContractTransaction;
 import io.nuls.contract.entity.tx.ContractTransferTransaction;
 import io.nuls.contract.entity.tx.CreateContractTransaction;
+import io.nuls.contract.entity.tx.DeleteContractTransaction;
 import io.nuls.contract.entity.txdata.CallContractData;
 import io.nuls.contract.entity.txdata.CreateContractData;
 import io.nuls.contract.entity.txdata.DeleteContractData;
 import io.nuls.contract.helper.VMHelper;
 import io.nuls.contract.ledger.manager.ContractBalanceManager;
+import io.nuls.contract.ledger.module.ContractBalance;
 import io.nuls.contract.ledger.service.ContractTransactionInfoService;
 import io.nuls.contract.ledger.service.ContractUtxoService;
 import io.nuls.contract.ledger.util.ContractLedgerUtil;
@@ -58,11 +62,14 @@ import io.nuls.kernel.lite.annotation.Service;
 import io.nuls.kernel.lite.core.bean.InitializingBean;
 import io.nuls.kernel.model.*;
 import io.nuls.kernel.utils.TransactionFeeCalculator;
+import io.nuls.kernel.validate.ValidateResult;
 import io.nuls.ledger.constant.LedgerErrorCode;
+import io.nuls.ledger.service.LedgerService;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -96,6 +103,9 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
     private AccountLedgerService accountLedgerService;
 
     @Autowired
+    private LedgerService ledgerService;
+
+    @Autowired
     private VMHelper vmHelper;
 
     private ProgramExecutor programExecutor;
@@ -114,8 +124,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
      * @param create        创建智能合约的参数
      * @return
      */
-    @Override
-    public Result<ContractResult> createContract(long number, byte[] prevStateRoot, CreateContractData create) {
+    private Result<ContractResult> createContract(long number, byte[] prevStateRoot, CreateContractData create) {
         if(number < 0) {
             return Result.getFailed(ContractErrorCode.PARAMETER_ERROR);
         }
@@ -185,8 +194,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
      * @param call          调用智能合约的参数
      * @return
      */
-    @Override
-    public Result<ContractResult> callContract(long number, byte[] prevStateRoot, CallContractData call) {
+    private Result<ContractResult> callContract(long number, byte[] prevStateRoot, CallContractData call) {
         if(number < 0) {
             return Result.getFailed(ContractErrorCode.PARAMETER_ERROR);
         }
@@ -243,8 +251,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
      * @param delete        删除智能合约的参数
      * @return
      */
-    @Override
-    public Result<ContractResult> deleteContract(long number, byte[] prevStateRoot, DeleteContractData delete) {
+    private Result<ContractResult> deleteContract(long number, byte[] prevStateRoot, DeleteContractData delete) {
         if(number < 0) {
             return Result.getFailed(ContractErrorCode.PARAMETER_ERROR);
         }
@@ -297,7 +304,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
         return ContractLedgerUtil.isContractAddress(addressBytes);
     }
 
-    @Override
+    @Deprecated
     public Result<Integer> saveUnconfirmedTransaction(Transaction tx) {
         saveLock.lock();
         try{
@@ -443,7 +450,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
     }
 
     @Override
-    public Result<Integer> rollbackTransaction(List<Transaction> txs) {
+    public Result<Integer> rollbackTransactionList(List<Transaction> txs) {
         Result result = Result.getSuccess().setData(txs.size());
         result = rollbackTransaction(txs, true);
         return result;
@@ -512,8 +519,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
         return resultTxs;
     }
 
-    @Override
-    public Result<ContractTransferTransaction> transfer(byte[] from, byte[] to, Na values, long blockTime,
+    private Result<ContractTransferTransaction> transfer(byte[] from, byte[] to, Na values, long blockTime,
                                                         Map<String, Coin> toMaps,
                                                         Map<String, Coin> contractUsedCoinMap) {
         try {
@@ -632,6 +638,125 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
         } finally {
             lock.unlock();
         }
+    }
+
+    /*****************************************************************************/
+
+    @Override
+    public Result<ContractResult> callContract(Transaction tx, long height, byte[] stateRoot) {
+        if(tx == null || height < 0 || stateRoot == null) {
+            return Result.getFailed(KernelErrorCode.PARAMETER_ERROR);
+        }
+        int tyType = tx.getType();
+        if (tyType == ContractConstant.TX_TYPE_CREATE_CONTRACT) {
+            CreateContractTransaction createContractTransaction = (CreateContractTransaction) tx;
+            CreateContractData createContractData = createContractTransaction.getTxData();
+            Result<ContractResult> contractResult = createContract(height, stateRoot, createContractData);
+            return contractResult;
+        } else if(tyType == ContractConstant.TX_TYPE_CALL_CONTRACT) {
+            // 调用合约方法时，才有可能发生合约地址的余额变化
+            if(contractBalanceManager.getTempBalanceMap() == null) {
+                contractBalanceManager.setTempBalanceMap(new ConcurrentHashMap<>());
+            }
+
+            CallContractTransaction callContractTransaction = (CallContractTransaction) tx;
+            CallContractData callContractData = callContractTransaction.getTxData();
+            Result<ContractResult> result = callContract(height, stateRoot, callContractData);
+            // 刷新临时余额
+            if(result.isSuccess()) {
+                // 增加转入
+                long value = callContractData.getValue();
+                byte[] contractAddress = callContractData.getContractAddress();
+                if(value > 0) {
+                    contractBalanceManager.addTempBalance(contractAddress, value);
+                }
+                // 扣除转出
+                ContractResult contractResult = result.getData();
+                List<ContractTransfer> transfers = contractResult.getTransfers();
+                if(transfers != null && transfers.size() > 0) {
+                    BigInteger outAmount = BigInteger.ZERO;
+                    for(ContractTransfer transfer : transfers) {
+                        outAmount = outAmount.add(transfer.getValue());
+                    }
+                    contractBalanceManager.minusTempBalance(contractAddress, outAmount.longValue());
+                }
+            }
+            return result;
+        } else if(tyType == ContractConstant.TX_TYPE_DELETE_CONTRACT) {
+            DeleteContractTransaction deleteContractTransaction = (DeleteContractTransaction) tx;
+            DeleteContractData deleteContractData = deleteContractTransaction.getTxData();
+            Result<ContractResult> contractResult = deleteContract(height, stateRoot, deleteContractData);
+            return contractResult;
+        } else {
+            return Result.getSuccess();
+        }
+    }
+
+    @Override
+    public void rollbackContractTempBalance(Transaction tx, ContractResult contractResult) {
+        if(tx != null && tx.getType() == ContractConstant.TX_TYPE_CALL_CONTRACT) {
+            CallContractTransaction callContractTransaction = (CallContractTransaction) tx;
+            CallContractData callContractData = callContractTransaction.getTxData();
+            byte[] contractAddress = callContractData.getContractAddress();
+            // 增加转出
+            List<ContractTransfer> transfers = contractResult.getTransfers();
+            if(transfers != null && transfers.size() > 0) {
+                BigInteger outAmount = BigInteger.ZERO;
+                for(ContractTransfer transfer : transfers) {
+                    outAmount = outAmount.add(transfer.getValue());
+                }
+                contractBalanceManager.minusTempBalance(contractAddress, outAmount.longValue());
+            }
+            // 扣除转入
+            long value = callContractData.getValue();
+            if(value > 0) {
+                contractBalanceManager.addTempBalance(contractAddress, value);
+            }
+        }
+    }
+
+    @Override
+    public void removeContractTempBalance() {
+        contractBalanceManager.setTempBalanceMap(null);
+    }
+
+    @Override
+    public ValidateResult verifyContractTransferCoinData(ContractTransferTransaction contractTransferTx, Map<String, Coin> toMaps, Set<String> fromSet) {
+        Transaction repeatTx = ledgerService.getTx(contractTransferTx.getHash());
+
+        if (repeatTx != null) {
+            return ValidateResult.getSuccessResult();
+        }
+        return ledgerService.verifyCoinData(contractTransferTx, toMaps, fromSet);
+    }
+
+    @Override
+    public void rollbackContractTransferTxs(Map<String, ContractTransferTransaction> successContractTransferTxs) {
+        if(successContractTransferTxs != null && successContractTransferTxs.size() > 0) {
+            Collection<ContractTransferTransaction> values = successContractTransferTxs.values();
+            for(Transaction tx : values) {
+                rollbackTransaction(tx);
+            }
+        }
+    }
+
+    @Override
+    public void rollbackContractTransferTx(ContractTransferTransaction tx) {
+        if(tx != null) {
+            rollbackTransaction(tx);
+        }
+    }
+
+    @Override
+    public Result<ContractTransferTransaction> createContractTransferTx(ContractTransfer transfer, long blockTime, Map<String, Coin> toMaps, Map<String, Coin> contractUsedCoinMap) {
+        Result<ContractTransferTransaction> result = null;
+        result = transfer(transfer.getFrom(), transfer.getTo(), Na.valueOf(transfer.getValue().longValue()), blockTime, toMaps, contractUsedCoinMap);
+        if(result.isSuccess()) {
+            result.getData().setTransfer(transfer);
+        } else {
+            Log.warn("contract transfer failed. Info: " + transfer);
+        }
+        return result;
     }
 
 }
