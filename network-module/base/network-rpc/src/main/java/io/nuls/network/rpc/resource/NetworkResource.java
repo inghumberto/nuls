@@ -31,6 +31,7 @@ import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Component;
 import io.nuls.kernel.model.Result;
 import io.nuls.kernel.model.RpcClientResult;
+import io.nuls.network.cache.NodeCacheManager;
 import io.nuls.network.constant.NetworkConstant;
 import io.nuls.network.constant.NetworkParam;
 import io.nuls.network.model.Node;
@@ -56,6 +57,8 @@ public class NetworkResource {
 
     @Autowired
     private NetworkService networkService;
+
+    private NodeCacheManager nodeCacheManager = NodeCacheManager.getInstance();
 
     @GET
     @Path("/info/")
@@ -99,12 +102,16 @@ public class NetworkResource {
             @ApiResponse(code = 200, message = "success", response = String[].class)
     })
     public RpcClientResult getNode() {
-        List<Node> nodeList = networkService.getCanConnectNodes();
-        Set<String> ipSet = new HashSet<>();
-        Result result = Result.getSuccess();
-        for (Node node : nodeList) {
-            ipSet.add(node.getIp());
+        Set<String> ipSet = nodeCacheManager.getIpSet();
+        if (ipSet == null || ipSet.isEmpty()) {
+            ipSet = new HashSet<>();
+            List<Node> nodeList = networkService.getCanConnectNodes();
+            for (Node node : nodeList) {
+                ipSet.add(node.getIp());
+            }
+            nodeCacheManager.cacheIpSet(ipSet);
         }
+        Result result = Result.getSuccess();
         Map<String, Set<String>> map = new HashMap<>();
         map.put("list", ipSet);
         result.setData(map);
