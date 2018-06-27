@@ -24,22 +24,22 @@
 package io.nuls.contract.rpc.resource;
 
 import io.nuls.account.ledger.constant.AccountLedgerErrorCode;
-import io.nuls.account.model.Address;
 import io.nuls.contract.constant.ContractErrorCode;
 import io.nuls.contract.rpc.form.ContractCall;
 import io.nuls.contract.rpc.form.ContractCreate;
 import io.nuls.contract.rpc.form.ContractDelete;
 import io.nuls.contract.service.ContractTxService;
-import io.nuls.core.tools.log.Log;
 import io.nuls.core.tools.str.StringUtils;
-import io.nuls.kernel.exception.NulsRuntimeException;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Component;
 import io.nuls.kernel.model.Na;
 import io.nuls.kernel.model.Result;
+import io.nuls.kernel.utils.AddressTool;
 import io.swagger.annotations.*;
 
-import javax.ws.rs.*;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import java.util.Base64;
 
@@ -68,7 +68,7 @@ public class ContractResource {
             return Result.getFailed(ContractErrorCode.PARAMETER_ERROR);
         }
 
-        if (!Address.validAddress(create.getSender())) {
+        if (!AddressTool.validAddress(create.getSender())) {
             return Result.getFailed(AccountLedgerErrorCode.ADDRESS_ERROR);
         }
 
@@ -101,11 +101,11 @@ public class ContractResource {
             return Result.getFailed(ContractErrorCode.PARAMETER_ERROR);
         }
 
-        if (!Address.validAddress(call.getSender())) {
+        if (!AddressTool.validAddress(call.getSender())) {
             return Result.getFailed(AccountLedgerErrorCode.ADDRESS_ERROR);
         }
 
-        if (!Address.validAddress(call.getContractAddress())) {
+        if (!AddressTool.validAddress(call.getContractAddress())) {
             return Result.getFailed(AccountLedgerErrorCode.ADDRESS_ERROR);
         }
 
@@ -133,11 +133,11 @@ public class ContractResource {
             return Result.getFailed(ContractErrorCode.PARAMETER_ERROR);
         }
 
-        if (!Address.validAddress(delete.getSender())) {
+        if (!AddressTool.validAddress(delete.getSender())) {
             return Result.getFailed(AccountLedgerErrorCode.ADDRESS_ERROR);
         }
 
-        if (!Address.validAddress(delete.getContractAddress())) {
+        if (!AddressTool.validAddress(delete.getContractAddress())) {
             return Result.getFailed(AccountLedgerErrorCode.ADDRESS_ERROR);
         }
 

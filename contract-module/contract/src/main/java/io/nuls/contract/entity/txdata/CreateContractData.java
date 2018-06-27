@@ -47,6 +47,7 @@ public class CreateContractData extends TransactionLogicData {
     private byte[] code;
     private long naLimit;
     private byte price;
+    private long txGasUsed;
     private byte argsCount;
     private String[] args;
 
@@ -60,6 +61,7 @@ public class CreateContractData extends TransactionLogicData {
         size += SerializeUtils.sizeOfBytes(code);
         size += SerializeUtils.sizeOfVarInt(naLimit);
         size += 1;
+        size += SerializeUtils.sizeOfVarInt(txGasUsed);
         size += 1;
         if(args != null) {
             for(String arg : args) {
@@ -78,6 +80,7 @@ public class CreateContractData extends TransactionLogicData {
         stream.writeBytesWithLength(code);
         stream.writeVarInt(naLimit);
         stream.write(price);
+        stream.writeVarInt(txGasUsed);
         stream.write(argsCount);
         if(args != null) {
             for(String arg : args) {
@@ -95,6 +98,7 @@ public class CreateContractData extends TransactionLogicData {
         this.code = byteBuffer.readByLengthByte();
         this.naLimit = (long) byteBuffer.readVarInt();
         this.price = byteBuffer.readByte();
+        this.txGasUsed = (long) byteBuffer.readVarInt();
         this.argsCount = byteBuffer.readByte();
         int length = this.argsCount;
         this.args = new String[length];
@@ -159,6 +163,14 @@ public class CreateContractData extends TransactionLogicData {
         this.price = price;
     }
 
+    public long getTxGasUsed() {
+        return txGasUsed;
+    }
+
+    public void setTxGasUsed(long txGasUsed) {
+        this.txGasUsed = txGasUsed;
+    }
+
     public byte getArgsCount() {
         return argsCount;
     }
@@ -181,7 +193,6 @@ public class CreateContractData extends TransactionLogicData {
 
     @Override
     public Set<byte[]> getAddresses() {
-        //TODO auto-generated method stub
         return null;
     }
 }

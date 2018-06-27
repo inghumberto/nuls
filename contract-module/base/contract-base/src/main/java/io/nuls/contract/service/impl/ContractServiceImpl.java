@@ -647,13 +647,13 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
         if(tx == null || height < 0 || stateRoot == null) {
             return Result.getFailed(KernelErrorCode.PARAMETER_ERROR);
         }
-        int tyType = tx.getType();
-        if (tyType == ContractConstant.TX_TYPE_CREATE_CONTRACT) {
+        int txType = tx.getType();
+        if (txType == ContractConstant.TX_TYPE_CREATE_CONTRACT) {
             CreateContractTransaction createContractTransaction = (CreateContractTransaction) tx;
             CreateContractData createContractData = createContractTransaction.getTxData();
             Result<ContractResult> contractResult = createContract(height, stateRoot, createContractData);
             return contractResult;
-        } else if(tyType == ContractConstant.TX_TYPE_CALL_CONTRACT) {
+        } else if(txType == ContractConstant.TX_TYPE_CALL_CONTRACT) {
             // 调用合约方法时，才有可能发生合约地址的余额变化
             if(contractBalanceManager.getTempBalanceMap() == null) {
                 contractBalanceManager.setTempBalanceMap(new ConcurrentHashMap<>());
@@ -682,7 +682,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
                 }
             }
             return result;
-        } else if(tyType == ContractConstant.TX_TYPE_DELETE_CONTRACT) {
+        } else if(txType == ContractConstant.TX_TYPE_DELETE_CONTRACT) {
             DeleteContractTransaction deleteContractTransaction = (DeleteContractTransaction) tx;
             DeleteContractData deleteContractData = deleteContractTransaction.getTxData();
             Result<ContractResult> contractResult = deleteContract(height, stateRoot, deleteContractData);

@@ -47,6 +47,7 @@ public class CallContractData extends TransactionLogicData {
     private byte price;
     private String methodName;
     private String methodDesc;
+    private long txGasUsed;
     private byte argsCount;
     private String[] args;
 
@@ -60,6 +61,7 @@ public class CallContractData extends TransactionLogicData {
         size += 1;
         size += SerializeUtils.sizeOfString(methodName);
         size += SerializeUtils.sizeOfString(methodDesc);
+        size += SerializeUtils.sizeOfVarInt(txGasUsed);
         size += 1;
         if(args != null) {
             for(String arg : args) {
@@ -78,6 +80,7 @@ public class CallContractData extends TransactionLogicData {
         stream.write(price);
         stream.writeString(methodName);
         stream.writeString(methodDesc);
+        stream.writeVarInt(txGasUsed);
         stream.write(argsCount);
         if(args != null) {
             for(String arg : args) {
@@ -95,6 +98,7 @@ public class CallContractData extends TransactionLogicData {
         this.price = byteBuffer.readByte();
         this.methodName = byteBuffer.readString();
         this.methodDesc = byteBuffer.readString();
+        this.txGasUsed = byteBuffer.readVarInt();
         this.argsCount = byteBuffer.readByte();
         int length = this.argsCount;
         this.args = new String[length];
@@ -159,6 +163,14 @@ public class CallContractData extends TransactionLogicData {
         this.methodDesc = methodDesc;
     }
 
+    public long getTxGasUsed() {
+        return txGasUsed;
+    }
+
+    public void setTxGasUsed(long txGasUsed) {
+        this.txGasUsed = txGasUsed;
+    }
+
     public byte getArgsCount() {
         return argsCount;
     }
@@ -181,7 +193,6 @@ public class CallContractData extends TransactionLogicData {
 
     @Override
     public Set<byte[]> getAddresses() {
-        //TODO auto-generated method stub
         return null;
     }
 }

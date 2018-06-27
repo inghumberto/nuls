@@ -42,6 +42,10 @@ import io.nuls.consensus.poc.protocol.tx.DepositTransaction;
 import io.nuls.consensus.poc.protocol.tx.YellowPunishTransaction;
 import io.nuls.consensus.poc.storage.service.AgentStorageService;
 import io.nuls.consensus.poc.storage.service.DepositStorageService;
+import io.nuls.contract.constant.ContractConstant;
+import io.nuls.contract.dto.ContractResult;
+import io.nuls.contract.entity.tx.CreateContractTransaction;
+import io.nuls.contract.entity.txdata.CreateContractData;
 import io.nuls.contract.service.ContractService;
 import io.nuls.core.tools.array.ArraysTool;
 import io.nuls.core.tools.calc.DoubleUtils;
@@ -58,6 +62,7 @@ import io.nuls.kernel.utils.VarInt;
 import io.nuls.ledger.service.LedgerService;
 import io.nuls.protocol.model.SmallBlock;
 import io.nuls.protocol.model.tx.CoinBaseTransaction;
+import sun.management.resources.agent;
 
 import java.io.IOException;
 import java.util.*;
@@ -152,6 +157,28 @@ public class ConsensusTool {
             Log.error(e);
         }
         return tx;
+    }
+
+    private static List<Coin> returnContractRemainingGas(List<Transaction> txList, long unlockHeight) {
+        if(txList != null && txList.size() > 0) {
+            int tyType;
+            for (Transaction tx : txList) {
+                tyType = tx.getType();
+                if (tyType == ContractConstant.TX_TYPE_CREATE_CONTRACT) {
+                    CreateContractTransaction createContractTx = (CreateContractTransaction) tx;
+                    ContractResult contractResult = createContractTx.getContractResult();
+                    long realGasUsed = contractResult.getGasUsed();
+                    //TODO pierre 减差额作为退还Gas 
+                    // Na imputedNa = Na.valueOf(gasUsed * price);
+                    CreateContractData createContractData = createContractTx.getTxData();
+
+                    //TODO pierre
+                    Coin returnCoin = new Coin(createContractData.getSender(), Na.valueOf((long) 0), unlockHeight);
+
+                }
+            }
+        }
+        return null;
     }
 
     private static List<Coin> calcReward(List<Transaction> txList, MeetingMember self, MeetingRound localRound, long unlockHeight) {

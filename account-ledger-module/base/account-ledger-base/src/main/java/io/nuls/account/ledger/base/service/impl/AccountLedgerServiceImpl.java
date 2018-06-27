@@ -556,16 +556,16 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
             }
 
             // pierre add 保存未确认交易到合约账本
-            saveResult = contractService.saveUnconfirmedTransaction(tx);
+            /*saveResult = contractService.saveUnconfirmedTransaction(tx);
             if (saveResult.isFailed()) {
                 rollbackTransaction(tx);
                 return saveResult;
-            }
+            }*/
 
             Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
                 this.rollbackTransaction(tx);
-                contractService.rollbackTransaction(tx);
+                //contractService.rollbackTransaction(tx);
                 return sendResult;
             }
             return Result.getSuccess().setData(tx.getHash().getDigestHex());

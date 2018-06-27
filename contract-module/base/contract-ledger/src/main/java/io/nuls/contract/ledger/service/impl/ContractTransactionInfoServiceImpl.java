@@ -35,6 +35,7 @@ import io.nuls.kernel.constant.KernelErrorCode;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Service;
+import io.nuls.kernel.model.Address;
 import io.nuls.kernel.model.Result;
 import io.nuls.kernel.utils.AddressTool;
 
@@ -85,9 +86,9 @@ public class ContractTransactionInfoServiceImpl implements ContractTransactionIn
             int txHashLength = infoPo.getTxHash().size();
             byte[] infoKey;
             for (int i = 0; i < addresses.size(); i++) {
-                infoKey = new byte[AddressTool.HASH_LENGTH + txHashLength];
-                System.arraycopy(addresses.get(i), 0, infoKey, 0, AddressTool.HASH_LENGTH);
-                System.arraycopy(txHashBytes, 0, infoKey, AddressTool.HASH_LENGTH, txHashLength);
+                infoKey = new byte[Address.ADDRESS_LENGTH + txHashLength];
+                System.arraycopy(addresses.get(i), 0, infoKey, 0, Address.ADDRESS_LENGTH);
+                System.arraycopy(txHashBytes, 0, infoKey, Address.ADDRESS_LENGTH, txHashLength);
                 contractTransactionInfoStorageService.saveTransactionInfo(infoKey, infoPo);
                 savedKeyList.add(infoKey);
             }
@@ -105,9 +106,9 @@ public class ContractTransactionInfoServiceImpl implements ContractTransactionIn
         try {
             byte[] txHashBytes = infoPo.getTxHash().serialize();
             int txHashLength = infoPo.getTxHash().size();
-            byte[] infoKey = new byte[AddressTool.HASH_LENGTH + txHashLength];
-            System.arraycopy(address, 0, infoKey, 0, AddressTool.HASH_LENGTH);
-            System.arraycopy(txHashBytes, 0, infoKey, AddressTool.HASH_LENGTH, txHashLength);
+            byte[] infoKey = new byte[Address.ADDRESS_LENGTH + txHashLength];
+            System.arraycopy(address, 0, infoKey, 0, Address.ADDRESS_LENGTH);
+            System.arraycopy(txHashBytes, 0, infoKey, Address.ADDRESS_LENGTH, txHashLength);
             Result<byte[]> txInfoBytesResult = contractTransactionInfoStorageService.getTransactionInfo(infoKey);
             if(txInfoBytesResult.getData() == null) {
                 return false;
@@ -138,11 +139,11 @@ public class ContractTransactionInfoServiceImpl implements ContractTransactionIn
         }
 
         byte[] addresses = infoPo.getAddresses();
-        if (addresses.length % AddressTool.HASH_LENGTH != 0) {
+        if (addresses.length % Address.ADDRESS_LENGTH != 0) {
             return Result.getFailed(KernelErrorCode.PARAMETER_ERROR);
         }
 
-        int addressCount = addresses.length / AddressTool.HASH_LENGTH;
+        int addressCount = addresses.length / Address.ADDRESS_LENGTH;
 
         byte[] txHashBytes;
         try {
@@ -154,9 +155,9 @@ public class ContractTransactionInfoServiceImpl implements ContractTransactionIn
         int txHashLength = infoPo.getTxHash().size();
         byte[] infoKey;
         for (int i = 0; i < addressCount; i++) {
-            infoKey = new byte[AddressTool.HASH_LENGTH + txHashLength];
-            System.arraycopy(addresses, i * AddressTool.HASH_LENGTH, infoKey, 0, AddressTool.HASH_LENGTH);
-            System.arraycopy(txHashBytes, 0, infoKey, AddressTool.HASH_LENGTH, txHashLength);
+            infoKey = new byte[Address.ADDRESS_LENGTH + txHashLength];
+            System.arraycopy(addresses, i * Address.ADDRESS_LENGTH, infoKey, 0, Address.ADDRESS_LENGTH);
+            System.arraycopy(txHashBytes, 0, infoKey, Address.ADDRESS_LENGTH, txHashLength);
             contractTransactionInfoStorageService.deleteTransactionInfo(infoKey);
         }
         return Result.getSuccess().setData(new Integer(addressCount));

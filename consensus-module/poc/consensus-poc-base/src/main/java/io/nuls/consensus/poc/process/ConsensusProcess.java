@@ -317,6 +317,7 @@ public class ConsensusProcess {
         boolean isCorrectContractTransfer = true;
         long contractTransferTxTotalSize = 0L;
         Map<String, Coin> contractUsedCoinMap = new HashMap<>();
+        int txType;
 
         while (true) {
             isCorrectContractTransfer = true;
@@ -340,6 +341,7 @@ public class ConsensusProcess {
 
             Transaction tx = txContainer.getTx();
             txSize = tx.size();
+            txType = tx.getType();
 
             if ((totalSize + txSize) > ProtocolConstant.MAX_BLOCK_SIZE) {
                 txMemoryPool.addInFirst(txContainer, false);
@@ -456,8 +458,19 @@ public class ConsensusProcess {
             }
             // 更新世界状态根
             bd.setStateRoot(stateRoot);
-            // 这笔交易的合约执行结果保存在DB中
-            contractService.saveContractExecuteResult(tx.getHash(), contractResult);
+            // 这笔交易的合约执行结果保存在DB中, 另外保存在交易对象中，用于计算退还剩余的Gas
+            if(contractResult != null) {
+                if(txType == ContractConstant.TX_TYPE_CREATE_CONTRACT) {
+                    CreateContractTransaction createContractTransaction = (CreateContractTransaction) tx;
+                    createContractTransaction.setContractResult(contractResult);
+                    contractService.saveContractExecuteResult(tx.getHash(), contractResult);
+                } else if(txType == ContractConstant.TX_TYPE_CALL_CONTRACT) {
+                    CallContractTransaction callContractTransaction = (CallContractTransaction) tx;
+                    callContractTransaction.setContractResult(contractResult);
+                    contractService.saveContractExecuteResult(tx.getHash(), contractResult);
+                }
+            }
+
 
             tx.setBlockHeight(bd.getHeight());
             packingTxList.add(tx);
@@ -485,6 +498,7 @@ public class ConsensusProcess {
                 }
             }
         }
+        // 合约调用退还剩余的Gas
         addConsensusTx(bestBlock, packingTxList, self, round);
         bd.setTxList(packingTxList);
 

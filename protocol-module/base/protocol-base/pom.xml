@@ -29,6 +29,11 @@
             <version>0.9.11</version>
         </dependency>
         <dependency>
+            <groupId>io.nuls.contract-module</groupId>
+            <artifactId>contract</artifactId>
+            <version>0.9.11</version>
+        </dependency>
+        <dependency>
             <groupId>io.nuls.message-bus-module</groupId>
             <artifactId>message-bus</artifactId>
             <version>0.9.11</version>

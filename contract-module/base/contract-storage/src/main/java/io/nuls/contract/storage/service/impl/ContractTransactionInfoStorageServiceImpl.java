@@ -34,6 +34,7 @@ import io.nuls.kernel.exception.NulsRuntimeException;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Service;
 import io.nuls.kernel.lite.core.bean.InitializingBean;
+import io.nuls.kernel.model.Address;
 import io.nuls.kernel.model.Result;
 import io.nuls.kernel.utils.AddressTool;
 import io.nuls.kernel.utils.NulsByteBuffer;
@@ -78,11 +79,11 @@ public class ContractTransactionInfoStorageServiceImpl implements ContractTransa
             return infoPoList;
         }
 
-        byte[] addressKey = new byte[AddressTool.HASH_LENGTH];
+        byte[] addressKey = new byte[Address.ADDRESS_LENGTH];
         TransactionInfoPo transactionInfoPo;
         byte[] values;
         for (byte[] key : keyList) {
-            System.arraycopy(key, 0, addressKey, 0, AddressTool.HASH_LENGTH);
+            System.arraycopy(key, 0, addressKey, 0, Address.ADDRESS_LENGTH);
             if (Arrays.equals(addressKey, address)) {
                 values = dbService.get(ContractStorageConstant.DB_NAME_CONTRACT_LEDGER_TX_INDEX, key);
                 transactionInfoPo = new TransactionInfoPo();

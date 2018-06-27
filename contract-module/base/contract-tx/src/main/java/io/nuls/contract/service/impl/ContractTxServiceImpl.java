@@ -57,6 +57,7 @@ import io.nuls.kernel.lite.annotation.Service;
 import io.nuls.kernel.lite.core.bean.InitializingBean;
 import io.nuls.kernel.model.*;
 import io.nuls.kernel.script.P2PKHScriptSig;
+import io.nuls.kernel.utils.AddressTool;
 import io.nuls.kernel.utils.TransactionFeeCalculator;
 import io.nuls.protocol.service.TransactionService;
 
@@ -139,7 +140,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             Address contractAddress = AccountTool.createContractAddress();
 
             byte[] contractAddressBytes = contractAddress.getAddressBytes();
-            byte[] senderBytes = Base58.decode(sender);
+            byte[] senderBytes = AddressTool.getAddress(sender);
 
             CreateContractTransaction tx = new CreateContractTransaction();
             if (StringUtils.isNotBlank(remark)) {
@@ -152,20 +153,6 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             }
             tx.setTime(TimeService.currentTimeMillis());
 
-            // 组装txData
-            CreateContractData createContractData = new CreateContractData();
-            createContractData.setSender(senderBytes);
-            createContractData.setContractAddress(contractAddressBytes);
-            createContractData.setValue(value.getValue());
-            createContractData.setNaLimit(naLimit.getValue());
-            createContractData.setPrice(price);
-            createContractData.setCodeLen(contractCode.length);
-            createContractData.setCode(contractCode);
-            if(args != null) {
-                createContractData.setArgsCount((byte) args.length);
-                createContractData.setArgs(args);
-            }
-            tx.setTxData(createContractData);
 
             // 计算CoinData
             /*
@@ -188,13 +175,13 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             byte[] prevStateRoot = blockHeader.getStateRoot();
             // 执行VM估算Gas消耗
             ProgramCreate programCreate = new ProgramCreate();
-            programCreate.setContractAddress(createContractData.getContractAddress());
-            programCreate.setSender(createContractData.getSender());
+            programCreate.setContractAddress(contractAddressBytes);
+            programCreate.setSender(senderBytes);
             programCreate.setValue(BigInteger.valueOf(value.getValue()));
-            programCreate.setPrice(createContractData.getPrice());
-            programCreate.setNaLimit(createContractData.getNaLimit());
+            programCreate.setPrice(price);
+            programCreate.setNaLimit(naLimit.getValue());
             programCreate.setNumber(blockHeight);
-            programCreate.setContractCode(createContractData.getCode());
+            programCreate.setContractCode(contractCode);
             if(args != null) {
                 programCreate.setArgs(args);
             }
@@ -221,6 +208,24 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
                 coinData.getTo().add(coinDataResult.getChange());
             }
             tx.setCoinData(coinData);
+
+            // 组装txData
+            CreateContractData createContractData = new CreateContractData();
+            createContractData.setSender(senderBytes);
+            createContractData.setContractAddress(contractAddressBytes);
+            createContractData.setValue(value.getValue());
+            createContractData.setNaLimit(naLimit.getValue());
+            createContractData.setPrice(price);
+            createContractData.setCodeLen(contractCode.length);
+            createContractData.setCode(contractCode);
+            // 本次交易使用的Gas消耗
+            createContractData.setTxGasUsed(imputedNa.getValue());
+            if(args != null) {
+                createContractData.setArgsCount((byte) args.length);
+                createContractData.setArgs(args);
+            }
+            tx.setTxData(createContractData);
+
             tx.setHash(NulsDigestData.calcDigestData(tx.serialize()));
             // 交易签名
             P2PKHScriptSig sig = new P2PKHScriptSig();
@@ -228,11 +233,11 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             sig.setSignData(accountService.signData(tx.getHash().serialize(), account, password));
             tx.setScriptSig(sig.serialize());
 
-            // 如果是创建合约的交易，即刻保存合约地址到DB中，用于后面代码逻辑的校验
-            Result result = contractAddressStorageService.saveContractAddress(contractAddressBytes);
+            // 如果是创建合约的交易，交易仅仅用于创建合约，合约内部不执行复杂逻辑
+            /*Result result = contractAddressStorageService.saveContractAddress(contractAddressBytes);
             if(result.isFailed()) {
                 return result;
-            }
+            }*/
 
             // 保存未确认交易到本地账户
             Result saveResult = accountLedgerService.verifyAndSaveUnconfirmedTransaction(tx);
@@ -252,9 +257,9 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             // 广播交易
             Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
-                contractService.rollbackTransaction(tx);
+                //contractService.rollbackTransaction(tx);
                 accountLedgerService.rollbackTransaction(tx);
-                contractAddressStorageService.deleteContractAddress(contractAddressBytes);
+                //contractAddressStorageService.deleteContractAddress(contractAddressBytes);
                 return sendResult;
             }
 
@@ -318,8 +323,8 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
                 }
             }
 
-            byte[] senderBytes = Base58.decode(sender);
-            byte[] contractAddressBytes = Base58.decode(contractAddress);
+            byte[] senderBytes = AddressTool.getAddress(sender);
+            byte[] contractAddressBytes = AddressTool.getAddress(contractAddress);
 
             // 当前区块高度
             BlockHeaderDto blockHeader = vmContext.getBlockHeader();
@@ -367,20 +372,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             }
             tx.setTime(TimeService.currentTimeMillis());
 
-            // 组装txData
-            CallContractData callContractData = new CallContractData();
-            callContractData.setContractAddress(contractAddressBytes);
-            callContractData.setSender(senderBytes);
-            callContractData.setValue(value.getValue());
-            callContractData.setPrice(price);
-            callContractData.setNaLimit(naLimit.getValue());
-            callContractData.setMethodName(methodName);
-            callContractData.setMethodDesc(methodDesc);
-            if(args != null) {
-                callContractData.setArgsCount((byte) args.length);
-                callContractData.setArgs(args);
-            }
-            tx.setTxData(callContractData);
+
 
             // 计算CoinData
             /*
@@ -421,6 +413,24 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
                 coinData.getTo().add(coinDataResult.getChange());
             }
             tx.setCoinData(coinData);
+
+            // 组装txData
+            CallContractData callContractData = new CallContractData();
+            callContractData.setContractAddress(contractAddressBytes);
+            callContractData.setSender(senderBytes);
+            callContractData.setValue(value.getValue());
+            callContractData.setPrice(price);
+            callContractData.setNaLimit(naLimit.getValue());
+            callContractData.setMethodName(methodName);
+            callContractData.setMethodDesc(methodDesc);
+            // 本次交易使用的Gas消耗
+            callContractData.setTxGasUsed(imputedNa.getValue());
+            if(args != null) {
+                callContractData.setArgsCount((byte) args.length);
+                callContractData.setArgs(args);
+            }
+            tx.setTxData(callContractData);
+
             tx.setHash(NulsDigestData.calcDigestData(tx.serialize()));
             // 交易签名
             P2PKHScriptSig sig = new P2PKHScriptSig();
@@ -428,25 +438,25 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             sig.setSignData(accountService.signData(tx.getHash().serialize(), account, password));
             tx.setScriptSig(sig.serialize());
 
-            // 保存未确认交易到本地账户
+            // 保存未确认交易到本地账本
             Result saveResult = accountLedgerService.verifyAndSaveUnconfirmedTransaction(tx);
             if (saveResult.isFailed()) {
                 return saveResult;
             }
 
             // 保存未确认交易到合约账本
-            saveResult = contractService.saveUnconfirmedTransaction(tx);
+            /*saveResult = contractService.saveUnconfirmedTransaction(tx);
             if (saveResult.isFailed()) {
                 accountLedgerService.rollbackTransaction(tx);
                 return saveResult;
-            }
+            }*/
 
             // 广播
             Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
                 // 失败则回滚
                 accountLedgerService.rollbackTransaction(tx);
-                contractService.rollbackTransaction(tx);
+                //contractService.rollbackTransaction(tx);
                 return sendResult;
             }
 
@@ -510,8 +520,8 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             }
             tx.setTime(TimeService.currentTimeMillis());
 
-            byte[] senderBytes = Base58.decode(sender);
-            byte[] contractAddressBytes = Base58.decode(contractAddress);
+            byte[] senderBytes = AddressTool.getAddress(sender);
+            byte[] contractAddressBytes = AddressTool.getAddress(contractAddress);
 
             // 组装txData
             DeleteContractData deleteContractData = new DeleteContractData();

@@ -24,6 +24,7 @@
 package io.nuls.contract.entity.tx;
 
 import io.nuls.contract.constant.ContractConstant;
+import io.nuls.contract.dto.ContractResult;
 import io.nuls.contract.entity.txdata.CallContractData;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.model.Transaction;
@@ -35,6 +36,8 @@ import io.nuls.kernel.utils.NulsByteBuffer;
  * @Date: 2018/4/20
  */
 public class CallContractTransaction extends Transaction<CallContractData> {
+
+    private ContractResult contractResult;
 
     public CallContractTransaction() {
         super(ContractConstant.TX_TYPE_CALL_CONTRACT);
@@ -49,5 +52,13 @@ public class CallContractTransaction extends Transaction<CallContractData> {
     public String getInfo(byte[] address) {
         //TODO auto-generated method stub
         return null;
+    }
+
+    public ContractResult getContractResult() {
+        return contractResult;
+    }
+
+    public void setContractResult(ContractResult contractResult) {
+        this.contractResult = contractResult;
     }
 }
