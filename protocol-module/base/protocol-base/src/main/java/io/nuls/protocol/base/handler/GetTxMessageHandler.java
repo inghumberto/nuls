@@ -46,7 +46,6 @@ public class GetTxMessageHandler extends AbstractMessageHandler<GetTxMessage> {
 
     private TemporaryCacheManager cacheManager = TemporaryCacheManager.getInstance();
     private MessageBusService messageBusService = NulsContext.getServiceBean(MessageBusService.class);
-    private LedgerService ledgerService = NulsContext.getServiceBean(LedgerService.class);
 
     @Override
     public void onMessage(GetTxMessage message, Node fromNode) {
@@ -55,16 +54,16 @@ public class GetTxMessageHandler extends AbstractMessageHandler<GetTxMessage> {
         }
         Transaction tx = cacheManager.getTx(message.getMsgBody());
         if (null == tx) {
-            tx = ledgerService.getTx(message.getMsgBody());
-        }
-        if (null == tx) {
             sendNotFound(message.getMsgBody(), fromNode);
             return;
         }
 
         TransactionMessage txMessage = new TransactionMessage();
         txMessage.setMsgBody(tx);
-        messageBusService.sendToNode(txMessage, fromNode, true);
+        Result result = messageBusService.sendToNode(txMessage, fromNode, true);
+        if(!result.isSuccess()) {
+            Log.error("send error to node : " + fromNode.getId());
+        }
     }
 
     private void sendNotFound(NulsDigestData hash, Node fromNode) {

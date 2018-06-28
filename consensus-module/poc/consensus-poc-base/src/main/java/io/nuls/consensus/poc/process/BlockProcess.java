@@ -395,13 +395,7 @@ public class BlockProcess {
         if (blockContainer.getNode() == null) {
             return;
         }
-        SmallBlock smallBlock = ConsensusTool.getSmallBlock(blockContainer.getBlock());
-        Result result;
-        if (blockContainer.getNode() == null) {
-            result = blockService.broadcastBlock(smallBlock);
-        } else {
-            result = blockService.forwardBlock(smallBlock, blockContainer.getNode());
-        }
+        Result result = blockService.forwardBlock(blockContainer.getBlock().getHeader().getHash(), blockContainer.getNode());
         if (!result.isSuccess()) {
             Log.warn("forward the block failed, block height: " + blockContainer.getBlock().getHeader().getHeight() + " , hash : " + blockContainer.getBlock().getHeader().getHash());
         }

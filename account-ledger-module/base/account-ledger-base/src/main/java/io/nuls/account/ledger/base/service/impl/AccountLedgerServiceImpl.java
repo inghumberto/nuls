@@ -38,12 +38,10 @@ import io.nuls.account.ledger.service.AccountLedgerService;
 import io.nuls.account.ledger.storage.po.TransactionInfoPo;
 import io.nuls.account.ledger.storage.service.UnconfirmedTransactionStorageService;
 import io.nuls.account.model.Account;
-import io.nuls.contract.constant.ContractConstant;
-import io.nuls.kernel.model.Address;
 import io.nuls.account.model.Balance;
 import io.nuls.account.service.AccountService;
+import io.nuls.contract.constant.ContractConstant;
 import io.nuls.contract.service.ContractService;
-import io.nuls.core.tools.crypto.Base58;
 import io.nuls.core.tools.crypto.ECKey;
 import io.nuls.core.tools.crypto.Hex;
 import io.nuls.core.tools.log.Log;
@@ -569,8 +567,8 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
             if (saveResult.isFailed()) {
                 return saveResult;
             }
-
-            Result sendResult = transactionService.broadcastTx(tx);
+            transactionService.newTx(tx);
+            Result sendResult = transactionService.forwardTx(tx, null);
             if (sendResult.isFailed()) {
                 this.rollbackTransaction(tx);
                 return sendResult;
@@ -668,7 +666,7 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
 
     @Override
     public Result broadcast(Transaction tx) {
-        return transactionService.broadcastTx(tx);
+        return transactionService.forwardTx(tx, null);
     }
 
 

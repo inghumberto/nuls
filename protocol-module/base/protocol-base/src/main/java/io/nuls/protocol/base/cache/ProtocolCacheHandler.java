@@ -25,8 +25,10 @@
 
 package io.nuls.protocol.base.cache;
 
+import io.nuls.core.tools.log.Log;
 import io.nuls.kernel.model.Block;
 import io.nuls.kernel.model.NulsDigestData;
+import io.nuls.kernel.model.Transaction;
 import io.nuls.kernel.utils.SerializeUtils;
 import io.nuls.protocol.base.utils.filter.InventoryFilter;
 import io.nuls.protocol.constant.MessageDataType;
@@ -44,25 +46,25 @@ import java.util.concurrent.Future;
  */
 public class ProtocolCacheHandler {
 
-    public static final InventoryFilter TX_FILTER = new InventoryFilter();
-    public static final InventoryFilter SMALL_BLOCK_FILTER = new InventoryFilter();
+    public static final InventoryFilter TX_FILTER = new InventoryFilter(10000, 1000000);
+    public static final InventoryFilter SMALL_BLOCK_FILTER = new InventoryFilter(100, 1000000);
 
-    private static DataCacher<Block> blockCacher = new DataCacher<>(MessageDataType.BLOCK);
+    private static DataCacher<Block> blockByHashCacher = new DataCacher<>(MessageDataType.BLOCK);
+    private static DataCacher<Block> blockByHeightCacher = new DataCacher<>(MessageDataType.BLOCK);
     private static DataCacher<TxGroup> txGroupCacher = new DataCacher<>(MessageDataType.TRANSACTIONS);
     private static DataCacher<BlockHashResponse> blockHashesCacher = new DataCacher<>(MessageDataType.HASHES);
     private static DataCacher<CompleteParam> taskCacher = new DataCacher<>(MessageDataType.BLOCKS);
     private static DataCacher<NulsDigestData> reactCacher = new DataCacher<>(MessageDataType.REQUEST);
-    private static DataCacher<Boolean> txCacher = new DataCacher<>(MessageDataType.TRANSACTION);
+    private static DataCacher<Transaction> txCacher = new DataCacher<>(MessageDataType.TRANSACTION);
     private static DataCacher<Boolean> smallBlockCacher = new DataCacher<>(MessageDataType.SMALL_BLOCK);
 
-    public static CompletableFuture<Boolean> addGetTxRequest(NulsDigestData txHash) {
+    public static CompletableFuture<Transaction> addGetTxRequest(NulsDigestData txHash) {
         return txCacher.addFuture(txHash);
     }
 
-    public static void receiveTx(NulsDigestData txHash, boolean log) {
-        TX_FILTER.insert(txHash.getDigestBytes());
-        txCacher.callback(txHash, true, log);
-
+    public static void receiveTx(Transaction tx) {
+        TX_FILTER.insert(tx.getHash().getDigestBytes());
+        txCacher.callback(tx.getHash(), tx);
     }
 
     public static void removeTxFuture(NulsDigestData txHash) {
@@ -73,24 +75,29 @@ public class ProtocolCacheHandler {
         return smallBlockCacher.addFuture(blockHash);
     }
 
-    public static void receiveSmallBlock(NulsDigestData blockHash, boolean log) {
+    public static void receiveSmallBlock(NulsDigestData blockHash) {
+        Log.error("receive small block:" + blockHash);
         SMALL_BLOCK_FILTER.insert(blockHash.getDigestBytes());
-        smallBlockCacher.callback(blockHash, true, log);
+        smallBlockCacher.callback(blockHash, true);
     }
 
     public static void removeSmallBlockFuture(NulsDigestData blockHash) {
         smallBlockCacher.removeFuture(blockHash);
     }
 
-    public static CompletableFuture<Block> addGetBlockRequest(NulsDigestData requestHash) {
-        return blockCacher.addFuture(requestHash);
+    public static CompletableFuture<Block> addGetBlockByHeightRequest(NulsDigestData requestHash) {
+        return blockByHeightCacher.addFuture(requestHash);
+    }
+
+    public static CompletableFuture<Block> addGetBlockByHashRequest(NulsDigestData requestHash) {
+        return blockByHashCacher.addFuture(requestHash);
     }
 
     public static void receiveBlock(Block block) {
         NulsDigestData hash = NulsDigestData.calcDigestData(SerializeUtils.uint64ToByteArray(block.getHeader().getHeight()));
-        boolean result = blockCacher.callback(hash, block);
+        boolean result = blockByHeightCacher.callback(hash, block, false);
         if (!result) {
-            blockCacher.callback(block.getHeader().getHash(), block);
+            blockByHashCacher.callback(block.getHeader().getHash(), block);
         }
     }
 
@@ -116,13 +123,18 @@ public class ProtocolCacheHandler {
 
     public static void notFound(NotFound data) {
         if (data.getType() == MessageDataType.BLOCK) {
-            blockCacher.notFound(data.getHash());
+            blockByHeightCacher.notFound(data.getHash());
+            blockByHashCacher.notFound(data.getHash());
         } else if (data.getType() == MessageDataType.BLOCKS) {
             taskCacher.notFound(data.getHash());
         } else if (data.getType() == MessageDataType.TRANSACTIONS) {
             txGroupCacher.notFound(data.getHash());
         } else if (data.getType() == MessageDataType.HASHES) {
             blockHashesCacher.notFound(data.getHash());
+        } else if (data.getType() == MessageDataType.TRANSACTION) {
+            txCacher.notFound(data.getHash());
+        } else if (data.getType() == MessageDataType.SMALL_BLOCK) {
+            smallBlockCacher.notFound(data.getHash());
         }
     }
 
@@ -139,8 +151,12 @@ public class ProtocolCacheHandler {
         reactCacher.callback(requesetId, requesetId);
     }
 
-    public static void removeBlockFuture(NulsDigestData hash) {
-        blockCacher.removeFuture(hash);
+    public static void removeBlockByHeightFuture(NulsDigestData hash) {
+        blockByHeightCacher.removeFuture(hash);
+    }
+
+    public static void removeBlockByHashFuture(NulsDigestData hash) {
+        blockByHashCacher.removeFuture(hash);
     }
 
     public static void removeHashesFuture(NulsDigestData hash) {

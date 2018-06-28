@@ -25,7 +25,6 @@
  */
 package io.nuls.consensus.poc.process;
 
-import io.nuls.consensus.constant.ConsensusConstant;
 import io.nuls.consensus.poc.cache.TxMemoryPool;
 import io.nuls.consensus.poc.config.ConsensusConfig;
 import io.nuls.consensus.poc.constant.BlockContainerStatus;
@@ -66,6 +65,7 @@ import io.nuls.kernel.model.*;
 import io.nuls.kernel.validate.ValidateResult;
 import io.nuls.ledger.service.LedgerService;
 import io.nuls.network.service.NetworkService;
+import io.nuls.protocol.cache.TemporaryCacheManager;
 import io.nuls.protocol.constant.ProtocolConstant;
 import io.nuls.protocol.model.SmallBlock;
 import io.nuls.protocol.model.tx.CoinBaseTransaction;
@@ -92,6 +92,8 @@ public class ConsensusProcess {
 
     private TransactionService transactionService = NulsContext.getServiceBean(TransactionService.class);
     private ContractService contractService = NulsContext.getServiceBean(ContractService.class);
+
+    private TemporaryCacheManager temporaryCacheManager = TemporaryCacheManager.getInstance();
 
 
     private boolean hasPacking;
@@ -263,7 +265,8 @@ public class ConsensusProcess {
 
     private void broadcastSmallBlock(Block block) {
         SmallBlock smallBlock = ConsensusTool.getSmallBlock(block);
-        blockService.broadcastBlock(smallBlock);
+        temporaryCacheManager.cacheSmallBlock(smallBlock);
+        blockService.forwardBlock(block.getHeader().getHash(), null);
     }
 
     private Block doPacking(MeetingMember self, MeetingRound round) throws NulsException, IOException {
@@ -294,7 +297,6 @@ public class ConsensusProcess {
         Set<NulsDigestData> outHashSet = new HashSet<>();
 
         long totalSize = 0L;
-        long txSize = 0L;
 
         Map<String, Coin> toMaps = new HashMap<>();
         Set<String> fromSet = new HashSet<>();
@@ -335,14 +337,11 @@ public class ConsensusProcess {
                 }
                 continue;
             }
-            if (txContainer.getTx() == null || txContainer.getPackageCount() >= 3) {
-                continue;
-            }
 
             Transaction tx = txContainer.getTx();
-            txSize = tx.size();
             txType = tx.getType();
 
+            long txSize = tx.size();
             if ((totalSize + txSize) > ProtocolConstant.MAX_BLOCK_SIZE) {
                 txMemoryPool.addInFirst(txContainer, false);
                 break;
@@ -374,10 +373,16 @@ public class ConsensusProcess {
                 result = ledgerService.verifyCoinData(tx, toMaps, fromSet);
             }
             if (result.isFailed()) {
+
+                if (txContainer.getTx() == null || txContainer.getPackageCount() >= 2) {
+                    continue;
+                }
+
                 if (result.getErrorCode() == TransactionErrorCode.ORPHAN_TX) {
                     txMemoryPool.add(txContainer, true);
                     txContainer.setPackageCount(txContainer.getPackageCount() + 1);
                 }
+
                 Log.warn(result.getMsg());
                 try {
                     Thread.sleep(1L);
