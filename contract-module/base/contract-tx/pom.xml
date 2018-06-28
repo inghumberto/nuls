@@ -19,7 +19,12 @@
     <dependencies>
         <dependency>
             <groupId>io.nuls.contract-module</groupId>
-            <artifactId>contract-base</artifactId>
+            <artifactId>contract-storage</artifactId>
+            <version>0.9.11</version>
+        </dependency>
+        <dependency>
+            <groupId>io.nuls.contract-module</groupId>
+            <artifactId>contract-vm</artifactId>
             <version>0.9.11</version>
         </dependency>
         <dependency>

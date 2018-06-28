@@ -44,7 +44,9 @@ import io.nuls.consensus.poc.storage.service.AgentStorageService;
 import io.nuls.consensus.poc.storage.service.DepositStorageService;
 import io.nuls.contract.constant.ContractConstant;
 import io.nuls.contract.dto.ContractResult;
+import io.nuls.contract.entity.tx.CallContractTransaction;
 import io.nuls.contract.entity.tx.CreateContractTransaction;
+import io.nuls.contract.entity.txdata.CallContractData;
 import io.nuls.contract.entity.txdata.CreateContractData;
 import io.nuls.contract.service.ContractService;
 import io.nuls.core.tools.array.ArraysTool;
@@ -58,6 +60,7 @@ import io.nuls.kernel.func.TimeService;
 import io.nuls.kernel.model.*;
 import io.nuls.kernel.script.P2PKHScriptSig;
 import io.nuls.kernel.utils.AddressTool;
+import io.nuls.kernel.utils.ByteArrayWrapper;
 import io.nuls.kernel.utils.VarInt;
 import io.nuls.ledger.service.LedgerService;
 import io.nuls.protocol.model.SmallBlock;
@@ -145,6 +148,20 @@ public class ConsensusTool {
     public static CoinBaseTransaction createCoinBaseTx(MeetingMember member, List<Transaction> txList, MeetingRound localRound, long unlockHeight) {
         CoinData coinData = new CoinData();
         List<Coin> rewardList = calcReward(txList, member, localRound, unlockHeight);
+        // 合约剩余Gas退还
+        List<Coin> returnGasList = returnContractRemainingGasNa(txList, unlockHeight);
+        if(!returnGasList.isEmpty()) {
+            Coin agentReward = rewardList.remove(0);
+            rewardList.addAll(returnGasList);
+            rewardList.sort(new Comparator<Coin>() {
+                @Override
+                public int compare(Coin o1, Coin o2) {
+                    return Arrays.hashCode(o1.getOwner()) > Arrays.hashCode(o2.getOwner()) ? 1 : -1;
+                }
+            });
+            rewardList.add(0, agentReward);
+        }
+
         for (Coin coin : rewardList) {
             coinData.addTo(coin);
         }
@@ -159,7 +176,10 @@ public class ConsensusTool {
         return tx;
     }
 
-    private static List<Coin> returnContractRemainingGas(List<Transaction> txList, long unlockHeight) {
+    private static List<Coin> returnContractRemainingGasNa(List<Transaction> txList, long unlockHeight) {
+        // 去重, 可能存在同一个sender发出的几笔合约交易，需要把退还的GasNa累加到一起
+        Map<ByteArrayWrapper, Na> returnGasMap = new HashMap<>();
+        List<Coin> returnList = new ArrayList<>();
         if(txList != null && txList.size() > 0) {
             int tyType;
             for (Transaction tx : txList) {
@@ -167,18 +187,53 @@ public class ConsensusTool {
                 if (tyType == ContractConstant.TX_TYPE_CREATE_CONTRACT) {
                     CreateContractTransaction createContractTx = (CreateContractTransaction) tx;
                     ContractResult contractResult = createContractTx.getContractResult();
-                    long realGasUsed = contractResult.getGasUsed();
-                    //TODO pierre 减差额作为退还Gas 
-                    // Na imputedNa = Na.valueOf(gasUsed * price);
+
                     CreateContractData createContractData = createContractTx.getTxData();
+                    // 减差额作为退还Gas
+                    long realGasUsed = contractResult.getGasUsed();
+                    long txGasUsed = createContractData.getTxGasUsed();
+                    long returnGas = 0;
+                    if(txGasUsed > realGasUsed) {
+                        returnGas = txGasUsed - realGasUsed;
+                        ByteArrayWrapper sender = new ByteArrayWrapper(createContractData.getSender());
+                        Na senderGasNa = returnGasMap.get(sender);
+                        if(senderGasNa == null) {
+                            senderGasNa = Na.ZERO.add(Na.valueOf((long) (returnGas * createContractData.getPrice())));
+                        } else {
+                            senderGasNa = senderGasNa.add(Na.valueOf((long) (returnGas * createContractData.getPrice())));
+                        }
+                        returnGasMap.put(sender, senderGasNa);
+                    }
+                } else if (tyType == ContractConstant.TX_TYPE_CALL_CONTRACT) {
+                    CallContractTransaction callContractTx = (CallContractTransaction) tx;
+                    ContractResult contractResult = callContractTx.getContractResult();
 
-                    //TODO pierre
-                    Coin returnCoin = new Coin(createContractData.getSender(), Na.valueOf((long) 0), unlockHeight);
-
+                    CallContractData callContractData = callContractTx.getTxData();
+                    // 减差额作为退还Gas
+                    long realGasUsed = contractResult.getGasUsed();
+                    long txGasUsed = callContractData.getTxGasUsed();
+                    long returnGas = 0;
+                    if(txGasUsed > realGasUsed) {
+                        returnGas = txGasUsed - realGasUsed;
+                        ByteArrayWrapper sender = new ByteArrayWrapper(callContractData.getSender());
+                        Na senderGasNa = returnGasMap.get(sender);
+                        if(senderGasNa == null) {
+                            senderGasNa = Na.ZERO.add(Na.valueOf((long) (returnGas * callContractData.getPrice())));
+                        } else {
+                            senderGasNa = senderGasNa.add(Na.valueOf((long) (returnGas * callContractData.getPrice())));
+                        }
+                        returnGasMap.put(sender, senderGasNa);
+                    }
                 }
             }
+            Set<Map.Entry<ByteArrayWrapper, Na>> entries = returnGasMap.entrySet();
+            Coin returnCoin;
+            for(Map.Entry<ByteArrayWrapper, Na> entry : entries) {
+                returnCoin = new Coin(entry.getKey().getBytes(), entry.getValue(), unlockHeight);
+                returnList.add(returnCoin);
+            }
         }
-        return null;
+        return returnList;
     }
 
     private static List<Coin> calcReward(List<Transaction> txList, MeetingMember self, MeetingRound localRound, long unlockHeight) {
@@ -253,8 +308,8 @@ public class ConsensusTool {
             }
         });
 
-        Coin agentReword = new Coin(self.getRewardAddress(), Na.valueOf(DoubleUtils.longValue(caReward)), unlockHeight);
-        rewardList.add(0, agentReword);
+        Coin agentReward = new Coin(self.getRewardAddress(), Na.valueOf(DoubleUtils.longValue(caReward)), unlockHeight);
+        rewardList.add(0, agentReward);
 
         return rewardList;
     }

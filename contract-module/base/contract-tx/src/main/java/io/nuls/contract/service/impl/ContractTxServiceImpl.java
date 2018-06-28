@@ -28,6 +28,7 @@ import io.nuls.account.ledger.service.AccountLedgerService;
 import io.nuls.account.model.Account;
 import io.nuls.account.service.AccountService;
 import io.nuls.account.util.AccountTool;
+import io.nuls.contract.constant.ContractConstant;
 import io.nuls.contract.constant.ContractErrorCode;
 import io.nuls.contract.entity.BlockHeaderDto;
 import io.nuls.contract.entity.tx.CallContractTransaction;
@@ -37,7 +38,6 @@ import io.nuls.contract.entity.txdata.CallContractData;
 import io.nuls.contract.entity.txdata.CreateContractData;
 import io.nuls.contract.entity.txdata.DeleteContractData;
 import io.nuls.contract.helper.VMHelper;
-import io.nuls.contract.service.ContractService;
 import io.nuls.contract.service.ContractTxService;
 import io.nuls.contract.storage.service.ContractAddressStorageService;
 import io.nuls.contract.util.VMContext;
@@ -45,7 +45,6 @@ import io.nuls.contract.vm.program.ProgramCall;
 import io.nuls.contract.vm.program.ProgramCreate;
 import io.nuls.contract.vm.program.ProgramExecutor;
 import io.nuls.contract.vm.program.ProgramResult;
-import io.nuls.core.tools.crypto.Base58;
 import io.nuls.core.tools.log.Log;
 import io.nuls.core.tools.param.AssertUtil;
 import io.nuls.core.tools.str.StringUtils;
@@ -84,8 +83,6 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
     @Autowired
     private ContractAddressStorageService contractAddressStorageService;
     @Autowired
-    private ContractService contractService;
-    @Autowired
     private VMHelper vmHelper;
     @Autowired
     private VMContext vmContext;
@@ -99,6 +96,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
 
     /**
      * 创建包含智能合约的交易
+     * 如果是创建合约的交易，交易仅仅用于创建合约，合约内部不执行复杂逻辑
      *
      * @param sender          交易创建者
      * @param value           交易附带的货币量
@@ -233,33 +231,16 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             sig.setSignData(accountService.signData(tx.getHash().serialize(), account, password));
             tx.setScriptSig(sig.serialize());
 
-            // 如果是创建合约的交易，交易仅仅用于创建合约，合约内部不执行复杂逻辑
-            /*Result result = contractAddressStorageService.saveContractAddress(contractAddressBytes);
-            if(result.isFailed()) {
-                return result;
-            }*/
-
-            // 保存未确认交易到本地账户
+            // 保存未确认交易到本地账本
             Result saveResult = accountLedgerService.verifyAndSaveUnconfirmedTransaction(tx);
             if (saveResult.isFailed()) {
-                contractAddressStorageService.deleteContractAddress(contractAddressBytes);
                 return saveResult;
             }
-
-            //TODO pierre 是否保存未确认交易到合约账本，只有打包调用合约时，才有可能花费合约地址的资产
-            /*saveResult = contractService.saveUnconfirmedTransaction(tx);
-            if (saveResult.isFailed()) {
-                accountLedgerService.rollbackTransaction(tx);
-                contractAddressStorageService.deleteContractAddress(contractAddressBytes);
-                return saveResult;
-            }*/
 
             // 广播交易
             Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
-                //contractService.rollbackTransaction(tx);
                 accountLedgerService.rollbackTransaction(tx);
-                //contractAddressStorageService.deleteContractAddress(contractAddressBytes);
                 return sendResult;
             }
 
@@ -323,6 +304,13 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
                 }
             }
 
+            if(ContractConstant.BALANCE_TRIGGER_METHOD_NAME.equals(methodName)
+                    && ContractConstant.BALANCE_TRIGGER_METHOD_DESC.equals(methodDesc)){
+                if(naLimit == null) {
+                    //TODO pierre NaLimit设置一个默认值, 执行预估合约需要NaLimit为参数，而设置一个默认的NaLimit又需要执行预估合约来做参考
+                }
+            }
+
             byte[] senderBytes = AddressTool.getAddress(sender);
             byte[] contractAddressBytes = AddressTool.getAddress(contractAddress);
 
@@ -371,8 +359,6 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
                 }
             }
             tx.setTime(TimeService.currentTimeMillis());
-
-
 
             // 计算CoinData
             /*
@@ -444,19 +430,11 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
                 return saveResult;
             }
 
-            // 保存未确认交易到合约账本
-            /*saveResult = contractService.saveUnconfirmedTransaction(tx);
-            if (saveResult.isFailed()) {
-                accountLedgerService.rollbackTransaction(tx);
-                return saveResult;
-            }*/
-
             // 广播
             Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
                 // 失败则回滚
                 accountLedgerService.rollbackTransaction(tx);
-                //contractService.rollbackTransaction(tx);
                 return sendResult;
             }
 

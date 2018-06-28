@@ -77,11 +77,11 @@ public class ContractUtxoServiceImpl implements ContractUtxoService {
 
 
     /**
-     * 两种交易
-     *   第一种交易是普通地址转入合约地址
-     *
-     *   第二种交易是智能合约特殊转账交易，合约地址转出到普通地址/合约地址
-     *
+     * 从地址的维度上讲，分为两大类交易
+     *   第一大类交易是普通地址转入合约地址
+     *      合约交易 - 调用合约时 调用者地址向合约地址转入金额
+     *      普通转账交易 - 普通地址向合约地址转入金额
+     *   第二大类交易是智能合约特殊转账交易，合约地址转出到普通地址/合约地址
      *
      * @param tx
      * @return
@@ -95,7 +95,7 @@ public class ContractUtxoServiceImpl implements ContractUtxoService {
         CoinData coinData = tx.getCoinData();
 
         if (coinData != null) {
-            // 在合约独立账本中，只有合约特殊转账交易才能从合约地址中转出资产，所以只有这类交易才处理fromCoinData -> delete - from
+            // 在合约独立账本中，只有合约特殊转账交易才能从合约地址中转出金额，所以只有这类交易才处理fromCoinData -> delete - from
             List<byte[]> fromList = new ArrayList<>();
             // 合约特殊转账交易
             if(tx.getType() == ContractConstant.TX_TYPE_CONTRACT_TRANSFER) {
@@ -118,10 +118,10 @@ public class ContractUtxoServiceImpl implements ContractUtxoService {
                         Transaction sourceTx = null;
                         try {
                             sourceTx = ledgerService.getTx(NulsDigestData.fromDigestHex(Hex.encode(utxoFromTxHash)));
-                            // 特殊合约交易查询连续交易, 这类交易在打包/验证区块时执行, 已代表这是确认交易, 打包时连续特殊交易处理
-                            if (sourceTx == null) {
+
+                            /*if (sourceTx == null) {
                                 sourceTx = contractTransferTransactionStorageService.getContractTransferTx(NulsDigestData.fromDigestHex(Hex.encode(utxoFromTxHash))).getData();
-                            }
+                            }*/
                         } catch (Exception e) {
                             throw new NulsRuntimeException(e);
                         }
@@ -134,7 +134,7 @@ public class ContractUtxoServiceImpl implements ContractUtxoService {
                     byte[] address = fromOfFromCoin.getOwner();
 
                     if (!ContractLedgerUtil.isContractAddress(address)) {
-                        continue;
+                        return Result.getFailed(ContractErrorCode.ILLEGAL_CONTRACT_ADDRESS);
                     }
 
                     fromList.add(fromSource);
@@ -264,7 +264,6 @@ public class ContractUtxoServiceImpl implements ContractUtxoService {
             contractBalanceManager.refreshBalance(deletedFromList, result.getData());
 
         }
-
         return Result.getSuccess();
     }
 

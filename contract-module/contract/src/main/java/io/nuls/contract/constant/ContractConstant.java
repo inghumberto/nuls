@@ -46,4 +46,7 @@ public interface ContractConstant extends NulsConstant {
      */
     int TX_TYPE_CONTRACT_TRANSFER = 103;
 
+    String BALANCE_TRIGGER_METHOD_NAME = "_payable";
+    String BALANCE_TRIGGER_METHOD_DESC = "()V";
+
 }

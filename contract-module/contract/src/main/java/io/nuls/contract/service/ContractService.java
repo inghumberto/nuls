@@ -112,7 +112,7 @@ public interface ContractService {
      * @param tx
      * @return
      */
-    Result<Integer> saveConfirmedTransaction(Transaction tx);
+    //Result<Integer> saveConfirmedTransaction(Transaction tx);
     Result<Integer> saveConfirmedTransactionList(List<Transaction> txs);
 
 
@@ -122,8 +122,8 @@ public interface ContractService {
      * @param tx
      * @return
      */
-    Result<Integer> rollbackTransaction(Transaction tx);
-    Result<Integer> rollbackTransactionList(List<Transaction> txs);
+    //Result<Integer> rollbackTransaction(Transaction tx);
+    //Result<Integer> rollbackTransactionList(List<Transaction> txs);
 
 
     /**
@@ -167,5 +167,8 @@ public interface ContractService {
     Result<ContractTransferTransaction> createContractTransferTx(ContractTransfer transfer, long blockTime, Map<String, Coin> toMaps, Map<String, Coin> contractUsedCoinMap);
     void rollbackContractTransferTxs(Map<String, ContractTransferTransaction> successContractTransferTxs);
     void rollbackContractTransferTx(ContractTransferTransaction tx);
+
+    Result contractCallTx(byte[] sender, Na value, Na naLimit, byte price, byte[] contractAddress,
+                          String methodName, String methodDesc, String[] args, String password, String remark);
 
 }

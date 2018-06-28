@@ -45,6 +45,7 @@ import io.nuls.contract.ledger.service.ContractTransactionInfoService;
 import io.nuls.contract.ledger.service.ContractUtxoService;
 import io.nuls.contract.ledger.util.ContractLedgerUtil;
 import io.nuls.contract.service.ContractService;
+import io.nuls.contract.service.ContractTxService;
 import io.nuls.contract.storage.po.TransactionInfoPo;
 import io.nuls.contract.storage.service.ContractAddressStorageService;
 import io.nuls.contract.storage.service.ContractExecuteResultStorageService;
@@ -61,6 +62,7 @@ import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Service;
 import io.nuls.kernel.lite.core.bean.InitializingBean;
 import io.nuls.kernel.model.*;
+import io.nuls.kernel.utils.AddressTool;
 import io.nuls.kernel.utils.TransactionFeeCalculator;
 import io.nuls.kernel.validate.ValidateResult;
 import io.nuls.ledger.constant.LedgerErrorCode;
@@ -101,6 +103,9 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
 
     @Autowired
     private AccountLedgerService accountLedgerService;
+
+    @Autowired
+    private ContractTxService contractTxService;
 
     @Autowired
     private LedgerService ledgerService;
@@ -344,28 +349,20 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
         }
     }
 
-    @Override
-    public Result<Integer> saveConfirmedTransaction(Transaction tx) {
+    private Result<Integer> saveConfirmedTransaction(Transaction tx) {
         if (tx == null) {
             return Result.getFailed(ContractErrorCode.NULL_PARAMETER);
         }
 
-        // 合约账本不处理非合约相关交易
-        if(!ContractLedgerUtil.isRelatedTransaction(tx)) {
-            return Result.getSuccess().setData(new Integer(0));
-        }
-
-        // 获取tx中是智能合约的地址列表
+        // 获取tx中是智能合约地址列表
         List<byte[]> addresses = ContractLedgerUtil.getRelatedAddresses(tx);
 
+        // 合约账本不处理非合约相关交易
         if (addresses == null || addresses.size() == 0) {
             return Result.getSuccess().setData(new Integer(0));
         }
 
         TransactionInfoPo txInfoPo = new TransactionInfoPo(tx);
-        // 判断当前节点是否是创建当前交易的节点，如果不是则需要保存UTXO
-        boolean isCreateTxNode = contractTransactionInfoService.isDbExistTransactionInfo(txInfoPo, addresses.get(0));
-
         txInfoPo.setStatus(TransactionInfo.CONFIRMED);
 
         Result result = contractTransactionInfoService.saveTransactionInfo(txInfoPo, addresses);
@@ -373,13 +370,11 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             return result;
         }
 
-        // 不是创建交易的节点则需要保存UTXO，创建交易的节点已经保存UTXO
-        if (!isCreateTxNode) {
-            result = contractUtxoService.saveUtxoForContractAddress(tx);
-            if (result.isFailed()) {
-                contractTransactionInfoService.deleteTransactionInfo(txInfoPo);
-                return result;
-            }
+        // 保存UTXO
+        result = contractUtxoService.saveUtxoForContractAddress(tx);
+        if (result.isFailed()) {
+            contractTransactionInfoService.deleteTransactionInfo(txInfoPo);
+            return result;
         }
 
         // 合约转账交易需要保存交易信息到合约账本中
@@ -413,8 +408,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
         return Result.getSuccess().setData(savedTxList.size());
     }
 
-    @Override
-    public Result<Integer> rollbackTransaction(Transaction tx) {
+    private Result<Integer> rollbackTransaction(Transaction tx) {
         // 判断交易是否与合约相关
         if (!ContractLedgerUtil.isRelatedTransaction(tx)) {
             return Result.getSuccess().setData(new Integer(0));
@@ -449,8 +443,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
         return result;
     }
 
-    @Override
-    public Result<Integer> rollbackTransactionList(List<Transaction> txs) {
+    private Result<Integer> rollbackTransactionList(List<Transaction> txs) {
         Result result = Result.getSuccess().setData(txs.size());
         result = rollbackTransaction(txs, true);
         return result;
@@ -745,6 +738,11 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
         if(tx != null) {
             rollbackTransaction(tx);
         }
+    }
+
+    @Override
+    public Result contractCallTx(byte[] sender, Na value, Na naLimit, byte price, byte[] contractAddress, String methodName, String methodDesc, String[] args, String password, String remark) {
+        return contractTxService.contractCallTx(AddressTool.getStringAddressByBytes(sender), value, naLimit, price, AddressTool.getStringAddressByBytes(contractAddress), methodName, methodDesc, args, password, remark);
     }
 
     @Override

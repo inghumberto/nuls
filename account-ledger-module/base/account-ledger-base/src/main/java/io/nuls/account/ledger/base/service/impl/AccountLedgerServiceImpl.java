@@ -38,6 +38,7 @@ import io.nuls.account.ledger.service.AccountLedgerService;
 import io.nuls.account.ledger.storage.po.TransactionInfoPo;
 import io.nuls.account.ledger.storage.service.UnconfirmedTransactionStorageService;
 import io.nuls.account.model.Account;
+import io.nuls.contract.constant.ContractConstant;
 import io.nuls.kernel.model.Address;
 import io.nuls.account.model.Balance;
 import io.nuls.account.service.AccountService;
@@ -519,6 +520,20 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
                     return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG);
                 }
             }
+            // 检查to是否为合约地址，如果是合约地址，则转为合约交易
+            if(contractService.isContractAddress(to)) {
+                return contractService.contractCallTx(from,
+                        values,
+                        null,
+                        (byte) price.getValue(),
+                        to,
+                        ContractConstant.BALANCE_TRIGGER_METHOD_NAME,
+                        ContractConstant.BALANCE_TRIGGER_METHOD_DESC,
+                        null,
+                        password,
+                        remark);
+            }
+
             TransferTransaction tx = new TransferTransaction();
             if (StringUtils.isNotBlank(remark)) {
                 try {
@@ -555,17 +570,9 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
                 return saveResult;
             }
 
-            // pierre add 保存未确认交易到合约账本
-            /*saveResult = contractService.saveUnconfirmedTransaction(tx);
-            if (saveResult.isFailed()) {
-                rollbackTransaction(tx);
-                return saveResult;
-            }*/
-
             Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
                 this.rollbackTransaction(tx);
-                //contractService.rollbackTransaction(tx);
                 return sendResult;
             }
             return Result.getSuccess().setData(tx.getHash().getDigestHex());
