@@ -43,7 +43,7 @@ public class ContractTest {
         programCreate.setContractAddress(ADDRESS.getBytes());
         programCreate.setSender(SENDER.getBytes());
         programCreate.setPrice(0);
-        programCreate.setNaLimit(1000000);
+        programCreate.setGasLimit(1000000);
         programCreate.setNumber(1);
         programCreate.setContractCode(contractCode);
         //programCreate.args();
@@ -66,7 +66,7 @@ public class ContractTest {
         programCall.setContractAddress(ADDRESS.getBytes());
         programCall.setSender(SENDER.getBytes());
         programCall.setPrice(0);
-        programCall.setNaLimit(1000000);
+        programCall.setGasLimit(1000000);
         programCall.setNumber(1);
         programCall.setMethodName("mint");
         programCall.setMethodDesc("");
@@ -103,7 +103,7 @@ public class ContractTest {
         programCall.setContractAddress(ADDRESS.getBytes());
         programCall.setSender(SENDER.getBytes());
         programCall.setPrice(0);
-        programCall.setNaLimit(1000000);
+        programCall.setGasLimit(1000000);
         programCall.setNumber(1);
         programCall.setMethodName("_payable");
         programCall.setMethodDesc("()V");
@@ -144,7 +144,7 @@ public class ContractTest {
         programCall.setContractAddress(ADDRESS.getBytes());
         programCall.setSender(SENDER.getBytes());
         programCall.setPrice(0);
-        programCall.setNaLimit(1000000);
+        programCall.setGasLimit(1000000);
         programCall.setNumber(1);
         programCall.setMethodName("balanceOf");
         programCall.setMethodDesc("");
@@ -156,7 +156,7 @@ public class ContractTest {
         programCall1.setContractAddress(ADDRESS.getBytes());
         programCall1.setSender(SENDER.getBytes());
         programCall1.setPrice(0);
-        programCall1.setNaLimit(1000000);
+        programCall1.setGasLimit(1000000);
         programCall1.setNumber(1);
         programCall1.setMethodName("balanceOf");
         programCall1.setMethodDesc("");

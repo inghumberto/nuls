@@ -45,7 +45,7 @@ public class CrowdsaleTest {
         programCreate.setContractAddress(CROWDSALE_ADDRESS.getBytes());
         programCreate.setSender(SENDER.getBytes());
         programCreate.setPrice(0);
-        programCreate.setNaLimit(1000000);
+        programCreate.setGasLimit(1000000);
         programCreate.setNumber(1);
         programCreate.setContractCode(contractCode);
         programCreate.args("0", "20000", "10", Hex.toHexString(WALLET_ADDRESS.getBytes()), "20000000", Hex.toHexString(TOKEN_ADDRESS.getBytes()), "10000000");
@@ -69,7 +69,7 @@ public class CrowdsaleTest {
         programCall.setSender(SENDER.getBytes());
         programCall.setValue(new BigInteger("1000"));
         programCall.setPrice(0);
-        programCall.setNaLimit(1000000);
+        programCall.setGasLimit(1000000);
         programCall.setNumber(1);
         programCall.setMethodName("buyTokens");
         programCall.setMethodDesc("");
@@ -90,7 +90,7 @@ public class CrowdsaleTest {
         programCall1.setContractAddress(TOKEN_ADDRESS.getBytes());
         programCall1.setSender(SENDER.getBytes());
         programCall1.setPrice(0);
-        programCall1.setNaLimit(1000000);
+        programCall1.setGasLimit(1000000);
         programCall1.setNumber(1);
         programCall1.setMethodName("balanceOf");
         programCall1.setMethodDesc("");
