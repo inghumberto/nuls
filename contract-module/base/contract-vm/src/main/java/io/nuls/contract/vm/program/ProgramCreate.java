@@ -21,9 +21,9 @@ public class ProgramCreate {
     private BigInteger value;
 
     /**
-     * 最大Na消耗
+     * 最大Gas消耗
      */
-    private long naLimit;
+    private long gasLimit;
 
     /**
      * 执行合约单价
@@ -76,12 +76,12 @@ public class ProgramCreate {
         this.value = value;
     }
 
-    public long getNaLimit() {
-        return naLimit;
+    public long getGasLimit() {
+        return gasLimit;
     }
 
-    public void setNaLimit(long naLimit) {
-        this.naLimit = naLimit;
+    public void setGasLimit(long gasLimit) {
+        this.gasLimit = gasLimit;
     }
 
     public long getPrice() {
@@ -124,7 +124,7 @@ public class ProgramCreate {
         ProgramCreate that = (ProgramCreate) o;
 
         if (number != that.number) return false;
-        if (naLimit != that.naLimit) return false;
+        if (gasLimit != that.gasLimit) return false;
         if (price != that.price) return false;
         if (!Arrays.equals(sender, that.sender)) return false;
         if (value != null ? !value.equals(that.value) : that.value != null) return false;
@@ -139,7 +139,7 @@ public class ProgramCreate {
         int result = (int) (number ^ (number >>> 32));
         result = 31 * result + Arrays.hashCode(sender);
         result = 31 * result + (value != null ? value.hashCode() : 0);
-        result = 31 * result + (int) (naLimit ^ (naLimit >>> 32));
+        result = 31 * result + (int) (gasLimit ^ (gasLimit >>> 32));
         result = 31 * result + (int) (price ^ (price >>> 32));
         result = 31 * result + Arrays.hashCode(contractAddress);
         result = 31 * result + Arrays.hashCode(contractCode);
@@ -153,7 +153,7 @@ public class ProgramCreate {
                 "number=" + number +
                 ", sender=" + Arrays.toString(sender) +
                 ", value=" + value +
-                ", naLimit=" + naLimit +
+                ", gasLimit=" + gasLimit +
                 ", price=" + price +
                 ", contractAddress=" + Arrays.toString(contractAddress) +
                 ", contractCode=" + Arrays.toString(contractCode) +

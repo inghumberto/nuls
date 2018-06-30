@@ -71,7 +71,7 @@ public class ProgramExecutorImpl implements ProgramExecutor {
         programInvoke.setAddress(programCreate.getContractAddress());
         programInvoke.setSender(programCreate.getSender());
         programInvoke.setGasPrice(programCreate.getPrice());
-        programInvoke.setGas(programCreate.getNaLimit());
+        programInvoke.setGas(programCreate.getGasLimit());
         programInvoke.setValue(programCreate.getValue() != null ? programCreate.getValue() : BigInteger.ZERO);
         programInvoke.setNumber(programCreate.getNumber());
         programInvoke.setData(programCreate.getContractCode());
@@ -86,7 +86,7 @@ public class ProgramExecutorImpl implements ProgramExecutor {
         programInvoke.setAddress(programCall.getContractAddress());
         programInvoke.setSender(programCall.getSender());
         programInvoke.setGasPrice(programCall.getPrice());
-        programInvoke.setGas(programCall.getNaLimit());
+        programInvoke.setGas(programCall.getGasLimit());
         programInvoke.setValue(programCall.getValue() != null ? programCall.getValue() : BigInteger.ZERO);
         programInvoke.setNumber(programCall.getNumber());
         programInvoke.setMethodName(programCall.getMethodName());

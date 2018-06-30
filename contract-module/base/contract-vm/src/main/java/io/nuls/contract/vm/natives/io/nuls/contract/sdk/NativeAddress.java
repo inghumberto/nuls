@@ -91,7 +91,7 @@ public class NativeAddress {
         programCall.setNumber(programInvoke.getNumber());
         programCall.setSender(programInvoke.getAddress());
         programCall.setValue(value != null ? value : BigInteger.ZERO);
-        programCall.setNaLimit(programInvoke.getGas() - frame.getVm().getGasUsed());
+        programCall.setGasLimit(programInvoke.getGas() - frame.getVm().getGasUsed());
         programCall.setPrice(programInvoke.getGasPrice());
         programCall.setContractAddress(Hex.decode(address));
         programCall.setMethodName(methodName);
