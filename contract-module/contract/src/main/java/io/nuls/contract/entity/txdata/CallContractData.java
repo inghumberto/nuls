@@ -43,8 +43,8 @@ public class CallContractData extends TransactionLogicData {
     private byte[] sender;
     private byte[] contractAddress;
     private long value;
-    private long naLimit;
-    private byte price;
+    private long gasLimit;
+    private long price;
     private String methodName;
     private String methodDesc;
     private long txGasUsed;
@@ -57,8 +57,8 @@ public class CallContractData extends TransactionLogicData {
         size += SerializeUtils.sizeOfBytes(sender);
         size += SerializeUtils.sizeOfBytes(contractAddress);
         size += SerializeUtils.sizeOfVarInt(value);
-        size += SerializeUtils.sizeOfVarInt(naLimit);
-        size += 1;
+        size += SerializeUtils.sizeOfVarInt(gasLimit);
+        size += SerializeUtils.sizeOfVarInt(price);
         size += SerializeUtils.sizeOfString(methodName);
         size += SerializeUtils.sizeOfString(methodDesc);
         size += SerializeUtils.sizeOfVarInt(txGasUsed);
@@ -76,8 +76,8 @@ public class CallContractData extends TransactionLogicData {
         stream.writeBytesWithLength(sender);
         stream.writeBytesWithLength(contractAddress);
         stream.writeVarInt(value);
-        stream.writeVarInt(naLimit);
-        stream.write(price);
+        stream.writeVarInt(gasLimit);
+        stream.writeVarInt(price);
         stream.writeString(methodName);
         stream.writeString(methodDesc);
         stream.writeVarInt(txGasUsed);
@@ -94,8 +94,8 @@ public class CallContractData extends TransactionLogicData {
         this.sender = byteBuffer.readByLengthByte();
         this.contractAddress = byteBuffer.readByLengthByte();
         this.value = byteBuffer.readVarInt();
-        this.naLimit = byteBuffer.readVarInt();
-        this.price = byteBuffer.readByte();
+        this.gasLimit = byteBuffer.readVarInt();
+        this.price = byteBuffer.readVarInt();
         this.methodName = byteBuffer.readString();
         this.methodDesc = byteBuffer.readString();
         this.txGasUsed = byteBuffer.readVarInt();
@@ -131,19 +131,19 @@ public class CallContractData extends TransactionLogicData {
         this.value = value;
     }
 
-    public long getNaLimit() {
-        return naLimit;
+    public long getGasLimit() {
+        return gasLimit;
     }
 
-    public void setNaLimit(long naLimit) {
-        this.naLimit = naLimit;
+    public void setGasLimit(long gasLimit) {
+        this.gasLimit = gasLimit;
     }
 
-    public byte getPrice() {
+    public long getPrice() {
         return price;
     }
 
-    public void setPrice(byte price) {
+    public void setPrice(long price) {
         this.price = price;
     }
 

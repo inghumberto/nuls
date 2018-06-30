@@ -50,10 +50,6 @@ import io.nuls.contract.dto.ContractTransfer;
 import io.nuls.contract.entity.tx.CallContractTransaction;
 import io.nuls.contract.entity.tx.ContractTransferTransaction;
 import io.nuls.contract.entity.tx.CreateContractTransaction;
-import io.nuls.contract.entity.tx.DeleteContractTransaction;
-import io.nuls.contract.entity.txdata.CallContractData;
-import io.nuls.contract.entity.txdata.CreateContractData;
-import io.nuls.contract.entity.txdata.DeleteContractData;
 import io.nuls.contract.service.ContractService;
 import io.nuls.core.tools.date.DateUtil;
 import io.nuls.core.tools.log.Log;
@@ -277,7 +273,6 @@ public class ConsensusProcess {
         bd.setHeight(bestBlock.getHeader().getHeight() + 1);
         bd.setPreHash(bestBlock.getHeader().getHash());
         bd.setTime(self.getPackEndTime());
-        bd.setStateRoot(bestBlock.getHeader().getStateRoot());
         BlockRoundData roundData = new BlockRoundData();
         roundData.setRoundIndex(round.getIndex());
         roundData.setConsensusMemberCount(round.getMemberCount());
@@ -309,12 +304,13 @@ public class ConsensusProcess {
          * pierre add 智能合约相关
          */
         byte[] stateRoot = bestBlock.getHeader().getStateRoot();
+        // 更新世界状态根
+        bd.setStateRoot(stateRoot);
         long height = bestBlock.getHeader().getHeight();
         Result<ContractResult> callContractResult = null;
         ContractResult contractResult = null;
         List<ContractTransfer> transfers = null;
         List<String> contractEvents = null;
-        List<ContractTransferTransaction> contractTransferTxs = null;
         Map<String, ContractTransferTransaction> successContractTransferTxs = null;
         boolean isCorrectContractTransfer = true;
         long contractTransferTxTotalSize = 0L;
@@ -416,6 +412,7 @@ public class ConsensusProcess {
                     for(ContractTransfer transfer : transfers) {
                         contractTransferResult = contractService.createContractTransferTx(transfer, bd.getTime(), toMaps, contractUsedCoinMap);
                         if(contractTransferResult.isFailed()) {
+                            contractService.rollbackContractTransferTxs(successContractTransferTxs, toMaps, fromSet, contractUsedCoinMap);
                             isCorrectContractTransfer = false;
                             break;
                         }
@@ -425,8 +422,8 @@ public class ConsensusProcess {
                         if(result.isFailed()) {
                             // 如果转账出现错误，跳过整笔合约交易
                             // 回滚内部转账交易
-                            contractService.rollbackContractTransferTx(contractTransferTx);
-                            contractService.rollbackContractTransferTxs(successContractTransferTxs);
+                            contractService.rollbackContractTransferTx(contractTransferTx, toMaps, fromSet, contractUsedCoinMap);
+                            contractService.rollbackContractTransferTxs(successContractTransferTxs, toMaps, fromSet, contractUsedCoinMap);
                             isCorrectContractTransfer = false;
                             break;
                         } else {
@@ -438,11 +435,10 @@ public class ConsensusProcess {
 
                     }
 
-                    // 如果转账出现错误，跳过整笔合约交易
+                    // 如果合约内部转账出现错误，跳过整笔合约交易
                     if(!isCorrectContractTransfer) {
                         // 清除临时余额
                         contractService.rollbackContractTempBalance(tx, contractResult);
-
                         Log.warn(result.getMsg());
                         continue;
                     }
@@ -452,18 +448,21 @@ public class ConsensusProcess {
                         // 清除临时余额
                         contractService.rollbackContractTempBalance(tx, contractResult);
 
-                        contractService.rollbackContractTransferTxs(successContractTransferTxs);
+                        contractService.rollbackContractTransferTxs(successContractTransferTxs, toMaps, fromSet, contractUsedCoinMap);
                         txMemoryPool.addInFirst(txContainer, false);
                         break;
                     }
                     totalSize += contractTransferTxTotalSize;
 
-                    packingTxList.addAll(contractTransferTxs);
+                    packingTxList.addAll(successContractTransferTxs.values());
                 }
+            } else {
+                // 清除toMaps和fromSet的这条交易的记录
+                contractService.rollbackVerifyData(tx, toMaps, fromSet);
             }
             // 更新世界状态根
             bd.setStateRoot(stateRoot);
-            // 这笔交易的合约执行结果保存在DB中, 另外保存在交易对象中，用于计算退还剩余的Gas
+            // 这笔交易的合约执行结果保存在DB中, 另外保存在交易对象中，用于计算退还剩余的Gas --> method: addConsensusTx
             if(contractResult != null) {
                 if(txType == ContractConstant.TX_TYPE_CREATE_CONTRACT) {
                     CreateContractTransaction createContractTransaction = (CreateContractTransaction) tx;

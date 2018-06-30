@@ -122,4 +122,44 @@ public class ContractResult {
     public void setTransfers(List<ContractTransfer> transfers) {
         this.transfers = transfers;
     }
+
+    public boolean isError() {
+        return error;
+    }
+
+    public void setError(boolean error) {
+        this.error = error;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
+    }
+
+    public String getStackTrace() {
+        return stackTrace;
+    }
+
+    public void setStackTrace(String stackTrace) {
+        this.stackTrace = stackTrace;
+    }
+
+    public BigInteger getBalance() {
+        return balance;
+    }
+
+    public void setBalance(BigInteger balance) {
+        this.balance = balance;
+    }
+
+    public BigInteger getNonce() {
+        return nonce;
+    }
+
+    public void setNonce(BigInteger nonce) {
+        this.nonce = nonce;
+    }
 }

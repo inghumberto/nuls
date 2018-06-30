@@ -100,7 +100,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
      *
      * @param sender          交易创建者
      * @param value           交易附带的货币量
-     * @param naLimit         最大Na消耗
+     * @param gasLimit        最大gas消耗
      * @param price           执行合约单价
      * @param contractAddress 合约地址
      * @param contractCode    合约代码
@@ -110,7 +110,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
      * @return
      */
     @Override
-    public Result contractCreateTx(String sender, Na value, Na naLimit, byte price,
+    public Result contractCreateTx(String sender, Na value, Long gasLimit, Long price,
                                    byte[] contractCode, String[] args,
                                    String password, String remark) {
         try {
@@ -176,8 +176,8 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             programCreate.setContractAddress(contractAddressBytes);
             programCreate.setSender(senderBytes);
             programCreate.setValue(BigInteger.valueOf(value.getValue()));
-            programCreate.setPrice(price);
-            programCreate.setNaLimit(naLimit.getValue());
+            programCreate.setPrice(price.longValue());
+            programCreate.setGasLimit(gasLimit.longValue());
             programCreate.setNumber(blockHeight);
             programCreate.setContractCode(contractCode);
             if(args != null) {
@@ -212,7 +212,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             createContractData.setSender(senderBytes);
             createContractData.setContractAddress(contractAddressBytes);
             createContractData.setValue(value.getValue());
-            createContractData.setNaLimit(naLimit.getValue());
+            createContractData.setGasLimit(gasLimit);
             createContractData.setPrice(price);
             createContractData.setCodeLen(contractCode.length);
             createContractData.setCode(contractCode);
@@ -266,7 +266,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
      *
      * @param sender          交易创建者
      * @param value           交易附带的货币量
-     * @param naLimit         最大Na消耗
+     * @param gasLimit        最大gas消耗
      * @param price           执行合约单价
      * @param contractAddress 合约地址
      * @param methodName      方法名
@@ -277,7 +277,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
      * @return
      */
     @Override
-    public Result contractCallTx(String sender, Na value, Na naLimit, byte price, String contractAddress,
+    public Result contractCallTx(String sender, Na value, Long gasLimit, Long price, String contractAddress,
                                  String methodName, String methodDesc, String[] args,
                                  String password, String remark) {
         try {
@@ -306,7 +306,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
 
             if(ContractConstant.BALANCE_TRIGGER_METHOD_NAME.equals(methodName)
                     && ContractConstant.BALANCE_TRIGGER_METHOD_DESC.equals(methodDesc)){
-                if(naLimit == null) {
+                if(gasLimit == null) {
                     //TODO pierre NaLimit设置一个默认值, 执行预估合约需要NaLimit为参数，而设置一个默认的NaLimit又需要执行预估合约来做参考
                 }
             }
@@ -325,8 +325,8 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             programCall.setContractAddress(contractAddressBytes);
             programCall.setSender(senderBytes);
             programCall.setValue(BigInteger.valueOf(value.getValue()));
-            programCall.setPrice(price);
-            programCall.setNaLimit(naLimit.getValue());
+            programCall.setPrice(price.longValue());
+            programCall.setGasLimit(gasLimit.longValue());
             programCall.setNumber(blockHeight);
             programCall.setMethodName(methodName);
             programCall.setMethodDesc(methodDesc);
@@ -405,8 +405,8 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             callContractData.setContractAddress(contractAddressBytes);
             callContractData.setSender(senderBytes);
             callContractData.setValue(value.getValue());
-            callContractData.setPrice(price);
-            callContractData.setNaLimit(naLimit.getValue());
+            callContractData.setPrice(price.longValue());
+            callContractData.setGasLimit(gasLimit.longValue());
             callContractData.setMethodName(methodName);
             callContractData.setMethodDesc(methodDesc);
             // 本次交易使用的Gas消耗

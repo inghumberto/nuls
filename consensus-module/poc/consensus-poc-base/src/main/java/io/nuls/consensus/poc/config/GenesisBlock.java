@@ -59,6 +59,7 @@ public final class GenesisBlock extends Block {
 
     private static final String CONFIG_FILED_TIME = "time";
     private static final String CONFIG_FILED_HEIGHT = "height";
+    private static final String CONFIG_FILED_STATE_ROOT = "stateRoot";
     private static final String CONFIG_FILED_TXS = "txs";
     private static final String CONFIG_FILED_ADDRESS = "address";
     private static final String CONFIG_FILED_NULS = "nuls";
@@ -144,11 +145,13 @@ public final class GenesisBlock extends Block {
 
     private void fillHeader(Map<String, Object> jsonMap) throws NulsException {
         Integer height = (Integer) jsonMap.get(CONFIG_FILED_HEIGHT);
+        String stateRoot = (String) jsonMap.get(CONFIG_FILED_STATE_ROOT);
         AssertUtil.canNotEmpty(height, KernelErrorCode.CONFIG_ERROR.getMsg());
 
         BlockHeader header = new BlockHeader();
         this.setHeader(header);
         header.setHeight(height);
+        header.setStateRoot(Hex.decode(stateRoot));
         header.setTime(blockTime);
         header.setPreHash(NulsDigestData.calcDigestData(new byte[35]));
         header.setTxCount(this.getTxs().size());

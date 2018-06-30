@@ -45,8 +45,8 @@ public class CreateContractData extends TransactionLogicData {
     private long value;
     private int codeLen;
     private byte[] code;
-    private long naLimit;
-    private byte price;
+    private long gasLimit;
+    private long price;
     private long txGasUsed;
     private byte argsCount;
     private String[] args;
@@ -59,8 +59,8 @@ public class CreateContractData extends TransactionLogicData {
         size += SerializeUtils.sizeOfVarInt(value);
         size += SerializeUtils.sizeOfVarInt(codeLen);
         size += SerializeUtils.sizeOfBytes(code);
-        size += SerializeUtils.sizeOfVarInt(naLimit);
-        size += 1;
+        size += SerializeUtils.sizeOfVarInt(gasLimit);
+        size += SerializeUtils.sizeOfVarInt(price);
         size += SerializeUtils.sizeOfVarInt(txGasUsed);
         size += 1;
         if(args != null) {
@@ -78,8 +78,8 @@ public class CreateContractData extends TransactionLogicData {
         stream.writeVarInt(value);
         stream.writeVarInt(codeLen);
         stream.writeBytesWithLength(code);
-        stream.writeVarInt(naLimit);
-        stream.write(price);
+        stream.writeVarInt(gasLimit);
+        stream.writeVarInt(price);
         stream.writeVarInt(txGasUsed);
         stream.write(argsCount);
         if(args != null) {
@@ -96,8 +96,8 @@ public class CreateContractData extends TransactionLogicData {
         this.value = (long) byteBuffer.readVarInt();
         this.codeLen = (int) byteBuffer.readVarInt();
         this.code = byteBuffer.readByLengthByte();
-        this.naLimit = (long) byteBuffer.readVarInt();
-        this.price = byteBuffer.readByte();
+        this.gasLimit = (long) byteBuffer.readVarInt();
+        this.price = (long) byteBuffer.readVarInt();
         this.txGasUsed = (long) byteBuffer.readVarInt();
         this.argsCount = byteBuffer.readByte();
         int length = this.argsCount;
@@ -147,19 +147,19 @@ public class CreateContractData extends TransactionLogicData {
         this.code = code;
     }
 
-    public long getNaLimit() {
-        return naLimit;
+    public long getGasLimit() {
+        return gasLimit;
     }
 
-    public void setNaLimit(long naLimit) {
-        this.naLimit = naLimit;
+    public void setGasLimit(long gasLimit) {
+        this.gasLimit = gasLimit;
     }
 
-    public byte getPrice() {
+    public long getPrice() {
         return price;
     }
 
-    public void setPrice(byte price) {
+    public void setPrice(long price) {
         this.price = price;
     }
 

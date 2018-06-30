@@ -40,7 +40,6 @@ import io.nuls.contract.entity.txdata.CreateContractData;
 import io.nuls.contract.entity.txdata.DeleteContractData;
 import io.nuls.contract.helper.VMHelper;
 import io.nuls.contract.ledger.manager.ContractBalanceManager;
-import io.nuls.contract.ledger.module.ContractBalance;
 import io.nuls.contract.ledger.service.ContractTransactionInfoService;
 import io.nuls.contract.ledger.service.ContractUtxoService;
 import io.nuls.contract.ledger.util.ContractLedgerUtil;
@@ -52,18 +51,17 @@ import io.nuls.contract.storage.service.ContractExecuteResultStorageService;
 import io.nuls.contract.storage.service.ContractTransferTransactionStorageService;
 import io.nuls.contract.util.ContractCoinComparator;
 import io.nuls.contract.vm.program.*;
+import io.nuls.core.tools.array.ArraysTool;
 import io.nuls.core.tools.log.Log;
 import io.nuls.core.tools.str.StringUtils;
 import io.nuls.kernel.constant.KernelErrorCode;
 import io.nuls.kernel.exception.NulsException;
-import io.nuls.kernel.exception.NulsRuntimeException;
-import io.nuls.kernel.func.TimeService;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Service;
 import io.nuls.kernel.lite.core.bean.InitializingBean;
 import io.nuls.kernel.model.*;
 import io.nuls.kernel.utils.AddressTool;
-import io.nuls.kernel.utils.TransactionFeeCalculator;
+import io.nuls.kernel.utils.VarInt;
 import io.nuls.kernel.validate.ValidateResult;
 import io.nuls.ledger.constant.LedgerErrorCode;
 import io.nuls.ledger.service.LedgerService;
@@ -74,6 +72,9 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static io.nuls.ledger.util.LedgerUtil.asBytes;
+import static io.nuls.ledger.util.LedgerUtil.asString;
 
 /**
  * @Desription:
@@ -143,7 +144,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             programCreate.setSender(create.getSender());
             programCreate.setValue(BigInteger.valueOf(create.getValue()));
             programCreate.setPrice(create.getPrice());
-            programCreate.setNaLimit(create.getNaLimit());
+            programCreate.setGasLimit(create.getGasLimit());
             programCreate.setNumber(number);
             programCreate.setContractCode(create.getCode());
 
@@ -151,15 +152,26 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             ProgramResult programResult = track.create(programCreate);
             track.commit();
 
+            ContractResult contractResult = new ContractResult();
             if(programResult.isError()) {
-                Result result = Result.getFailed(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
+                Result<ContractResult> result = Result.getFailed(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
+                contractResult.setError(true);
+                contractResult.setErrorMessage(programResult.getErrorMessage());
+                contractResult.setStackTrace(programResult.getStackTrace());
+                contractResult.setNonce(programResult.getNonce());
+                contractResult.setGasUsed(programResult.getGasUsed());
+                //contractResult.setStateRoot(stateRoot);
+                contractResult.setContractAddress(contractAddress);
                 result.setMsg(programResult.getErrorMessage());
+                result.setData(contractResult);
                 return result;
             }
             // current state root
             byte[] stateRoot = track.getRoot();
-            ContractResult contractResult = new ContractResult();
             // 返回已使用gas、状态根、消息事件、合约转账
+            contractResult.setError(false);
+            contractResult.setStackTrace(programResult.getStackTrace());
+            contractResult.setNonce(programResult.getNonce());
             contractResult.setGasUsed(programResult.getGasUsed());
             contractResult.setStateRoot(stateRoot);
             contractResult.setEvents(programResult.getEvents());
@@ -213,7 +225,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             programCall.setSender(call.getSender());
             programCall.setValue(BigInteger.valueOf(call.getValue()));
             programCall.setPrice(call.getPrice());
-            programCall.setNaLimit(call.getNaLimit());
+            programCall.setGasLimit(call.getGasLimit());
             programCall.setNumber(number);
             programCall.setMethodName(call.getMethodName());
             programCall.setMethodDesc(call.getMethodDesc());
@@ -223,15 +235,26 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             ProgramResult programResult = track.call(programCall);
             track.commit();
 
+            ContractResult contractResult = new ContractResult();
             if(programResult.isError()) {
-                Result result = Result.getFailed(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
+                Result<ContractResult> result = Result.getFailed(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
+                contractResult.setError(true);
+                contractResult.setErrorMessage(programResult.getErrorMessage());
+                contractResult.setStackTrace(programResult.getStackTrace());
+                contractResult.setNonce(programResult.getNonce());
+                contractResult.setGasUsed(programResult.getGasUsed());
+                //contractResult.setStateRoot(stateRoot);
+                contractResult.setContractAddress(contractAddress);
                 result.setMsg(programResult.getErrorMessage());
+                result.setData(contractResult);
                 return result;
             }
             // current state root
             byte[] stateRoot = track.getRoot();
-            ContractResult contractResult = new ContractResult();
             // 返回调用结果、已使用Gas、状态根、消息事件、合约转账
+            contractResult.setError(false);
+            contractResult.setStackTrace(programResult.getStackTrace());
+            contractResult.setNonce(programResult.getNonce());
             contractResult.setResult(programResult.getResult());
             contractResult.setGasUsed(programResult.getGasUsed());
             contractResult.setStateRoot(stateRoot);
@@ -269,15 +292,26 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             ProgramResult programResult = track.stop(contractAddress, delete.getSender());
             track.commit();
 
+            ContractResult contractResult = new ContractResult();
             if(programResult.isError()) {
-                Result result = Result.getFailed(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
+                Result<ContractResult> result = Result.getFailed(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
+                contractResult.setError(true);
+                contractResult.setErrorMessage(programResult.getErrorMessage());
+                contractResult.setStackTrace(programResult.getStackTrace());
+                contractResult.setNonce(programResult.getNonce());
+                contractResult.setGasUsed(programResult.getGasUsed());
+                //contractResult.setStateRoot(stateRoot);
+                contractResult.setContractAddress(contractAddress);
                 result.setMsg(programResult.getErrorMessage());
+                result.setData(contractResult);
                 return result;
             }
             // current state root
             byte[] stateRoot = track.getRoot();
-            ContractResult contractResult = new ContractResult();
             // 返回状态根
+            contractResult.setError(false);
+            contractResult.setStackTrace(programResult.getStackTrace());
+            contractResult.setNonce(programResult.getNonce());
             contractResult.setStateRoot(stateRoot);
             contractResult.setContractAddress(contractAddress);
 
@@ -540,10 +574,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             tx.setHash(NulsDigestData.calcDigestData(tx.serializeForHash()));
 
             // 合约转账交易不需要签名
-            Result result = saveConfirmedTransaction(tx);
-            if (result.isFailed()) {
-                return result;
-            }
+            return Result.getSuccess().setData(tx);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -562,9 +593,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
         try {
             CoinDataResult coinDataResult = new CoinDataResult();
             List<Coin> coinList = contractBalanceManager.getCoinListByAddress(address);
-            //pierre add toMaps
-            Collection<Coin> coinCollection = toMaps.values();
-
+            //pierre add contract coin key
             Set<Map.Entry<String, Coin>> entries = toMaps.entrySet();
             Coin toCoin;
             String key;
@@ -572,7 +601,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
                 key = entry.getKey();
                 toCoin = entry.getValue();
                 if (Arrays.equals(toCoin.getOwner(), address)) {
-                    toCoin.setOwner(Base64.getDecoder().decode(key));
+                    toCoin.setOwner(asBytes(key));
                     toCoin.setKey(key);
                     coinList.add(toCoin);
                 }
@@ -724,25 +753,27 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
     }
 
     @Override
-    public void rollbackContractTransferTxs(Map<String, ContractTransferTransaction> successContractTransferTxs) {
+    public void rollbackContractTransferTxs(Map<String, ContractTransferTransaction> successContractTransferTxs, Map<String, Coin> toMaps, Set<String> fromSet, Map<String, Coin> contractUsedCoinMap) {
         if(successContractTransferTxs != null && successContractTransferTxs.size() > 0) {
             Collection<ContractTransferTransaction> values = successContractTransferTxs.values();
             for(Transaction tx : values) {
+                rollbackVerifyData(tx, toMaps, fromSet);
                 rollbackTransaction(tx);
             }
         }
     }
 
     @Override
-    public void rollbackContractTransferTx(ContractTransferTransaction tx) {
+    public void rollbackContractTransferTx(ContractTransferTransaction tx, Map<String, Coin> toMaps, Set<String> fromSet, Map<String, Coin> contractUsedCoinMap) {
         if(tx != null) {
+            rollbackVerifyData(tx, toMaps, fromSet);
             rollbackTransaction(tx);
         }
     }
 
     @Override
-    public Result contractCallTx(byte[] sender, Na value, Na naLimit, byte price, byte[] contractAddress, String methodName, String methodDesc, String[] args, String password, String remark) {
-        return contractTxService.contractCallTx(AddressTool.getStringAddressByBytes(sender), value, naLimit, price, AddressTool.getStringAddressByBytes(contractAddress), methodName, methodDesc, args, password, remark);
+    public Result contractCallTx(byte[] sender, Na value, Long gasLimit, Long price, byte[] contractAddress, String methodName, String methodDesc, String[] args, String password, String remark) {
+        return contractTxService.contractCallTx(AddressTool.getStringAddressByBytes(sender), value, gasLimit, price, AddressTool.getStringAddressByBytes(contractAddress), methodName, methodDesc, args, password, remark);
     }
 
     @Override
@@ -757,4 +788,31 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
         return result;
     }
 
+    @Override
+    public void rollbackVerifyData(Transaction tx, Map<String, Coin> toMaps, Set<String> fromSet) {
+        if (tx == null || tx.getCoinData() == null || toMaps == null || fromSet == null) {
+            return;
+        }
+        try {
+            CoinData coinData = tx.getCoinData();
+            List<Coin> froms = coinData.getFrom();
+            String key;
+            for (Coin from : froms) {
+                fromSet.remove(asString(from.getOwner()));
+                key = from.getKey();
+            }
+            List<Coin> tos = coinData.getTo();
+            byte[] txBytes = new byte[0];
+
+            txBytes = tx.getHash().serialize();
+            Coin to;
+            for (int i = 0, toLength = tos.size(); i < toLength; i++) {
+                to = tos.get(i);
+                toMaps.remove(asString(ArraysTool.concatenate(txBytes, new VarInt(i).encode())));
+            }
+        } catch (IOException e) {
+            Log.error(e);
+            return;
+        }
+    }
 }

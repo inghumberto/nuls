@@ -37,7 +37,7 @@ public interface ContractTxService {
      *
      * @param sender          交易创建者
      * @param value           交易附带的货币量
-     * @param naLimit         最大Na消耗
+     * @param gasLimit        最大gas消耗
      * @param price           执行合约单价
      * @param contractCode    合约代码
      * @param args            参数列表
@@ -45,7 +45,7 @@ public interface ContractTxService {
      * @param remark          备注
      * @return
      */
-    Result contractCreateTx(String sender, Na value, Na naLimit, byte price,
+    Result contractCreateTx(String sender, Na value, Long gasLimit, Long price,
                             byte[] contractCode, String[] args, String password, String remark);
 
     /**
@@ -53,7 +53,7 @@ public interface ContractTxService {
      *
      * @param sender          交易创建者
      * @param value           交易附带的货币量
-     * @param naLimit         最大Na消耗
+     * @param gasLimit        最大gas消耗
      * @param price           执行合约单价
      * @param contractAddress 合约地址
      * @param methodName      方法名
@@ -63,7 +63,7 @@ public interface ContractTxService {
      * @param remark          备注
      * @return
      */
-    Result contractCallTx(String sender, Na value, Na naLimit, byte price, String contractAddress,
+    Result contractCallTx(String sender, Na value, Long gasLimit, Long price, String contractAddress,
                           String methodName, String methodDesc, String[] args, String password, String remark);
 
     /**

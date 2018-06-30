@@ -12,12 +12,12 @@ import io.swagger.annotations.ApiModelProperty;
 public class ContractBase {
     @ApiModelProperty(name = "sender", value = "交易创建者", required = true)
     private String sender;
-    @ApiModelProperty(name = "naLimit", value = "最大Na消耗", required = true)
-    private long naLimit;
+    @ApiModelProperty(name = "gasLimit", value = "最大gas消耗", required = true)
+    private long gasLimit;
     @ApiModelProperty(name = "value", value = "交易附带的货币量", required = false)
     private long value;
     @ApiModelProperty(name = "price", value = "执行合约单价", required = true)
-    private byte price;
+    private long price;
     @ApiModelProperty(name = "password", value = "账户密码", required = true)
     private String password;
     @ApiModelProperty(name = "remark", value = "备注", required = false)
@@ -31,12 +31,20 @@ public class ContractBase {
         this.sender = sender;
     }
 
-    public long getNaLimit() {
-        return naLimit;
+    public long getGasLimit() {
+        return gasLimit;
     }
 
-    public void setNaLimit(long naLimit) {
-        this.naLimit = naLimit;
+    public void setGasLimit(long gasLimit) {
+        this.gasLimit = gasLimit;
+    }
+
+    public long getPrice() {
+        return price;
+    }
+
+    public void setPrice(long price) {
+        this.price = price;
     }
 
     public long getValue() {
@@ -47,13 +55,6 @@ public class ContractBase {
         this.value = value;
     }
 
-    public byte getPrice() {
-        return price;
-    }
-
-    public void setPrice(byte price) {
-        this.price = price;
-    }
 
     public String getPassword() {
         return password;

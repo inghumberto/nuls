@@ -160,15 +160,80 @@ public interface ContractService {
     ContractResult getContractExecuteResult(NulsDigestData hash);
 
     /*****************************************************************************/
-    Result<ContractResult> callContract(Transaction tx, long height, byte[] stateRoot);
-    void rollbackContractTempBalance(Transaction tx, ContractResult contractResult);
-    void removeContractTempBalance();
-    ValidateResult verifyContractTransferCoinData(ContractTransferTransaction contractTransferTx, Map<String,Coin> toMaps, Set<String> fromSet);
-    Result<ContractTransferTransaction> createContractTransferTx(ContractTransfer transfer, long blockTime, Map<String, Coin> toMaps, Map<String, Coin> contractUsedCoinMap);
-    void rollbackContractTransferTxs(Map<String, ContractTransferTransaction> successContractTransferTxs);
-    void rollbackContractTransferTx(ContractTransferTransaction tx);
 
-    Result contractCallTx(byte[] sender, Na value, Na naLimit, byte price, byte[] contractAddress,
+    /**
+     * @param tx
+     * @param height
+     * @param stateRoot
+     * @return
+     */
+    Result<ContractResult> callContract(Transaction tx, long height, byte[] stateRoot);
+
+    /**
+     * @param tx
+     * @param contractResult
+     */
+    void rollbackContractTempBalance(Transaction tx, ContractResult contractResult);
+
+    /**
+     *
+     */
+    void removeContractTempBalance();
+
+    /**
+     * @param contractTransferTx
+     * @param toMaps
+     * @param fromSet
+     * @return
+     */
+    ValidateResult verifyContractTransferCoinData(ContractTransferTransaction contractTransferTx, Map<String,Coin> toMaps, Set<String> fromSet);
+
+    /**
+     * @param transfer
+     * @param blockTime
+     * @param toMaps
+     * @param contractUsedCoinMap
+     * @return
+     */
+    Result<ContractTransferTransaction> createContractTransferTx(ContractTransfer transfer, long blockTime, Map<String, Coin> toMaps, Map<String, Coin> contractUsedCoinMap);
+
+    /**
+     * @param successContractTransferTxs
+     * @param toMaps
+     * @param fromSet
+     * @param contractUsedCoinMap
+     */
+    void rollbackContractTransferTxs(Map<String, ContractTransferTransaction> successContractTransferTxs, Map<String, Coin> toMaps, Set<String> fromSet, Map<String, Coin> contractUsedCoinMap);
+
+    /**
+     * @param tx
+     * @param toMaps
+     * @param fromSet
+     * @param contractUsedCoinMap
+     */
+    void rollbackContractTransferTx(ContractTransferTransaction tx, Map<String, Coin> toMaps, Set<String> fromSet, Map<String, Coin> contractUsedCoinMap);
+
+    /**
+     * @param sender
+     * @param value
+     * @param gasLimit
+     * @param price
+     * @param contractAddress
+     * @param methodName
+     * @param methodDesc
+     * @param args
+     * @param password
+     * @param remark
+     * @return
+     */
+    Result contractCallTx(byte[] sender, Na value, Long gasLimit, Long price, byte[] contractAddress,
                           String methodName, String methodDesc, String[] args, String password, String remark);
+
+    /**
+     * @param tx
+     * @param toMaps
+     * @param fromSet
+     */
+    void rollbackVerifyData(Transaction tx, Map<String,Coin> toMaps, Set<String> fromSet);
 
 }

@@ -64,7 +64,7 @@ public class ContractResource {
             @ApiResponse(code = 200, message = "success")
     })
     public Result createContract(@ApiParam(name = "createForm", value = "创建智能合约", required = true) ContractCreate create) {
-        if (create == null || create.getValue() < 0 || create.getNaLimit() < 0 || create.getPrice() < 0) {
+        if (create == null || create.getValue() < 0 || create.getGasLimit() < 0 || create.getPrice() < 0) {
             return Result.getFailed(ContractErrorCode.PARAMETER_ERROR);
         }
 
@@ -81,7 +81,7 @@ public class ContractResource {
 
         return contractTxService.contractCreateTx(create.getSender(),
                 Na.valueOf(create.getValue()),
-                Na.valueOf(create.getNaLimit()),
+                create.getGasLimit(),
                 create.getPrice(),
                 contractCodeBytes,
                 create.getArgs(),
@@ -97,7 +97,7 @@ public class ContractResource {
             @ApiResponse(code = 200, message = "success")
     })
     public Result callContract(@ApiParam(name = "callFrom", value = "调用智能合约", required = true) ContractCall call) {
-        if (call == null || call.getValue() < 0 || call.getNaLimit() < 0 || call.getPrice() < 0) {
+        if (call == null || call.getValue() < 0 || call.getGasLimit() < 0 || call.getPrice() < 0) {
             return Result.getFailed(ContractErrorCode.PARAMETER_ERROR);
         }
 
@@ -111,7 +111,7 @@ public class ContractResource {
 
         return contractTxService.contractCallTx(call.getSender(),
                 Na.valueOf(call.getValue()),
-                Na.valueOf(call.getNaLimit()),
+                call.getGasLimit(),
                 call.getPrice(),
                 call.getContractAddress(),
                 call.getMethodName(),

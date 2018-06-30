@@ -522,8 +522,9 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
             if(contractService.isContractAddress(to)) {
                 return contractService.contractCallTx(from,
                         values,
+                        //TODO pierre 需要一个gasLimit
                         null,
-                        (byte) price.getValue(),
+                        price.getValue(),
                         to,
                         ContractConstant.BALANCE_TRIGGER_METHOD_NAME,
                         ContractConstant.BALANCE_TRIGGER_METHOD_DESC,

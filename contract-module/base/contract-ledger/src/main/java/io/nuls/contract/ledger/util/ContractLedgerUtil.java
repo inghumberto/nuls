@@ -96,4 +96,17 @@ public class ContractLedgerUtil {
         }
         return false;
     }
+
+    public static boolean isContractTransaction(Transaction tx) {
+        if (tx == null) {
+            return false;
+        }
+        int txType = tx.getType();
+        if(txType == ContractConstant.TX_TYPE_CREATE_CONTRACT
+                || txType == ContractConstant.TX_TYPE_CALL_CONTRACT
+                || txType == ContractConstant.TX_TYPE_DELETE_CONTRACT) {
+            return true;
+        }
+        return false;
+    }
 }

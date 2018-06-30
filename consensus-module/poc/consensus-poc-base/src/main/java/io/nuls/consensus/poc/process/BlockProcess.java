@@ -208,7 +208,6 @@ public class BlockProcess {
                     ContractResult contractResult = null;
                     List<ContractTransfer> transfers = null;
                     List<String> contractEvents = null;
-                    List<ContractTransferTransaction> contractTransferTxs = null;
                     Map<String, ContractTransferTransaction> receiveContractTransferTxs = new HashMap<>();
                     Map<String, ContractTransferTransaction> successContractTransferTxs = new HashMap<>();
                     boolean isCorrectContractTransfer = true;
@@ -246,6 +245,7 @@ public class BlockProcess {
                                 for(ContractTransfer transfer : transfers) {
                                     contractTransferResult = contractService.createContractTransferTx(transfer, block.getHeader().getTime(), toMaps, contractUsedCoinMap);
                                     if(contractTransferResult.isFailed()) {
+                                        contractService.rollbackContractTransferTxs(successContractTransferTxs, toMaps, fromSet, contractUsedCoinMap);
                                         isCorrectContractTransfer = false;
                                         break;
                                     }
@@ -255,8 +255,8 @@ public class BlockProcess {
                                     if(result.isFailed()) {
                                         // 如果转账出现错误，跳过整笔合约交易
                                         // 回滚内部转账交易
-                                        contractService.rollbackContractTransferTx(contractTransferTx);
-                                        contractService.rollbackContractTransferTxs(successContractTransferTxs);
+                                        contractService.rollbackContractTransferTx(contractTransferTx, toMaps, fromSet, contractUsedCoinMap);
+                                        contractService.rollbackContractTransferTxs(successContractTransferTxs, toMaps, fromSet, contractUsedCoinMap);
                                         isCorrectContractTransfer = false;
                                         break;
                                     } else {
@@ -267,7 +267,7 @@ public class BlockProcess {
 
                                 }
 
-                                // 如果转账出现错误，验证区块失败
+                                // 如果合约内部转账出现错误，验证区块失败
                                 if(!isCorrectContractTransfer) {
                                     // 清除临时余额
                                     contractService.rollbackContractTempBalance(tx, contractResult);
@@ -280,7 +280,9 @@ public class BlockProcess {
                             }
                         }
                         // 这笔交易的合约执行结果保存在DB中
-                        contractService.saveContractExecuteResult(tx.getHash(), contractResult);
+                        if(contractResult != null) {
+                            contractService.saveContractExecuteResult(tx.getHash(), contractResult);
+                        }
                     }
                     // 验证区块交易结束后移除临时余额区
                     contractService.removeContractTempBalance();
