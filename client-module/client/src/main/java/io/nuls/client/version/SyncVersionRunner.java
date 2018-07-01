@@ -44,7 +44,6 @@ import java.util.Map;
 
 /**
  * @author: Niels Wang
- * @date: 2018/6/13
  */
 public class SyncVersionRunner implements Runnable {
     /**
@@ -55,7 +54,11 @@ public class SyncVersionRunner implements Runnable {
     private static String VERSION_FILE_HASH;
     private static String INFORMATION;
 
+    private String rootUrl = NulsConfig.MODULES_CONFIG.getCfgValue("client", "version.root.url", "https://raw.githubusercontent.com/nuls-io/nuls-wallet-release/master/test/release/");
+    private String versionJsonUrl = rootUrl + "version.json";
+
     private boolean first = true;
+
 
     private static final SyncVersionRunner INSTANCE = new SyncVersionRunner();
 
@@ -93,7 +96,7 @@ public class SyncVersionRunner implements Runnable {
     private void syncNewestVersionInfo() throws NulsException, UnsupportedEncodingException {
         String jsonStr = null;
         try {
-            jsonStr = new String(HttpDownloadUtils.download(VersionConstant.VERDION_JSON_URL), NulsConfig.DEFAULT_ENCODING);
+            jsonStr = new String(HttpDownloadUtils.download(this.versionJsonUrl), NulsConfig.DEFAULT_ENCODING);
         } catch (IOException e) {
             throw new NulsException(KernelErrorCode.DOWNLOAD_VERSION_FAILD);
         }
@@ -132,5 +135,13 @@ public class SyncVersionRunner implements Runnable {
 
     public String getInformation() {
         return INFORMATION;
+    }
+
+    public String getRootUrl() {
+        return rootUrl;
+    }
+
+    public String getVersionJsonUrl() {
+        return versionJsonUrl;
     }
 }

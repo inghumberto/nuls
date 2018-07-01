@@ -37,25 +37,24 @@ import io.nuls.protocol.model.SmallBlock;
  * The block handles the service interface.
  *
  * @author Niels
- * @date 2017/11/10
  */
 public interface BlockService {
-    /**
-     * 获取创世块（从存储中）
-     * Get the creation block (from storage)
-     */
+//    /**
+//     * 获取创世块（从存储中）
+//     * Get the creation block (from storage)
+//     */
     Result<Block>  getGengsisBlock();
 
-    /**
-     * 获取最新的区块（从存储中）
-     * Get the highest block (from storage)
-     */
+//    /**
+//     * 获取最新的区块（从存储中）
+//     * Get the highest block (from storage)
+//     */
     Result<Block> getBestBlock();
 
-    /**
-     * 获取最新的区块头（从存储中）
-     * Get the highest block header (from storage)
-     */
+//    /**
+//     * 获取最新的区块头（从存储中）
+//     * Get the highest block header (from storage)
+//     */
     Result<BlockHeader> getBestBlockHeader();
 
     /**

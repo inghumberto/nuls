@@ -33,12 +33,10 @@ import io.nuls.core.tools.log.Log;
 
 /**
  * @author: Niels Wang
- * @date: 2018/5/21
  */
 public class NulsExceptionHandler implements ExceptionHandler<Object> {
     /**
      * <p>Strategy for handling uncaught exceptions when processing an event.</p>
-     * <p>
      * <p>If the strategy wishes to terminate further processing by the {@link BatchEventProcessor}
      * then it should throw a {@link RuntimeException}.</p>
      *

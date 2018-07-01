@@ -40,14 +40,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @author Facjas
- * @date 2018/5/10.
- */
 public interface AccountLedgerService {
 
     /**
-     * <p>
      * save a confirmed tx to account ledger.
      * save if the tx is relative to local accounts, or do nothing.
      *
@@ -57,7 +52,6 @@ public interface AccountLedgerService {
     Result<Integer> saveConfirmedTransaction(Transaction tx);
 
     /**
-     * <p>
      * save a unconfirmed tx to account ledger.
      * save if the tx is relative to local accounts, or do nothing.
      *
@@ -68,7 +62,6 @@ public interface AccountLedgerService {
 
 
     /**
-     * <p>
      * save a tx to account ledger.
      * save if the tx is relative to local accounts, or do nothing.
      *
@@ -79,7 +72,6 @@ public interface AccountLedgerService {
 
 
     /**
-     * <p>
      * get an .unconfirmed transaction
      *
      * @param hash transaction hash
@@ -88,7 +80,6 @@ public interface AccountLedgerService {
     Result<Transaction> getUnconfirmedTransaction(NulsDigestData hash);
 
     /**
-     * <p>
      * get all.unconfirmed transactions
      *
      * @return return all the unconfirmed txs
@@ -96,7 +87,6 @@ public interface AccountLedgerService {
     Result<List<Transaction>> getAllUnconfirmedTransaction();
 
     /**
-     * <p>
      * rollbackTransaction a tx in account ledger
      * save if the tx is relative to local accounts, or do nothing
      *
@@ -106,7 +96,6 @@ public interface AccountLedgerService {
     Result<Integer> rollbackTransaction(Transaction tx);
 
     /**
-     * <p>
      * rollbackTransaction a tx list in account ledger.
      * save if the tx is relative to local accounts, or do nothing
      *
@@ -116,7 +105,6 @@ public interface AccountLedgerService {
     Result<Integer> rollbackTransaction(List<Transaction> txs);
 
     /**
-     * <p>
      * get the balance of an local account.
      *
      * @param address account address
@@ -125,7 +113,6 @@ public interface AccountLedgerService {
     Result<Balance> getBalance(byte[] address) throws NulsException;
 
     /**
-     * <p>
      * get usable coinData
      *
      * @param address account address
@@ -143,7 +130,7 @@ public interface AccountLedgerService {
      * @param password password of A
      * @param remark remarks of transaction
      * @param price Unit price of fee
-     * @return
+     * @return Result
      */
     Result transfer(byte[] from, byte[] to, Na values, String password, String remark, Na price);
 
@@ -154,7 +141,7 @@ public interface AccountLedgerService {
      * @param values NULS amount
      * @param remark remarks of transaction
      * @param price Unit price of fee
-     * @return
+     * @return Result
      */
     Result transferFee(byte[] from, byte[] to, Na values, String remark, Na price);
 
@@ -163,54 +150,52 @@ public interface AccountLedgerService {
      * @param inputsKey key of utxo
      * @param outputs new utxos
      * @param remark remarks of transaction
-     * @return
+     * @return Result
      */
     Result createTransaction(List<byte[]> inputsKey, List<Coin> outputs, byte[] remark);
 
     /**
      * 签名交易
-     * @param tx
-     * @param ecKey
-     * @return
+     * @param tx tx
+     * @param ecKey ecKey
+     * @return Transaction
      */
     Transaction signTransaction(Transaction tx, ECKey ecKey) throws IOException;
 
     /**
      * 广播交易
-     * @param tx
-     * @return
+     * @param tx tx
+     * @return Result
      */
     Result broadcast(Transaction tx);
 
-    /**
-     * <p>
-     * get local address list
-     *
-     * @return true if a address is a local address
-     */
+//    /**
+//     * get local address list
+//     *
+//     * @return true if a address is a local address
+//     */
     Result unlockCoinData(Transaction tx, long newLockTime);
 
     Result rollbackUnlockTxCoinData(Transaction tx);
 
     /**
-     * <p>
      * load the local ledger of a account when an account imported
-     *
+     * @param address address
      * @return true if a address is a local address
      */
     Result importLedgerByAddress(String address);
 
     /**
      *
-     * @param address
-     * @return
+     * @param address address
+     * @return Result
      */
     Result<List<TransactionInfo>> getTxInfoList(byte[] address);
 
     /**
      *
-     * @param address
-     * @return
+     * @param address address
+     * @return Result
      */
     Result<List<Coin>> getLockedUtxo(byte[] address);
 }

@@ -37,7 +37,6 @@ import java.util.Arrays;
 
 /**
  * @author: Chralie
- * @date: 2018/5/4
  */
 public class Address {
 
@@ -67,15 +66,12 @@ public class Address {
      */
     protected byte[] hash160;
 
-    /**
-     * @param address bytes
-     */
 
     protected byte[] addressBytes;
-
-    /**
-     * @param address
-     */
+//
+//    /**
+//     * @param address
+//     */
     public Address(String address) {
         try {
             byte[] bytes = AddressTool.getAddress(address);

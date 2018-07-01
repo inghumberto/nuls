@@ -34,9 +34,7 @@ import java.io.IOException;
 import java.util.Set;
 
 /**
- * @Desription:
  * @Author: PierreLuo
- * @Date: 2018/4/21
  */
 public class CallContractData extends TransactionLogicData {
 

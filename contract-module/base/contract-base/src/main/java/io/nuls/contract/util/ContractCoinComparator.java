@@ -29,11 +29,6 @@ import io.nuls.kernel.model.Coin;
 
 import java.util.Comparator;
 
-/**
- * @desription:
- * @author: PierreLuo
- * @date: 2018/6/9
- */
 public class ContractCoinComparator implements Comparator<Coin> {
 
     private static ContractCoinComparator instance = new ContractCoinComparator();

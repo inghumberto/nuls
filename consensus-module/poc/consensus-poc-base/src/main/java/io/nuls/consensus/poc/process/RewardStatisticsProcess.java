@@ -43,7 +43,6 @@ import java.util.concurrent.LinkedBlockingDeque;
 
 /**
  * @author: Niels Wang
- * @date: 2018/5/24
  */
 @Component
 public class RewardStatisticsProcess {
@@ -57,7 +56,7 @@ public class RewardStatisticsProcess {
     @Autowired
     private AccountService accountService;
 
-    private static BlockingQueue<RewardStatisticsParam> queue = new LinkedBlockingDeque<>(100);
+    private static BlockingQueue<RewardStatisticsParam> queue = new LinkedBlockingDeque<>(1000);
 
     @Autowired
     private PocRewardCacheService service;

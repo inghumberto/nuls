@@ -42,11 +42,8 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * @author facjas
- * @date 2017/11/16
  */
 public class ForwardTxMessageHandler extends AbstractMessageHandler<ForwardTxMessage> {
-
-    private TemporaryCacheManager cacheManager = TemporaryCacheManager.getInstance();
 
     private TransactionDownloadProcessor txDownloadProcessor = TransactionDownloadProcessor.getInstance();
 
@@ -58,10 +55,7 @@ public class ForwardTxMessageHandler extends AbstractMessageHandler<ForwardTxMes
             return;
         }
         NulsDigestData hash = message.getMsgBody();
-//        InventoryFilter inventoryFilter = ProtocolCacheHandler.TX_FILTER;
-//        boolean constains = inventoryFilter.contains(hash.getDigestBytes());
         if (!set.add(hash)) {
-//            Log.error("重复交易：：：：" + hash.getDigestHex());
             return;
         }
         if (set.size() >= 100000) {
@@ -76,10 +70,7 @@ public class ForwardTxMessageHandler extends AbstractMessageHandler<ForwardTxMes
             ProtocolCacheHandler.removeTxFuture(hash);
             return;
         }
-//        inventoryFilter.insert(hash.getDigestBytes());
         txDownloadProcessor.offer(new TransactionContainer(fromNode, future,hash));
-
-
     }
 
 }

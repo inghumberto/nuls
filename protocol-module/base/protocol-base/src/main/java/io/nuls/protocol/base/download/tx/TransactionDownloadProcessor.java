@@ -46,7 +46,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author: Niels Wang
- * @date: 2018/6/28
  */
 public class TransactionDownloadProcessor implements Runnable {
 
@@ -58,8 +57,6 @@ public class TransactionDownloadProcessor implements Runnable {
 
     private ConsensusService consensusService = NulsContext.getServiceBean(ConsensusService.class);
     protected MessageBusService messageBusService = NulsContext.getServiceBean(MessageBusService.class);
-
-    private AtomicInteger count = new AtomicInteger(0);
 
     private TransactionDownloadProcessor() {
     }
@@ -83,7 +80,7 @@ public class TransactionDownloadProcessor implements Runnable {
 
         Transaction tx = null;
         Future<Transaction> future;
-        NulsDigestData txHash;
+        NulsDigestData txHash = null;
         Node fromNode;
         try {
             TransactionContainer container = queue.take();
@@ -102,6 +99,7 @@ public class TransactionDownloadProcessor implements Runnable {
             i++;
             try {
                 tx = future.get(5, TimeUnit.SECONDS);
+                ProtocolCacheHandler.removeTxFuture(txHash);
             } catch (Exception e) {
                 future = ProtocolCacheHandler.addGetTxRequest(txHash);
                 GetTxMessage getTxMessage = new GetTxMessage();
@@ -114,12 +112,12 @@ public class TransactionDownloadProcessor implements Runnable {
             }
         }
 
-        if (null == tx || tx.isSystemTx()) {
+        if (null == tx) {
+            ProtocolCacheHandler.removeTxFuture(txHash);
             return;
         }
-        int size = count.incrementAndGet();
-        if (size % 100 == 0) {
-            Log.error("tx count:::::" + size);
+        if (tx.isSystemTx()) {
+            return;
         }
         try {
             consensusService.newTx(tx);

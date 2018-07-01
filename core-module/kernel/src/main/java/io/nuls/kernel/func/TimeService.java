@@ -40,7 +40,6 @@ import java.util.List;
  * Time service class:Used to synchronize network standard time.
  *
  * @author vivi
- * @date 2017/11/21
  */
 public class TimeService implements Runnable {
 
@@ -109,6 +108,7 @@ public class TimeService implements Runnable {
     /**
      * 获取网络时间
      * todo 可优化为哪个地址延迟小使用哪个
+     * @return long
      */
     private long getWebTime() {
         NTPUDPClient client = new NTPUDPClient();
@@ -172,6 +172,7 @@ public class TimeService implements Runnable {
     /**
      * 获取当前网络时间毫秒数
      * Gets the current network time in milliseconds.
+     * @return long
      */
     public static long currentTimeMillis() {
         return System.currentTimeMillis() + netTimeOffset;
@@ -180,6 +181,7 @@ public class TimeService implements Runnable {
     /**
      * 获取网络时间偏移值
      * Gets the network time offset.
+     * @return long
      */
     public static long getNetTimeOffset() {
         return netTimeOffset;

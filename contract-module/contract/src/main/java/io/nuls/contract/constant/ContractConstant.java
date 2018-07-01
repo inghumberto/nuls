@@ -25,11 +25,6 @@ package io.nuls.contract.constant;
 
 import io.nuls.kernel.constant.NulsConstant;
 
-/**
- * @desription:
- * @author: PierreLuo
- * @date: 2018/5/7
- */
 public interface ContractConstant extends NulsConstant {
 
     short MODULE_ID_CONTRACT = 10;

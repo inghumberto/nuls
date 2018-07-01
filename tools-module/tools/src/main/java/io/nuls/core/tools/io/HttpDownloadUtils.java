@@ -35,7 +35,6 @@ import java.net.URL;
 
 /**
  * @author Niels
- * @date 2018/3/5
  */
 public class HttpDownloadUtils {
 
@@ -51,9 +50,9 @@ public class HttpDownloadUtils {
     }
 
 
-    /**
-     * 从输入流中获取字节数组
-     */
+//    /**
+//     * 从输入流中获取字节数组
+//     */
     public static byte[] readInputStream(InputStream inputStream) throws IOException {
         byte[] buffer = new byte[inputStream.available()];
         int len = 0;

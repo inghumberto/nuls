@@ -72,7 +72,6 @@ import java.util.*;
 
 /**
  * @author Niels
- * @date 2017/12/6
  */
 public class ConsensusTool {
 

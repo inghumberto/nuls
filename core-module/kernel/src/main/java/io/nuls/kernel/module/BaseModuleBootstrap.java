@@ -32,7 +32,6 @@ import io.nuls.kernel.module.manager.ServiceManager;
 
 /**
  * @author Niels
- * @date 2017/9/26
  */
 public abstract class BaseModuleBootstrap {
 
@@ -47,9 +46,6 @@ public abstract class BaseModuleBootstrap {
         this.status = ModuleStatusEnum.UNINITIALIZED;
     }
 
-    /**
-     *
-     */
     public abstract void init() throws Exception;
 
     /**
@@ -67,14 +63,14 @@ public abstract class BaseModuleBootstrap {
      */
     public abstract void destroy();
 
-    /**
-     * get all info of the module
-     */
+//    /**
+//     * get all info of the module
+//     */
     public abstract String getInfo();
 
-    /**
-     * get the status of the module
-     */
+//    /**
+//     * get the status of the module
+//     */
     public final ModuleStatusEnum getStatus() {
         return this.status;
     }

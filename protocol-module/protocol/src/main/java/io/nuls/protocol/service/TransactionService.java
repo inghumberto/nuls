@@ -37,7 +37,6 @@ import java.util.List;
  * Transaction operation service interface.
  *
  * @author: Niels Wang
- * @date: 2018/5/5
  */
 public interface TransactionService {
     /**
@@ -81,6 +80,8 @@ public interface TransactionService {
 
     /**
      * cache the transaction for consensus
+     * @param tx transaction
+     * @return Result
      */
     Result newTx(Transaction tx);
 

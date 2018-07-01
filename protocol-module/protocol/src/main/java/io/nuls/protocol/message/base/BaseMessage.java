@@ -37,7 +37,6 @@ import java.io.IOException;
  * The base class for all messages transmitted over the network defines the basic format of the network message.
  *
  * @author Niels
- * @date 2017/11/7
  */
 public abstract class BaseMessage<T extends BaseNulsData> extends BaseNulsData {
 
@@ -51,17 +50,17 @@ public abstract class BaseMessage<T extends BaseNulsData> extends BaseNulsData {
 
     }
 
-    /**
-     * 初始化基础消息的消息头
-     */
+//    /**
+//     * 初始化基础消息的消息头
+//     */
     public BaseMessage(short moduleId, short msgType) {
         this.header = new MessageHeader(moduleId, msgType);
     }
 
 
-    /**
-     * serialize important field
-     */
+//    /**
+//     * serialize important field
+//     */
     @Override
     protected void serializeToStream(NulsOutputStreamBuffer stream) throws IOException {
         stream.write(header.serialize());

@@ -41,7 +41,6 @@ import java.util.List;
  * Request transaction list data encapsulation.
  *
  * @author Niels
- * @date 2017/12/18
  */
 public class GetTxGroupParam extends BaseNulsData {
 
@@ -88,18 +87,18 @@ public class GetTxGroupParam extends BaseNulsData {
         }
     }
 
-    /**
-     * 请求的交易摘要列表
-     * the list of transaction digest data
-     */
+//    /**
+//     * 请求的交易摘要列表
+//     * the list of transaction digest data
+//     */
     public List<NulsDigestData> getTxHashList() {
         return txHashList;
     }
 
-    /**
-     * 添加一个交易摘要到请求列表中
-     * add a tx hash to ask list
-     */
+//    /**
+//     * 添加一个交易摘要到请求列表中
+//     * add a tx hash to ask list
+//     */
     public void addHash(NulsDigestData hash) {
         this.txHashList.add(hash);
     }

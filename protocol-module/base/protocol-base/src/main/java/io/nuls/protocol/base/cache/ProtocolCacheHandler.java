@@ -32,17 +32,13 @@ import io.nuls.kernel.model.Transaction;
 import io.nuls.kernel.utils.SerializeUtils;
 import io.nuls.protocol.base.utils.filter.InventoryFilter;
 import io.nuls.protocol.constant.MessageDataType;
-import io.nuls.protocol.model.BlockHashResponse;
-import io.nuls.protocol.model.CompleteParam;
-import io.nuls.protocol.model.NotFound;
-import io.nuls.protocol.model.TxGroup;
+import io.nuls.protocol.model.*;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 /**
  * @author ln
- * @date 2018/4/8
  */
 public class ProtocolCacheHandler {
 
@@ -56,7 +52,7 @@ public class ProtocolCacheHandler {
     private static DataCacher<CompleteParam> taskCacher = new DataCacher<>(MessageDataType.BLOCKS);
     private static DataCacher<NulsDigestData> reactCacher = new DataCacher<>(MessageDataType.REQUEST);
     private static DataCacher<Transaction> txCacher = new DataCacher<>(MessageDataType.TRANSACTION);
-    private static DataCacher<Boolean> smallBlockCacher = new DataCacher<>(MessageDataType.SMALL_BLOCK);
+    private static DataCacher<SmallBlock> smallBlockCacher = new DataCacher<>(MessageDataType.SMALL_BLOCK);
 
     public static CompletableFuture<Transaction> addGetTxRequest(NulsDigestData txHash) {
         return txCacher.addFuture(txHash);
@@ -71,14 +67,15 @@ public class ProtocolCacheHandler {
         txCacher.removeFuture(txHash);
     }
 
-    public static CompletableFuture<Boolean> addGetSmallBlockRequest(NulsDigestData blockHash) {
+    public static CompletableFuture<SmallBlock> addGetSmallBlockRequest(NulsDigestData blockHash) {
         return smallBlockCacher.addFuture(blockHash);
     }
 
-    public static void receiveSmallBlock(NulsDigestData blockHash) {
+    public static void receiveSmallBlock(SmallBlock smBlock) {
+        NulsDigestData blockHash = smBlock.getHeader().getHash();
         Log.error("receive small block:" + blockHash);
         SMALL_BLOCK_FILTER.insert(blockHash.getDigestBytes());
-        smallBlockCacher.callback(blockHash, true);
+        smallBlockCacher.callback(blockHash, smBlock);
     }
 
     public static void removeSmallBlockFuture(NulsDigestData blockHash) {

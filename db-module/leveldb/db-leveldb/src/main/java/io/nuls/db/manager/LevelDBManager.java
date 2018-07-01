@@ -1,18 +1,14 @@
 /**
  * MIT License
- * <p>
  * Copyright (c) 2017-2018 nuls.io
- * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * <p>
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -50,11 +46,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import static io.nuls.core.tools.str.StringUtils.bytes;
 import static io.nuls.db.constant.DBConstant.BASE_AREA_NAME;
 
-/**
- * @desription:
- * @author: PierreLuo
- * @date:
- */
 public class LevelDBManager {
 
     private static int max;
@@ -274,13 +265,14 @@ public class LevelDBManager {
         }
         Result result;
         try {
+            DB db = AREAS.remove(areaName);
+            db.close();
             File dir = new File(dataPath + File.separator + areaName);
             if (!dir.exists()) {
                 return Result.getFailed(DBErrorCode.DB_AREA_NOT_EXIST);
             }
             String filePath = dataPath + File.separator + areaName + File.separator + BASE_DB_NAME;
             destroyDB(filePath);
-            AREAS.remove(areaName);
             AREAS_COMPARATOR.remove(areaName);
             delete(BASE_AREA_NAME, bytes(areaName + "-comparator"));
             delete(BASE_AREA_NAME, bytes(areaName + "-cacheSize"));
@@ -962,5 +954,39 @@ public class LevelDBManager {
             Log.error(e);
             return null;
         }
+    }
+
+    public static Result clearArea(String area) {
+        if (!baseCheckArea(area)) {
+            return Result.getFailed();
+        }
+        try {
+            return destroyArea(area);
+        } catch (Exception e) {
+            Log.error(e);
+            return Result.getFailed();
+        }
+
+        /*DBIterator iterator = null;
+        try {
+            DB db = AREAS.get(area);
+            iterator = db.iterator();
+            for (iterator.seekToFirst(); iterator.hasNext(); iterator.next()) {
+               db.delete(iterator.peekNext().getKey());
+            }
+            return Result.getSuccess();
+        } catch (Exception e) {
+            Log.error(e);
+            return Result.getFailed();
+        } finally {
+            // Make sure you close the iterator to avoid resource leaks.
+            if (iterator != null) {
+                try {
+                    iterator.close();
+                } catch (IOException e) {
+                    //skip it
+                }
+            }
+        }*/
     }
 }

@@ -13,7 +13,7 @@
     <groupId>io.nuls.contract-module</groupId>
     <artifactId>contract-base</artifactId>
     <version>0.9.11</version>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
     <name>contract-base</name>
 
     <dependencies>
@@ -55,5 +55,6 @@
         </dependency>
 
     </dependencies>
+
 
 </project>

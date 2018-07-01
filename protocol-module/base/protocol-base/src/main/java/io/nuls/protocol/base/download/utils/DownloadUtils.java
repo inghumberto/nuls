@@ -48,7 +48,6 @@ import java.util.concurrent.TimeUnit;
 /**
  *
  * @author ln
- * @date 2018/4/8
  */
 public class DownloadUtils {
 
@@ -89,7 +88,7 @@ public class DownloadUtils {
             return resultList;
         }
 
-        Log.info("download block " + startHeight + " , " + endHeight + " from : " + node.getId());
+//        Log.info("download block " + startHeight + " , " + endHeight + " from : " + node.getId());
 
         GetBlocksByHeightMessage message = new GetBlocksByHeightMessage(startHeight, endHeight);
 

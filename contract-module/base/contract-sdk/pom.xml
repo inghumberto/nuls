@@ -13,9 +13,7 @@
     <groupId>io.nuls.contract-module</groupId>
     <artifactId>contract-sdk</artifactId>
     <version>0.9.11</version>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
     <name>contract-sdk</name>
 
-    <dependencies>
-    </dependencies>
 </project>

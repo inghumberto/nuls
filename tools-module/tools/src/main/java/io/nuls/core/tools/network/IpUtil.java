@@ -32,7 +32,6 @@ import java.util.regex.Pattern;
 
 /**
  * @author vivi
- * @date 2017/11/22.
  */
 public class IpUtil {
     private static final Pattern pattern = Pattern.compile("\\<dd class\\=\"fz24\">(.*?)\\<\\/dd>");
@@ -50,10 +49,6 @@ public class IpUtil {
         return ips;
     }
 
-
-    /**
-     * @return
-     */
     private static ArrayList<String> getLocalIP() {
         ArrayList<String> iplist = new ArrayList<>();
         boolean loop = false;
@@ -118,9 +113,6 @@ public class IpUtil {
         return iplist;
     }
 
-    /**
-     * lower is server
-     */
     public static boolean judgeLocalIsServer(String localIP, String remoteIP) {
         long local = ipToLong(localIP);
         long remote = ipToLong(remoteIP);

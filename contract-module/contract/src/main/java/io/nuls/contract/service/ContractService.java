@@ -36,11 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * @desription:
- * @author: PierreLuo
- * @date: 2018/5/5
- */
 public interface ContractService {
 
     /**

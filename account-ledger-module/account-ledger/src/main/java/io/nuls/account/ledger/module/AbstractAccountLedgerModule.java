@@ -27,11 +27,6 @@ package io.nuls.account.ledger.module;
 import io.nuls.account.ledger.constant.AccountLedgerConstant;
 import io.nuls.kernel.module.BaseModuleBootstrap;
 
-/**
- * @desription:
- * @author: Facjas
- * @date: 2018/5/10
- */
 public abstract class AbstractAccountLedgerModule extends BaseModuleBootstrap {
     public AbstractAccountLedgerModule() {
         super(AccountLedgerConstant.MODULE_ID_ACCOUNTLEDGER);

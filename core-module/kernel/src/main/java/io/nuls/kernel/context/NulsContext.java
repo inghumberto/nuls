@@ -130,6 +130,7 @@ public class NulsContext {
 
     /**
      * get zhe only instance of NulsContext
+     * @return NulsContext
      */
     public static final NulsContext getInstance() {
         return NC;
@@ -202,6 +203,7 @@ public class NulsContext {
     /**
      * 获取缓存的网络最新高度
      * Gets the latest height of the cached network.
+     * @return Long
      */
     public Long getNetBestBlockHeightWithNull() {
         return netBestBlockHeight;

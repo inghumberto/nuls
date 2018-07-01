@@ -29,11 +29,6 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @desription:
- * @author: PierreLuo
- * @date: 2018/4/20
- */
 public class ContractResult {
 
     /**

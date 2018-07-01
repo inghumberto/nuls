@@ -32,11 +32,6 @@ import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Component;
 import io.nuls.kernel.lite.core.bean.InitializingBean;
 
-/**
- * @desription:
- * @author: PierreLuo
- * @date: 2018/5/22
- */
 @Component
 public class VMHelper implements InitializingBean {
 

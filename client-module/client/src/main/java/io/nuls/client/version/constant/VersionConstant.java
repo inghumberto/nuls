@@ -30,17 +30,12 @@ import io.nuls.core.tools.crypto.Hex;
 
 /**
  * @author: Niels Wang
- * @date: 2018/6/13
  */
 public interface VersionConstant {
 
     String PUBLIC_KEY = "043f48de189fe5c01c7cd746cfdc404ab1957a287ef46fe23cb23e7ff6108f188eaaa89ce8e248854a809c187e9d207c881b126f0874183c0c81efe4293e6b1db7";
 
     ECKey EC_KEY = ECKey.fromPublicOnly(Hex.decode(PUBLIC_KEY));
-
-
-    String ROOT_URL = "https://raw.githubusercontent.com/nuls-io/nuls-wallet-release/master/";
-    String VERDION_JSON_URL = ROOT_URL + "version.json";
 
     /**
      * 状态：0：未开始,1：下载中,2：安装中,3：等待重启,4：失败

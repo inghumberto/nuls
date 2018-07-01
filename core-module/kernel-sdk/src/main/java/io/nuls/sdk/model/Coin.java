@@ -36,7 +36,6 @@ import java.io.IOException;
 /**
  *
  * @author ln
- * @date 2018/5/5
  */
 public class Coin extends BaseNulsData {
 
@@ -61,9 +60,6 @@ public class Coin extends BaseNulsData {
         this.lockTime = lockTime;
     }
 
-    /**
-     * serialize important field
-     */
     @Override
     protected void serializeToStream(NulsOutputStreamBuffer stream) throws IOException {
         stream.writeBytesWithLength(owner);

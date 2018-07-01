@@ -31,15 +31,11 @@ import java.io.IOException;
 
 /**
  * @author: Niels Wang
- * @date: 2018/4/17
  */
 public interface NulsData {
 
     int size();
 
-    /**
-     * serialize important field
-     */
     byte[] serialize() throws IOException;
 
     void parse(byte[] bytes,int cursor) throws NulsException;

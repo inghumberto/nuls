@@ -30,9 +30,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @desription:
  * @author: PierreLuo
- * @date: 2018/5/26
  */
 public class MapUtil{
 

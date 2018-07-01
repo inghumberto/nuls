@@ -27,13 +27,13 @@ package io.nuls.core.tools.str;
 
 /**
  * @author Niels
- * @date 2018/3/5
  */
 public class VersionUtils {
 
     /**
      * @param version0 main version
      * @param version1 other version
+     * @return boolean
      */
     public static boolean higherThan(String version0, String version1) {
         if (StringUtils.isBlank(version0) || StringUtils.isBlank(version1)) {
@@ -69,6 +69,7 @@ public class VersionUtils {
     /**
      * @param version0 main version
      * @param version1 other version
+     * @return boolean
      */
     public static boolean lowerThan(String version0, String version1) {
         if (StringUtils.isBlank(version0) || StringUtils.isBlank(version1)) {
