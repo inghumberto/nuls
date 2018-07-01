@@ -502,7 +502,7 @@ public class ConsensusProcess {
                 }
             }
         }
-        // 合约调用退还剩余的Gas
+        // 组装CoinBase交易，另外合约调用退还剩余的Gas
         addConsensusTx(bestBlock, packingTxList, self, round);
         bd.setTxList(packingTxList);
 
