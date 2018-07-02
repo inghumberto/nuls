@@ -49,14 +49,34 @@ public class ContractResult {
      */
     private byte[] stateRoot;
 
+    /**
+     *
+     */
+    private long value;
+
+    /**
+     *
+     */
     private boolean error;
 
+    /**
+     *
+     */
     private String errorMessage;
 
+    /**
+     *
+     */
     private String stackTrace;
 
+    /**
+     *
+     */
     private BigInteger balance;
 
+    /**
+     *
+     */
     private BigInteger nonce;
 
     /**
@@ -156,5 +176,13 @@ public class ContractResult {
 
     public void setNonce(BigInteger nonce) {
         this.nonce = nonce;
+    }
+
+    public long getValue() {
+        return value;
+    }
+
+    public void setValue(long value) {
+        this.value = value;
     }
 }

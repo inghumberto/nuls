@@ -36,6 +36,8 @@ import io.nuls.consensus.poc.context.ConsensusStatusContext;
 import io.nuls.consensus.poc.context.PocConsensusContext;
 import io.nuls.consensus.poc.manager.ChainManager;
 import io.nuls.consensus.poc.model.Chain;
+import io.nuls.consensus.poc.model.MeetingMember;
+import io.nuls.consensus.poc.model.MeetingRound;
 import io.nuls.consensus.poc.protocol.constant.PunishReasonEnum;
 import io.nuls.consensus.poc.protocol.entity.Agent;
 import io.nuls.consensus.poc.protocol.entity.RedPunishData;
@@ -46,7 +48,9 @@ import io.nuls.consensus.service.ConsensusService;
 import io.nuls.contract.constant.ContractConstant;
 import io.nuls.contract.dto.ContractResult;
 import io.nuls.contract.dto.ContractTransfer;
+import io.nuls.contract.entity.tx.CallContractTransaction;
 import io.nuls.contract.entity.tx.ContractTransferTransaction;
+import io.nuls.contract.entity.tx.CreateContractTransaction;
 import io.nuls.contract.service.ContractService;
 import io.nuls.core.tools.log.BlockLog;
 import io.nuls.core.tools.log.ChainLog;
@@ -61,6 +65,7 @@ import io.nuls.kernel.validate.ValidateResult;
 import io.nuls.ledger.constant.LedgerErrorCode;
 import io.nuls.ledger.service.LedgerService;
 import io.nuls.protocol.model.SmallBlock;
+import io.nuls.protocol.model.tx.CoinBaseTransaction;
 import io.nuls.protocol.service.BlockService;
 import io.nuls.protocol.service.TransactionService;
 
@@ -172,8 +177,8 @@ public class BlockProcess {
 
         // Verify that the block round information is correct, if correct, join the main chain
         // 验证区块轮次信息是否正确、如果正确，则加入主链
-        boolean verifyAndAddBlockResult = chainManager.getMasterChain().verifyAndAddBlock(block, isDownload);
-        if (verifyAndAddBlockResult) {
+        Result verifyAndAddBlockResult = chainManager.getMasterChain().verifyAndAddBlock(block, isDownload);
+        if (verifyAndAddBlockResult.isSuccess()) {
             boolean success = true;
             try {
                 do {
@@ -183,7 +188,8 @@ public class BlockProcess {
 //                    long time = System.currentTimeMillis();
                     List<Future<Boolean>> futures = new ArrayList<>();
 
-                    for (Transaction tx : block.getTxs()) {
+                    List<Transaction> txs = block.getTxs();
+                    for (Transaction tx : txs) {
                         Future<Boolean> res = signExecutor.submit(new Callable<Boolean>() {
                             @Override
                             public Boolean call() throws Exception {
@@ -211,8 +217,9 @@ public class BlockProcess {
                     Map<String, ContractTransferTransaction> successContractTransferTxs = new HashMap<>();
                     boolean isCorrectContractTransfer = true;
                     Map<String, Coin> contractUsedCoinMap = new HashMap<>();
+                    int txType;
 
-                    for (Transaction tx : block.getTxs()) {
+                    for (Transaction tx : txs) {
                         if (tx.isSystemTx()) {
                             continue;
                         }
@@ -223,7 +230,9 @@ public class BlockProcess {
                             break;
                         }
 
-                        if(tx.getType() == ContractConstant.TX_TYPE_CONTRACT_TRANSFER) {
+                        txType = tx.getType();
+
+                        if(txType == ContractConstant.TX_TYPE_CONTRACT_TRANSFER) {
                             receiveContractTransferTxs.put(tx.getHash().getDigestHex(), (ContractTransferTransaction) tx);
                         }
 
@@ -278,9 +287,17 @@ public class BlockProcess {
 
                             }
                         }
-                        // 这笔交易的合约执行结果保存在DB中
+                        // 这笔交易的合约执行结果保存在DB中, 另外保存在交易对象中，用于计算退还剩余的Gas/退还合约调用失败后转入的资金 --> method:
                         if(contractResult != null) {
-                            contractService.saveContractExecuteResult(tx.getHash(), contractResult);
+                            if(txType == ContractConstant.TX_TYPE_CREATE_CONTRACT) {
+                                CreateContractTransaction createContractTransaction = (CreateContractTransaction) tx;
+                                createContractTransaction.setContractResult(contractResult);
+                                contractService.saveContractExecuteResult(tx.getHash(), contractResult);
+                            } else if(txType == ContractConstant.TX_TYPE_CALL_CONTRACT) {
+                                CallContractTransaction callContractTransaction = (CallContractTransaction) tx;
+                                callContractTransaction.setContractResult(contractResult);
+                                contractService.saveContractExecuteResult(tx.getHash(), contractResult);
+                            }
                         }
                     }
                     // 验证区块交易结束后移除临时余额区
@@ -308,6 +325,16 @@ public class BlockProcess {
                             break;
                         }
                     }
+
+                    // 验证CoinBase交易
+                    Object[] objects = (Object[]) verifyAndAddBlockResult.getData();
+                    MeetingRound currentRound = (MeetingRound) objects[0];
+                    MeetingMember member = (MeetingMember) objects[1];
+                    if(!chainManager.getMasterChain().verifyBaseTx(block, currentRound, member)){
+                        success = false;
+                        break;
+                    }
+
 
                     if (!success) {
                         break;

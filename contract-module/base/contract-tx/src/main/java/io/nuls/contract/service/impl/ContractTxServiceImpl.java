@@ -99,7 +99,6 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
      * 如果是创建合约的交易，交易仅仅用于创建合约，合约内部不执行复杂逻辑
      *
      * @param sender          交易创建者
-     * @param value           交易附带的货币量
      * @param gasLimit        最大gas消耗
      * @param price           执行合约单价
      * @param contractAddress 合约地址
@@ -110,13 +109,13 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
      * @return
      */
     @Override
-    public Result contractCreateTx(String sender, Na value, Long gasLimit, Long price,
+    public Result contractCreateTx(String sender, Long gasLimit, Long price,
                                    byte[] contractCode, String[] args,
                                    String password, String remark) {
         try {
             AssertUtil.canNotEmpty(sender, "the sender address can not be empty");
             AssertUtil.canNotEmpty(contractCode, "the contractCode can not be empty");
-            value = Na.ZERO;
+            Na value = Na.ZERO;
 
             Result<Account> accountResult = accountService.getAccount(sender);
             if (accountResult.isFailed()) {

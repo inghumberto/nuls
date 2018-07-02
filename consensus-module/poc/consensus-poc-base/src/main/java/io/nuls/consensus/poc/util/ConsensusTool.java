@@ -147,8 +147,8 @@ public class ConsensusTool {
     public static CoinBaseTransaction createCoinBaseTx(MeetingMember member, List<Transaction> txList, MeetingRound localRound, long unlockHeight) {
         CoinData coinData = new CoinData();
         List<Coin> rewardList = calcReward(txList, member, localRound, unlockHeight);
-        // 合约剩余Gas退还
-        List<Coin> returnGasList = returnContractRemainingGasNa(txList, unlockHeight);
+        // 合约剩余Gas退还/合约调用失败转入资金退还
+        List<Coin> returnGasList = returnContractSenderNa(txList, unlockHeight);
         if(!returnGasList.isEmpty()) {
             Coin agentReward = rewardList.remove(0);
             rewardList.addAll(returnGasList);
@@ -175,9 +175,9 @@ public class ConsensusTool {
         return tx;
     }
 
-    private static List<Coin> returnContractRemainingGasNa(List<Transaction> txList, long unlockHeight) {
+    private static List<Coin> returnContractSenderNa(List<Transaction> txList, long unlockHeight) {
         // 去重, 可能存在同一个sender发出的几笔合约交易，需要把退还的GasNa累加到一起
-        Map<ByteArrayWrapper, Na> returnGasMap = new HashMap<>();
+        Map<ByteArrayWrapper, Na> returnMap = new HashMap<>();
         List<Coin> returnList = new ArrayList<>();
         if(txList != null && txList.size() > 0) {
             int tyType;
@@ -185,7 +185,14 @@ public class ConsensusTool {
                 tyType = tx.getType();
                 if (tyType == ContractConstant.TX_TYPE_CREATE_CONTRACT) {
                     CreateContractTransaction createContractTx = (CreateContractTransaction) tx;
+                    //TODO pierre 先从tx对象中找contractResult，如果为空，再从数据库中查找contractResult, 如果再为空，就没道理了
                     ContractResult contractResult = createContractTx.getContractResult();
+                    if(contractResult == null) {
+                        contractResult = contractService.getContractExecuteResult(tx.getHash());
+                        if(contractResult == null) {
+                            continue;
+                        }
+                    }
 
                     CreateContractData createContractData = createContractTx.getTxData();
                     // 减差额作为退还Gas
@@ -195,37 +202,55 @@ public class ConsensusTool {
                     if(txGasUsed > realGasUsed) {
                         returnGas = txGasUsed - realGasUsed;
                         ByteArrayWrapper sender = new ByteArrayWrapper(createContractData.getSender());
-                        Na senderGasNa = returnGasMap.get(sender);
-                        if(senderGasNa == null) {
-                            senderGasNa = Na.ZERO.add(Na.valueOf((long) (returnGas * createContractData.getPrice())));
+                        Na senderNa = returnMap.get(sender);
+                        if(senderNa == null) {
+                            senderNa = Na.ZERO.add(Na.valueOf((long) (returnGas * createContractData.getPrice())));
                         } else {
-                            senderGasNa = senderGasNa.add(Na.valueOf((long) (returnGas * createContractData.getPrice())));
+                            senderNa = senderNa.add(Na.valueOf((long) (returnGas * createContractData.getPrice())));
                         }
-                        returnGasMap.put(sender, senderGasNa);
+                        returnMap.put(sender, senderNa);
                     }
                 } else if (tyType == ContractConstant.TX_TYPE_CALL_CONTRACT) {
                     CallContractTransaction callContractTx = (CallContractTransaction) tx;
+                    //TODO pierre 先从tx对象中找contractResult，如果为空，再从数据库中查找contractResult, 如果再为空，就没道理了
                     ContractResult contractResult = callContractTx.getContractResult();
+                    if(contractResult == null) {
+                        contractResult = contractService.getContractExecuteResult(tx.getHash());
+                        if(contractResult == null) {
+                            continue;
+                        }
+                    }
 
                     CallContractData callContractData = callContractTx.getTxData();
                     // 减差额作为退还Gas
                     long realGasUsed = contractResult.getGasUsed();
                     long txGasUsed = callContractData.getTxGasUsed();
                     long returnGas = 0;
+                    ByteArrayWrapper sender = new ByteArrayWrapper(callContractData.getSender());
                     if(txGasUsed > realGasUsed) {
                         returnGas = txGasUsed - realGasUsed;
-                        ByteArrayWrapper sender = new ByteArrayWrapper(callContractData.getSender());
-                        Na senderGasNa = returnGasMap.get(sender);
-                        if(senderGasNa == null) {
-                            senderGasNa = Na.ZERO.add(Na.valueOf((long) (returnGas * callContractData.getPrice())));
+                        Na senderNa = returnMap.get(sender);
+                        if(senderNa == null) {
+                            senderNa = Na.ZERO.add(Na.valueOf((long) (returnGas * callContractData.getPrice())));
                         } else {
-                            senderGasNa = senderGasNa.add(Na.valueOf((long) (returnGas * callContractData.getPrice())));
+                            senderNa = senderNa.add(Na.valueOf((long) (returnGas * callContractData.getPrice())));
                         }
-                        returnGasMap.put(sender, senderGasNa);
+                        returnMap.put(sender, senderNa);
+                    }
+                    // 合约调用失败，退还调用者转入合约地址的资金
+                    if(contractResult.isError()) {
+                        Na returnValue = Na.valueOf(contractResult.getValue());
+                        Na senderNa = returnMap.get(sender);
+                        if(senderNa == null) {
+                            senderNa = Na.ZERO.add(returnValue);
+                        } else {
+                            senderNa = senderNa.add(returnValue);
+                        }
+                        returnMap.put(sender, senderNa);
                     }
                 }
             }
-            Set<Map.Entry<ByteArrayWrapper, Na>> entries = returnGasMap.entrySet();
+            Set<Map.Entry<ByteArrayWrapper, Na>> entries = returnMap.entrySet();
             Coin returnCoin;
             for(Map.Entry<ByteArrayWrapper, Na> entry : entries) {
                 returnCoin = new Coin(entry.getKey().getBytes(), entry.getValue(), unlockHeight);

@@ -64,7 +64,7 @@ public class ContractResource {
             @ApiResponse(code = 200, message = "success")
     })
     public Result createContract(@ApiParam(name = "createForm", value = "创建智能合约", required = true) ContractCreate create) {
-        if (create == null || create.getValue() < 0 || create.getGasLimit() < 0 || create.getPrice() < 0) {
+        if (create == null || create.getGasLimit() < 0 || create.getPrice() < 0) {
             return Result.getFailed(ContractErrorCode.PARAMETER_ERROR);
         }
 
@@ -80,7 +80,6 @@ public class ContractResource {
         byte[] contractCodeBytes = Base64.getDecoder().decode(contractCode);
 
         return contractTxService.contractCreateTx(create.getSender(),
-                Na.valueOf(create.getValue()),
                 create.getGasLimit(),
                 create.getPrice(),
                 contractCodeBytes,

@@ -702,6 +702,9 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
                     }
                     contractBalanceManager.minusTempBalance(contractAddress, outAmount.longValue());
                 }
+            } else {
+                // 合约调用失败，把需要退还的UTXO记录到结果对象中
+                result.getData().setValue(callContractData.getValue());
             }
             return result;
         } else if(txType == ContractConstant.TX_TYPE_DELETE_CONTRACT) {

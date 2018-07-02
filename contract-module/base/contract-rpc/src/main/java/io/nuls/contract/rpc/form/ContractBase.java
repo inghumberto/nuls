@@ -14,8 +14,6 @@ public class ContractBase {
     private String sender;
     @ApiModelProperty(name = "gasLimit", value = "最大gas消耗", required = true)
     private long gasLimit;
-    @ApiModelProperty(name = "value", value = "交易附带的货币量", required = false)
-    private long value;
     @ApiModelProperty(name = "price", value = "执行合约单价", required = true)
     private long price;
     @ApiModelProperty(name = "password", value = "账户密码", required = true)
@@ -46,15 +44,6 @@ public class ContractBase {
     public void setPrice(long price) {
         this.price = price;
     }
-
-    public long getValue() {
-        return value;
-    }
-
-    public void setValue(long value) {
-        this.value = value;
-    }
-
 
     public String getPassword() {
         return password;

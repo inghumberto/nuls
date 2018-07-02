@@ -8,6 +8,8 @@ public class ContractCall extends ContractBase {
 
     @ApiModelProperty(name = "contractAddress", value = "智能合约地址", required = true)
     private String contractAddress;
+    @ApiModelProperty(name = "value", value = "交易附带的货币量", required = false)
+    private long value;
     @ApiModelProperty(name = "methodName", value = "方法名", required = true)
     private String methodName;
     @ApiModelProperty(name = "methodDesc", value = "方法签名，如果方法名不重复，可以不传", required = false)
@@ -21,6 +23,14 @@ public class ContractCall extends ContractBase {
 
     public void setContractAddress(String contractAddress) {
         this.contractAddress = contractAddress;
+    }
+
+    public long getValue() {
+        return value;
+    }
+
+    public void setValue(long value) {
+        this.value = value;
     }
 
     public String getMethodName() {

@@ -46,15 +46,13 @@ import io.nuls.core.tools.log.BlockLog;
 import io.nuls.core.tools.log.Log;
 import io.nuls.kernel.context.NulsContext;
 import io.nuls.kernel.func.TimeService;
-import io.nuls.kernel.model.Block;
-import io.nuls.kernel.model.BlockHeader;
-import io.nuls.kernel.model.NulsDigestData;
-import io.nuls.kernel.model.Transaction;
+import io.nuls.kernel.model.*;
 import io.nuls.kernel.utils.AddressTool;
 import io.nuls.kernel.validate.ValidateResult;
 import io.nuls.protocol.constant.ProtocolConstant;
 import io.nuls.protocol.model.tx.CoinBaseTransaction;
 import io.nuls.protocol.service.BlockService;
+import sun.nio.cs.FastCharsetProvider;
 
 import java.util.*;
 
@@ -209,20 +207,20 @@ public class ChainContainer implements Cloneable {
         return true;
     }
 
-    public boolean verifyBlock(Block block) {
+    public Result verifyBlock(Block block) {
         return verifyBlock(block, false);
     }
 
 
-    public boolean verifyBlock(Block block, boolean isDownload) {
+    public Result verifyBlock(Block block, boolean isDownload) {
 
         if (block == null || chain.getEndBlockHeader() == null) {
-            return false;
+            Result.getFailed();
         }
 
         BlockHeader blockHeader = block.getHeader();
         if (blockHeader == null) {
-            return false;
+            Result.getFailed();
         }
 //todo 是否是重复验证
         block.verifyWithException();
@@ -235,7 +233,7 @@ public class ChainContainer implements Cloneable {
 
         if (!preHash.equals(bestBlockHeader.getHash())) {
             Log.error("block height " + blockHeader.getHeight() + " prehash is error! hash :" + blockHeader.getHash());
-            return false;
+            Result.getFailed();
         }
 
         BlockRoundData bestBlcokRoundData = new BlockRoundData(bestBlockHeader.getExtend());
@@ -245,7 +243,7 @@ public class ChainContainer implements Cloneable {
         if (roundData.getRoundIndex() < bestBlcokRoundData.getRoundIndex() ||
                 (roundData.getRoundIndex() == bestBlcokRoundData.getRoundIndex() && roundData.getPackingIndexOfRound() <= bestBlcokRoundData.getPackingIndexOfRound())) {
             Log.error("new block rounddata error, block height : " + blockHeader.getHeight() + " , hash :" + blockHeader.getHash());
-            return false;
+            Result.getFailed();
         }
 
         MeetingRound currentRound = roundManager.getCurrentRound();
@@ -264,20 +262,20 @@ public class ChainContainer implements Cloneable {
         // 验证区块轮次和时间是否正确
 //        if(roundData.getRoundIndex() > currentRound.getIndex()) {
 //            Log.error("block height " + blockHeader.getHeight() + " round index is error!");
-//            return false;
+//            Result.getFailed();
 //        }
         if (roundData.getRoundIndex() > currentRound.getIndex()) {
             if (roundData.getRoundStartTime() > TimeService.currentTimeMillis()) {
                 Log.error("block height " + blockHeader.getHeight() + " round startTime is error, greater than current time! hash :" + blockHeader.getHash());
-                return false;
+                Result.getFailed();
             }
             if (!isDownload && (roundData.getRoundStartTime() + (roundData.getPackingIndexOfRound() - 1) * ProtocolConstant.BLOCK_TIME_INTERVAL_SECOND * 1000L) > TimeService.currentTimeMillis()) {
                 Log.error("block height " + blockHeader.getHeight() + " is the block of the future and received in advance! hash :" + blockHeader.getHash());
-                return false;
+                Result.getFailed();
             }
             if (roundData.getRoundStartTime() < currentRound.getEndTime()) {
                 Log.error("block height " + blockHeader.getHeight() + " round index and start time not match! hash :" + blockHeader.getHash());
-                return false;
+                Result.getFailed();
             }
             MeetingRound tempRound = roundManager.getNextRound(roundData, !isDownload);
             if (tempRound.getIndex() > currentRound.getIndex()) {
@@ -298,43 +296,45 @@ public class ChainContainer implements Cloneable {
 
         if (roundData.getRoundIndex() != currentRound.getIndex() || roundData.getRoundStartTime() != currentRound.getStartTime()) {
             Log.error("block height " + blockHeader.getHeight() + " round startTime is error! hash :" + blockHeader.getHash());
-            return false;
+            Result.getFailed();
         }
 
         Log.debug(currentRound.toString());
 
         if (roundData.getConsensusMemberCount() != currentRound.getMemberCount()) {
             Log.error("block height " + blockHeader.getHeight() + " packager count is error! hash :" + blockHeader.getHash());
-            return false;
+            Result.getFailed();
         }
         // Verify that the packager is correct
         // 验证打包人是否正确
         MeetingMember member = currentRound.getMember(roundData.getPackingIndexOfRound());
         if (!Arrays.equals(member.getPackingAddress(), blockHeader.getPackingAddress())) {
             Log.error("block height " + blockHeader.getHeight() + " packager error! hash :" + blockHeader.getHash());
-            return false;
+            Result.getFailed();
         }
 
         if (member.getPackEndTime() != block.getHeader().getTime()) {
             Log.error("block height " + blockHeader.getHeight() + " time error! hash :" + blockHeader.getHash());
-            return false;
+            Result.getFailed();
         }
 
-        boolean success = verifyBaseTx(block, currentRound, member);
+        // 由于合约交易的特殊性，此处校验逻辑需要移走，移动到所有交易验证完之后
+        /*boolean success = verifyBaseTx(block, currentRound, member);
         if (!success) {
             Log.error("block height " + blockHeader.getHeight() + " verify tx error! hash :" + blockHeader.getHash());
-            return false;
-        }
+            Result.getFailed();
+        }*/
 
         if (hasChangeRound) {
             roundManager.addRound(currentRound);
         }
-        return true;
+        Object[] objects = new Object[]{currentRound, member};
+        return Result.getSuccess().setData(objects);
     }
 
     // Verify conbase transactions and penalties
     // 验证conbase交易和处罚交易
-    private boolean verifyBaseTx(Block block, MeetingRound currentRound, MeetingMember member) {
+    public boolean verifyBaseTx(Block block, MeetingRound currentRound, MeetingMember member) {
         List<Transaction> txs = block.getTxs();
         Transaction tx = txs.get(0);
         if (tx.getType() != ProtocolConstant.TX_TYPE_COINBASE) {
@@ -366,6 +366,7 @@ public class ChainContainer implements Cloneable {
         if (null == coinBaseTransaction || !tx.getHash().equals(coinBaseTransaction.getHash())) {
             BlockLog.debug("the coin base tx is wrong! height: " + block.getHeader().getHeight() + " , hash : " + block.getHeader().getHash());
             Log.error("the coin base tx is wrong! height: " + block.getHeader().getHeight() + " , hash : " + block.getHeader().getHash());
+            return false;
         }
         YellowPunishTransaction yellowPunishTransaction = null;
         try {
@@ -416,12 +417,14 @@ public class ChainContainer implements Cloneable {
         return true;
     }
 
-    public boolean verifyAndAddBlock(Block block, boolean isDownload) {
-        boolean success = verifyBlock(block, isDownload);
-        if (success) {
-            success = addBlock(block);
+    public Result verifyAndAddBlock(Block block, boolean isDownload) {
+        Result result = verifyBlock(block, isDownload);
+        if (result.isSuccess()) {
+            if(!addBlock(block)) {
+                return Result.getFailed();
+            }
         }
-        return success;
+        return result;
     }
 
     public boolean rollback(Block block) {

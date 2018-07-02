@@ -334,8 +334,8 @@ public class ForkChainProcess {
         //Combined with the new bifurcated block chain, combine and verify one by one
         //结合新分叉的块链， 逐个组合并验证
         for (Block forkBlock : needVerifyChain.getChain().getBlockList()) {
-            boolean success = forkChain.verifyAndAddBlock(forkBlock, true);
-            if (!success) {
+            Result success = forkChain.verifyAndAddBlock(forkBlock, true);
+            if (success.isFailed()) {
                 return null;
             }
         }

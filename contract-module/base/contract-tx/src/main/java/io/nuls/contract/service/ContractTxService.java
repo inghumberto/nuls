@@ -36,7 +36,6 @@ public interface ContractTxService {
      * 创建包含智能合约的交易
      *
      * @param sender          交易创建者
-     * @param value           交易附带的货币量
      * @param gasLimit        最大gas消耗
      * @param price           执行合约单价
      * @param contractCode    合约代码
@@ -45,7 +44,7 @@ public interface ContractTxService {
      * @param remark          备注
      * @return
      */
-    Result contractCreateTx(String sender, Na value, Long gasLimit, Long price,
+    Result contractCreateTx(String sender, Long gasLimit, Long price,
                             byte[] contractCode, String[] args, String password, String remark);
 
     /**

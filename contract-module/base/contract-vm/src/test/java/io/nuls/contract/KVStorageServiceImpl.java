@@ -132,4 +132,10 @@ public class KVStorageServiceImpl implements DBService {
         return null;
     }
 
+    @Override
+    public Result clearArea(String area) {
+        //TODO pierre auto-generated method stub
+        return null;
+    }
+
 }
