@@ -71,6 +71,19 @@ public class Bootstrap {
         }
     }
 
+    private static void copyWebFiles() {
+        String path = Bootstrap.class.getClassLoader().getResource("").getPath() + "/temp/" + NulsConfig.VERSION + "/conf/client-web/";
+        File source = new File(path);
+        if (!source.exists()) {
+            Log.info("source not exists:" + path);
+            return;
+        }
+        Log.info("do the files copy!");
+        File target = new File(Bootstrap.class.getClassLoader().getResource("").getPath() + "/conf/client-web/");
+        FileUtil.deleteFolder(target);
+        FileUtil.copyFolder(source, target);
+    }
+
     private static void sysStart() throws Exception {
         do {
             MicroKernelBootstrap mk = MicroKernelBootstrap.getInstance();
@@ -80,6 +93,7 @@ public class Bootstrap {
             initModules();
             String ip = NulsConfig.MODULES_CONFIG.getCfgValue(RpcConstant.CFG_RPC_SECTION, RpcConstant.CFG_RPC_SERVER_IP, RpcConstant.DEFAULT_IP);
             int port = NulsConfig.MODULES_CONFIG.getCfgValue(RpcConstant.CFG_RPC_SECTION, RpcConstant.CFG_RPC_SERVER_PORT, RpcConstant.DEFAULT_PORT);
+            copyWebFiles();
             RpcServerManager.getInstance().startServer(ip, port);
 
             LanguageService languageService = NulsContext.getServiceBean(LanguageService.class);

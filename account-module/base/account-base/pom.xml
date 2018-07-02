@@ -13,7 +13,7 @@
     <groupId>io.nuls.account-module</groupId>
     <artifactId>account-base</artifactId>
     <version>0.9.11</version>
-    <packaging>pom</packaging>
+
 
     <dependencies>
         <dependency>
@@ -58,12 +58,6 @@
         </dependency>
 
         <!-- test -->
-        <dependency>
-            <groupId>io.nuls.account-ledger-module</groupId>
-            <artifactId>account-ledger-base</artifactId>
-            <version>0.9.11</version>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>io.nuls.account-ledger-module</groupId>
             <artifactId>account-ledger-base</artifactId>
