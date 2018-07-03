@@ -152,6 +152,8 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             ProgramResult programResult = track.create(programCreate);
             track.commit();
 
+            // current state root
+            byte[] stateRoot = track.getRoot();
             ContractResult contractResult = new ContractResult();
             if(programResult.isError()) {
                 Result<ContractResult> result = Result.getFailed(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
@@ -160,14 +162,13 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
                 contractResult.setStackTrace(programResult.getStackTrace());
                 contractResult.setNonce(programResult.getNonce());
                 contractResult.setGasUsed(programResult.getGasUsed());
-                //contractResult.setStateRoot(stateRoot);
+                contractResult.setStateRoot(stateRoot);
                 contractResult.setContractAddress(contractAddress);
                 result.setMsg(programResult.getErrorMessage());
                 result.setData(contractResult);
                 return result;
             }
-            // current state root
-            byte[] stateRoot = track.getRoot();
+
             // 返回已使用gas、状态根、消息事件、合约转账
             contractResult.setError(false);
             contractResult.setStackTrace(programResult.getStackTrace());
@@ -235,6 +236,8 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             ProgramResult programResult = track.call(programCall);
             track.commit();
 
+            // current state root
+            byte[] stateRoot = track.getRoot();
             ContractResult contractResult = new ContractResult();
             if(programResult.isError()) {
                 Result<ContractResult> result = Result.getFailed(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
@@ -243,14 +246,13 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
                 contractResult.setStackTrace(programResult.getStackTrace());
                 contractResult.setNonce(programResult.getNonce());
                 contractResult.setGasUsed(programResult.getGasUsed());
-                //contractResult.setStateRoot(stateRoot);
+                contractResult.setStateRoot(stateRoot);
                 contractResult.setContractAddress(contractAddress);
                 result.setMsg(programResult.getErrorMessage());
                 result.setData(contractResult);
                 return result;
             }
-            // current state root
-            byte[] stateRoot = track.getRoot();
+
             // 返回调用结果、已使用Gas、状态根、消息事件、合约转账
             contractResult.setError(false);
             contractResult.setStackTrace(programResult.getStackTrace());
@@ -292,6 +294,8 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             ProgramResult programResult = track.stop(contractAddress, delete.getSender());
             track.commit();
 
+            // current state root
+            byte[] stateRoot = track.getRoot();
             ContractResult contractResult = new ContractResult();
             if(programResult.isError()) {
                 Result<ContractResult> result = Result.getFailed(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
@@ -300,14 +304,13 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
                 contractResult.setStackTrace(programResult.getStackTrace());
                 contractResult.setNonce(programResult.getNonce());
                 contractResult.setGasUsed(programResult.getGasUsed());
-                //contractResult.setStateRoot(stateRoot);
+                contractResult.setStateRoot(stateRoot);
                 contractResult.setContractAddress(contractAddress);
                 result.setMsg(programResult.getErrorMessage());
                 result.setData(contractResult);
                 return result;
             }
-            // current state root
-            byte[] stateRoot = track.getRoot();
+
             // 返回状态根
             contractResult.setError(false);
             contractResult.setStackTrace(programResult.getStackTrace());
