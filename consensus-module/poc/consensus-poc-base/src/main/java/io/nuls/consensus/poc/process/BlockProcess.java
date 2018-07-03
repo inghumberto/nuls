@@ -177,7 +177,7 @@ public class BlockProcess {
 
         // Verify that the block round information is correct, if correct, join the main chain
         // 验证区块轮次信息是否正确、如果正确，则加入主链
-        Result verifyAndAddBlockResult = chainManager.getMasterChain().verifyAndAddBlock(block, isDownload);
+        Result verifyAndAddBlockResult = chainManager.getMasterChain().verifyAndAddBlock(block, isDownload, false);
         if (verifyAndAddBlockResult.isSuccess()) {
             boolean success = true;
             try {

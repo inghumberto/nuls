@@ -83,7 +83,7 @@ public class ChainContainerTest extends BaseChainTest {
 
             newBlock = newBlock(bestBlock);
 
-            success = chainContainer.verifyAndAddBlock(newBlock, false);
+            success = chainContainer.verifyAndAddBlock(newBlock, false, true);
             assertTrue(success.isSuccess());
 
             bestBlock = chainContainer.getBestBlock();
@@ -106,22 +106,22 @@ public class ChainContainerTest extends BaseChainTest {
 
         addTx(newBlock);
 
-        Result success = chainContainer.verifyAndAddBlock(newBlock, false);
+        Result success = chainContainer.verifyAndAddBlock(newBlock, false, true);
         assertTrue(success.isSuccess());
 
         bestBlock = chainContainer.getBestBlock();
         newBlock = newBlock(bestBlock);
-        success = chainContainer.verifyAndAddBlock(newBlock, false);
+        success = chainContainer.verifyAndAddBlock(newBlock, false, true);
         assertTrue(success.isSuccess());
 
         bestBlock = chainContainer.getBestBlock();
         newBlock = newBlock(bestBlock);
-        success = chainContainer.verifyAndAddBlock(newBlock, false);
+        success = chainContainer.verifyAndAddBlock(newBlock, false, true);
         assertTrue(success.isSuccess());
 
         bestBlock = chainContainer.getBestBlock();
         newBlock = newBlock(bestBlock);
-        success = chainContainer.verifyAndAddBlock(newBlock, false);
+        success = chainContainer.verifyAndAddBlock(newBlock, false, true);
         assertTrue(success.isSuccess());
 
 
@@ -152,7 +152,7 @@ public class ChainContainerTest extends BaseChainTest {
             Block bestBlock = chainContainer.getBestBlock();
             Block newBlock = newBlock(bestBlock);
 
-            Result success = chainContainer.verifyAndAddBlock(newBlock, false);
+            Result success = chainContainer.verifyAndAddBlock(newBlock, false, true);
             assertTrue(success.isSuccess());
 
             bestBlock = chainContainer.getBestBlock();
@@ -187,7 +187,7 @@ public class ChainContainerTest extends BaseChainTest {
             Block bestBlock = chainContainer.getBestBlock();
             Block newBlock = newBlock(bestBlock);
 
-            Result success = chainContainer.verifyAndAddBlock(newBlock, false);
+            Result success = chainContainer.verifyAndAddBlock(newBlock, false, true);
             assertTrue(success.isSuccess());
 
             bestBlock = chainContainer.getBestBlock();

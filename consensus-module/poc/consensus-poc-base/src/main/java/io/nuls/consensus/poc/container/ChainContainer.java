@@ -208,11 +208,11 @@ public class ChainContainer implements Cloneable {
     }
 
     public Result verifyBlock(Block block) {
-        return verifyBlock(block, false);
+        return verifyBlock(block, false, true);
     }
 
 
-    public Result verifyBlock(Block block, boolean isDownload) {
+    public Result verifyBlock(Block block, boolean isDownload, boolean isNeedCheckCoinBaseTx) {
 
         if (block == null || chain.getEndBlockHeader() == null) {
             Result.getFailed();
@@ -318,12 +318,14 @@ public class ChainContainer implements Cloneable {
             Result.getFailed();
         }
 
-        // 由于合约交易的特殊性，此处校验逻辑需要移走，移动到所有交易验证完之后
-        /*boolean success = verifyBaseTx(block, currentRound, member);
-        if (!success) {
-            Log.error("block height " + blockHeader.getHeight() + " verify tx error! hash :" + blockHeader.getHash());
-            Result.getFailed();
-        }*/
+        // 由于合约交易的特殊性，此处校验逻辑在首次验证区块时移动到所有交易验证完之后
+        if(isNeedCheckCoinBaseTx) {
+            boolean success = verifyBaseTx(block, currentRound, member);
+            if (!success) {
+                Log.error("block height " + blockHeader.getHeight() + " verify tx error! hash :" + blockHeader.getHash());
+                Result.getFailed();
+            }
+        }
 
         if (hasChangeRound) {
             roundManager.addRound(currentRound);
@@ -417,8 +419,8 @@ public class ChainContainer implements Cloneable {
         return true;
     }
 
-    public Result verifyAndAddBlock(Block block, boolean isDownload) {
-        Result result = verifyBlock(block, isDownload);
+    public Result verifyAndAddBlock(Block block, boolean isDownload, boolean isNeedCheckCoinBaseTx) {
+        Result result = verifyBlock(block, isDownload, isNeedCheckCoinBaseTx);
         if (result.isSuccess()) {
             if(!addBlock(block)) {
                 return Result.getFailed();

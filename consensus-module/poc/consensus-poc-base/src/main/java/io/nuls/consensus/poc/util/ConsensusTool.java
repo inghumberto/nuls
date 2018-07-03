@@ -190,6 +190,7 @@ public class ConsensusTool {
                     if(contractResult == null) {
                         contractResult = contractService.getContractExecuteResult(tx.getHash());
                         if(contractResult == null) {
+                            Log.error("contract tx contractResult error: " + tx.getHash().getDigestHex());
                             continue;
                         }
                     }
@@ -217,6 +218,7 @@ public class ConsensusTool {
                     if(contractResult == null) {
                         contractResult = contractService.getContractExecuteResult(tx.getHash());
                         if(contractResult == null) {
+                            Log.error("contract tx contractResult error: " + tx.getHash().getDigestHex());
                             continue;
                         }
                     }
