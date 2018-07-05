@@ -1,23 +1,10 @@
 package io.nuls.contract;
 
-import io.nuls.db.model.Entry;
-import io.nuls.db.service.BatchOperation;
-import io.nuls.db.service.DBService;
-import io.nuls.kernel.model.Result;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.io.FileUtils;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
-
-public class KVStorageServiceImpl implements DBService {
+public class KVStorageServiceImpl {
 
     private String dir = "/tmp/";
 
-    @Override
+    /*@Override
     public Result createArea(String areaName) {
         return null;
     }
@@ -136,6 +123,6 @@ public class KVStorageServiceImpl implements DBService {
     public Result clearArea(String area) {
         //TODO pierre auto-generated method stub
         return null;
-    }
+    }*/
 
 }
