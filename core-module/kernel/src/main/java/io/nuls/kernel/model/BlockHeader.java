@@ -210,7 +210,6 @@ public class BlockHeader extends BaseNulsData {
         return stateRoot;
     }
 
-    //TODO pierre 设置智能合约世界状态根
     public void setStateRoot(byte[] stateRoot) {
         this.stateRoot = stateRoot;
     }

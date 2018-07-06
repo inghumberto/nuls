@@ -307,4 +307,18 @@ public abstract class Transaction<T extends TransactionLogicData> extends BaseNu
     }
 
     public abstract String getInfo(byte[] address);
+
+    @Override
+    public String toString() {
+        return "Transaction{" +
+                "type=" + type +
+                ", coinData=" + coinData +
+                ", txData=" + txData +
+                ", time=" + time +
+                ", hash=" + hash +
+                ", blockHeight=" + blockHeight +
+                ", status=" + status +
+                ", size=" + size +
+                '}';
+    }
 }

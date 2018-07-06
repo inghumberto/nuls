@@ -31,6 +31,7 @@ import io.nuls.kernel.constant.KernelErrorCode;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.exception.NulsRuntimeException;
 import io.nuls.kernel.lite.annotation.Autowired;
+import io.nuls.kernel.lite.annotation.Component;
 import io.nuls.kernel.lite.annotation.Service;
 import io.nuls.kernel.lite.core.bean.InitializingBean;
 import io.nuls.kernel.model.Result;
@@ -42,7 +43,7 @@ import java.util.List;
  * @author: PierreLuo
  * @date: 2018/5/24
  */
-@Service
+@Component
 public class ContractAddressStorageServiceImpl implements ContractAddressStorageService, InitializingBean {
 
     /**

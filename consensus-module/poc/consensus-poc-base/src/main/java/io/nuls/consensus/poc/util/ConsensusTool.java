@@ -162,6 +162,7 @@ public class ConsensusTool {
         }
 
         for (Coin coin : rewardList) {
+            Log.info("=========================================coinBase: " + coin.toString());
             coinData.addTo(coin);
         }
         CoinBaseTransaction tx = new CoinBaseTransaction();

@@ -48,29 +48,22 @@ public class CreateContractTxProcessor implements TransactionProcessor<CreateCon
 
     @Override
     public Result onRollback(CreateContractTransaction tx, Object secondaryData) {
-        /*
         CreateContractData txData = tx.getTxData();
         byte[] contractAddress = txData.getContractAddress();
         Result result = contractAddressStorageService.deleteContractAddress(contractAddress);
         return result;
-        */
-        return null;
     }
 
     @Override
     public Result onCommit(CreateContractTransaction tx, Object secondaryData) {
-        /*
         CreateContractData txData = tx.getTxData();
         byte[] contractAddress = txData.getContractAddress();
         Result result = contractAddressStorageService.saveContractAddress(contractAddress);
         return result;
-        */
-        return null;
     }
 
     @Override
     public ValidateResult conflictDetect(List<Transaction> txList) {
-        //TODO pierre 检查冲突???
         return ValidateResult.getSuccessResult();
     }
 }

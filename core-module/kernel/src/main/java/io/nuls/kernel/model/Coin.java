@@ -30,11 +30,13 @@ import io.nuls.kernel.constant.NulsConstant;
 import io.nuls.kernel.context.NulsContext;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.func.TimeService;
+import io.nuls.kernel.utils.AddressTool;
 import io.nuls.kernel.utils.NulsByteBuffer;
 import io.nuls.kernel.utils.NulsOutputStreamBuffer;
 import io.nuls.kernel.utils.SerializeUtils;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  *
@@ -168,5 +170,16 @@ public class Coin extends BaseNulsData {
                 return false;
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        return "Coin{" +
+                "owner=" + AddressTool.getStringAddressByBytes(owner) +
+                ", na=" + na.getValue() +
+                ", lockTime=" + lockTime +
+                ", from=" + from +
+                ", key='" + key + '\'' +
+                '}';
     }
 }

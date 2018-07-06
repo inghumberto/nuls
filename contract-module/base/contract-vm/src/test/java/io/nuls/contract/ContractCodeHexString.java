@@ -37,7 +37,7 @@ import java.io.InputStream;
  */
 public class ContractCodeHexString {
     public static void main(String[] args) throws IOException {
-        InputStream in = new FileInputStream(ContractCodeHexString.class.getResource("/firstcontract").getFile());
+        InputStream in = new FileInputStream(ContractCodeHexString.class.getResource("/contract.jar").getFile());
         byte[] contractCode = IOUtils.toByteArray(in);
         System.out.println(Hex.toHexString(contractCode));
     }

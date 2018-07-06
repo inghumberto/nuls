@@ -24,6 +24,7 @@
 package testcontract;
 
 import io.nuls.contract.sdk.Contract;
+import io.nuls.contract.sdk.Msg;
 
 /**
  * @desription:
@@ -31,7 +32,7 @@ import io.nuls.contract.sdk.Contract;
  * @date: 2018/7/4
  */
 public class TestContract implements Contract {
-    private final String name = "TestToken";
+    private String name = "TestToken";
     private final String symbol = "TT";
     private final int decimals = 18;
 
@@ -45,6 +46,14 @@ public class TestContract implements Contract {
 
     public int getDecimals() {
         return decimals;
+    }
+
+    public String balance() {
+        return Msg.address().balance().toString();
+    }
+
+    public TestContract() {
+        name += " - AW158U";
     }
 
 }

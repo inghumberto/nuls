@@ -23,6 +23,7 @@
  */
 package io.nuls.contract.service.impl;
 
+import io.nuls.account.constant.AccountErrorCode;
 import io.nuls.account.ledger.model.CoinDataResult;
 import io.nuls.account.ledger.service.AccountLedgerService;
 import io.nuls.account.model.Account;
@@ -46,12 +47,14 @@ import io.nuls.contract.vm.program.ProgramCreate;
 import io.nuls.contract.vm.program.ProgramExecutor;
 import io.nuls.contract.vm.program.ProgramResult;
 import io.nuls.core.tools.log.Log;
+import io.nuls.core.tools.map.MapUtil;
 import io.nuls.core.tools.param.AssertUtil;
 import io.nuls.core.tools.str.StringUtils;
 import io.nuls.kernel.cfg.NulsConfig;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.func.TimeService;
 import io.nuls.kernel.lite.annotation.Autowired;
+import io.nuls.kernel.lite.annotation.Component;
 import io.nuls.kernel.lite.annotation.Service;
 import io.nuls.kernel.lite.core.bean.InitializingBean;
 import io.nuls.kernel.model.*;
@@ -63,13 +66,15 @@ import io.nuls.protocol.service.TransactionService;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @desription:
  * @author: PierreLuo
  * @date: 2018/5/22
  */
-@Service
+@Component
 public class ContractTxServiceImpl implements ContractTxService, InitializingBean {
 
     private static final String GET = "get";
@@ -126,10 +131,8 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             // 验证账户密码
             if (accountService.isEncrypted(account).isSuccess() && account.isLocked()) {
                 AssertUtil.canNotEmpty(password, "the password can not be empty");
-
-                Result passwordResult = accountService.validPassword(account, password);
-                if (passwordResult.isFailed()) {
-                    return passwordResult;
+                if (!account.validatePassword(password)) {
+                    return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG);
                 }
             }
 
@@ -195,16 +198,6 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             Na imputedNa = Na.valueOf(gasUsed * price);
             // 总花费
             Na totalNa = imputedNa.add(value);
-            CoinDataResult coinDataResult = accountLedgerService.getCoinData(senderBytes, totalNa, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH, TransactionFeeCalculator.MIN_PRECE_PRE_1024_BYTES);
-            if (!coinDataResult.isEnough()) {
-                return Result.getFailed(ContractErrorCode.BALANCE_NOT_ENOUGH);
-            }
-            coinData.setFrom(coinDataResult.getCoinList());
-            // 找零的UTXO
-            if (coinDataResult.getChange() != null) {
-                coinData.getTo().add(coinDataResult.getChange());
-            }
-            tx.setCoinData(coinData);
 
             // 组装txData
             CreateContractData createContractData = new CreateContractData();
@@ -219,15 +212,30 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             createContractData.setTxGasUsed(imputedNa.getValue());
             if(args != null) {
                 createContractData.setArgsCount((byte) args.length);
-                createContractData.setArgs(args);
+                if(args.length > 0) {
+                    createContractData.setArgs(args);
+                }
             }
             tx.setTxData(createContractData);
 
-            tx.setHash(NulsDigestData.calcDigestData(tx.serialize()));
+            CoinDataResult coinDataResult = accountLedgerService.getCoinData(senderBytes, totalNa, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH, TransactionFeeCalculator.MIN_PRECE_PRE_1024_BYTES);
+            if (!coinDataResult.isEnough()) {
+                return Result.getFailed(ContractErrorCode.BALANCE_NOT_ENOUGH);
+            }
+            coinData.setFrom(coinDataResult.getCoinList());
+            // 找零的UTXO
+            if (coinDataResult.getChange() != null) {
+                coinData.getTo().add(coinDataResult.getChange());
+            }
+            tx.setCoinData(coinData);
+
+
+
+            tx.setHash(NulsDigestData.calcDigestData(tx.serializeForHash()));
             // 交易签名
             P2PKHScriptSig sig = new P2PKHScriptSig();
             sig.setPublicKey(account.getPubKey());
-            sig.setSignData(accountService.signData(tx.getHash().serialize(), account, password));
+            sig.setSignData(accountService.signDigest(tx.getHash().getDigestBytes(), account, password));
             tx.setScriptSig(sig.serialize());
 
             // 保存未确认交易到本地账本
@@ -237,13 +245,16 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             }
 
             // 广播交易
-            Result sendResult = transactionService.broadcastTx(tx);
+            transactionService.newTx(tx);
+            Result sendResult = transactionService.forwardTx(tx, null);
             if (sendResult.isFailed()) {
                 accountLedgerService.rollbackTransaction(tx);
                 return sendResult;
             }
-
-            return Result.getSuccess().setData(tx.getHash().getDigestHex());
+            Map<String, String> resultMap = MapUtil.createHashMap(2);
+            resultMap.put("txHash", tx.getHash().getDigestHex());
+            resultMap.put("contractAddress", AddressTool.getStringAddressByBytes(contractAddressBytes));
+            return Result.getSuccess().setData(resultMap);
         } catch (IOException e) {
             Log.error(e);
             Result result = Result.getFailed(ContractErrorCode.CONTRACT_TX_CREATE_ERROR);
@@ -296,10 +307,8 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             // 验证账户密码
             if (accountService.isEncrypted(account).isSuccess() && account.isLocked()) {
                 AssertUtil.canNotEmpty(password, "the password can not be empty");
-
-                Result passwordResult = accountService.validPassword(account, password);
-                if (passwordResult.isFailed()) {
-                    return passwordResult;
+                if (!account.validatePassword(password)) {
+                    return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG);
                 }
             }
 
@@ -388,16 +397,6 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             Na imputedNa = Na.valueOf(gasUsed * price);
             // 总花费
             Na totalNa = imputedNa.add(value);
-            CoinDataResult coinDataResult = accountLedgerService.getCoinData(senderBytes, totalNa, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH, TransactionFeeCalculator.MIN_PRECE_PRE_1024_BYTES);
-            if (!coinDataResult.isEnough()) {
-                return Result.getFailed(ContractErrorCode.BALANCE_NOT_ENOUGH);
-            }
-            coinData.setFrom(coinDataResult.getCoinList());
-            // 找零的UTXO
-            if (coinDataResult.getChange() != null) {
-                coinData.getTo().add(coinDataResult.getChange());
-            }
-            tx.setCoinData(coinData);
 
             // 组装txData
             CallContractData callContractData = new CallContractData();
@@ -416,11 +415,22 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             }
             tx.setTxData(callContractData);
 
-            tx.setHash(NulsDigestData.calcDigestData(tx.serialize()));
+            CoinDataResult coinDataResult = accountLedgerService.getCoinData(senderBytes, totalNa, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH, TransactionFeeCalculator.MIN_PRECE_PRE_1024_BYTES);
+            if (!coinDataResult.isEnough()) {
+                return Result.getFailed(ContractErrorCode.BALANCE_NOT_ENOUGH);
+            }
+            coinData.setFrom(coinDataResult.getCoinList());
+            // 找零的UTXO
+            if (coinDataResult.getChange() != null) {
+                coinData.getTo().add(coinDataResult.getChange());
+            }
+            tx.setCoinData(coinData);
+
+            tx.setHash(NulsDigestData.calcDigestData(tx.serializeForHash()));
             // 交易签名
             P2PKHScriptSig sig = new P2PKHScriptSig();
             sig.setPublicKey(account.getPubKey());
-            sig.setSignData(accountService.signData(tx.getHash().serialize(), account, password));
+            sig.setSignData(accountService.signDigest(tx.getHash().getDigestBytes(), account, password));
             tx.setScriptSig(sig.serialize());
 
             // 保存未确认交易到本地账本
@@ -430,7 +440,8 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             }
 
             // 广播
-            Result sendResult = transactionService.broadcastTx(tx);
+            transactionService.newTx(tx);
+            Result sendResult = transactionService.forwardTx(tx, null);
             if (sendResult.isFailed()) {
                 // 失败则回滚
                 accountLedgerService.rollbackTransaction(tx);
@@ -479,10 +490,8 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             // 验证账户密码
             if (accountService.isEncrypted(account).isSuccess() && account.isLocked()) {
                 AssertUtil.canNotEmpty(password, "the password can not be empty");
-
-                Result passwordResult = accountService.validPassword(account, password);
-                if (passwordResult.isFailed()) {
-                    return passwordResult;
+                if (!account.validatePassword(password)) {
+                    return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG);
                 }
             }
 
@@ -524,11 +533,11 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
                 coinData.getTo().add(coinDataResult.getChange());
             }
             tx.setCoinData(coinData);
-            tx.setHash(NulsDigestData.calcDigestData(tx.serialize()));
+            tx.setHash(NulsDigestData.calcDigestData(tx.serializeForHash()));
             // 交易签名
             P2PKHScriptSig sig = new P2PKHScriptSig();
             sig.setPublicKey(account.getPubKey());
-            sig.setSignData(accountService.signData(tx.getHash().serialize(), account, password));
+            sig.setSignData(accountService.signDigest(tx.getHash().getDigestBytes(), account, password));
             tx.setScriptSig(sig.serialize());
 
             // 保存删除合约的交易到本地账本
@@ -537,7 +546,8 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
                 return saveResult;
             }
             // 广播交易
-            Result sendResult = transactionService.broadcastTx(tx);
+            transactionService.newTx(tx);
+            Result sendResult = transactionService.forwardTx(tx, null);
             if (sendResult.isFailed()) {
                 // 失败则回滚
                 accountLedgerService.rollbackTransaction(tx);

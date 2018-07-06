@@ -23,6 +23,7 @@
  */
 package io.nuls.protocol.model.validator;
 
+import io.nuls.contract.constant.ContractConstant;
 import io.nuls.kernel.constant.TransactionErrorCode;
 import io.nuls.kernel.lite.annotation.Component;
 import io.nuls.kernel.model.CoinData;
@@ -49,10 +50,14 @@ public class TxFeeValidator implements NulsDataValidator<Transaction> {
         }
         Na realFee = tx.getFee();
         Na fee = null;
-        if(tx.getType() == ProtocolConstant.TX_TYPE_TRANSFER){
+        int txType = tx.getType();
+        if(txType == ProtocolConstant.TX_TYPE_TRANSFER
+                || txType == ContractConstant.TX_TYPE_CREATE_CONTRACT
+                || txType == ContractConstant.TX_TYPE_CALL_CONTRACT
+                || txType == ContractConstant.TX_TYPE_DELETE_CONTRACT){
             fee = TransactionFeeCalculator.getTransferFee(tx.size());
         }else{
-            fee =TransactionFeeCalculator.getMaxFee(tx.size());
+            fee = TransactionFeeCalculator.getMaxFee(tx.size());
         }
         if (realFee.isGreaterOrEquals(fee)) {
             return ValidateResult.getSuccessResult();

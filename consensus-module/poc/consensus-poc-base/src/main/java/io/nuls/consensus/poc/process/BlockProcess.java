@@ -52,6 +52,7 @@ import io.nuls.contract.entity.tx.CallContractTransaction;
 import io.nuls.contract.entity.tx.ContractTransferTransaction;
 import io.nuls.contract.entity.tx.CreateContractTransaction;
 import io.nuls.contract.service.ContractService;
+import io.nuls.core.tools.crypto.Hex;
 import io.nuls.core.tools.log.BlockLog;
 import io.nuls.core.tools.log.ChainLog;
 import io.nuls.core.tools.log.Log;
@@ -205,7 +206,10 @@ public class BlockProcess {
                     /**
                      * pierre add 智能合约相关
                      */
-                    Block bestBlock = chainManager.getBestBlock();
+                    Block bestBlock = NulsContext.getInstance().getBestBlock();
+                    Log.info("=========================================verifyBlock - NulsContext_bestBlock height: " + bestBlock.getHeader().getHeight()
+                            + ", NulsContext_bestBlock hash: " + bestBlock.getHeader().getHash().getDigestHex()
+                            + ", NulsContext_bestBlock stateRoot: " + Hex.encode(bestBlock.getHeader().getStateRoot()));
                     long bestHeight = bestBlock.getHeader().getHeight();
                     byte[] receiveStateRoot = block.getHeader().getStateRoot();
                     byte[] stateRoot = bestBlock.getHeader().getStateRoot();
@@ -238,9 +242,11 @@ public class BlockProcess {
 
                         // 验证区块时发现智能合约交易就调用智能合约
                         callContractResult = contractService.callContract(tx, bestHeight, stateRoot);
+                        Log.info("=========================================verifyBlock StateRoot: " + Hex.encode(stateRoot));
                         contractResult = callContractResult.getData();
                         if(contractResult != null) {
                             stateRoot = contractResult.getStateRoot();
+                            Log.info("=========================================verifyBlock result StateRoot: " + Hex.encode(stateRoot));
                             if(callContractResult.isSuccess()) {
                                 transfers = contractResult.getTransfers();
                                 contractEvents = contractResult.getEvents();

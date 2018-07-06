@@ -31,6 +31,7 @@ import io.nuls.contract.storage.service.ContractAddressStorageService;
 import io.nuls.contract.storage.service.ContractUtxoStorageService;
 import io.nuls.db.model.Entry;
 import io.nuls.kernel.lite.annotation.Autowired;
+import io.nuls.kernel.lite.annotation.Component;
 import io.nuls.kernel.model.Result;
 import io.nuls.kernel.model.Transaction;
 import io.nuls.kernel.processor.TransactionProcessor;
@@ -43,6 +44,7 @@ import java.util.List;
  * @author: PierreLuo
  * @date: 2018/6/8
  */
+@Component
 public class DeleteContractTxProcessor implements TransactionProcessor<DeleteContractTransaction> {
 
     @Autowired
@@ -79,7 +81,7 @@ public class DeleteContractTxProcessor implements TransactionProcessor<DeleteCon
         }
         return result;
         */
-        return null;
+        return Result.getSuccess();
     }
 
     /**
@@ -104,12 +106,11 @@ public class DeleteContractTxProcessor implements TransactionProcessor<DeleteCon
         }
         return listResult;
         */
-        return null;
+        return Result.getSuccess();
     }
 
     @Override
     public ValidateResult conflictDetect(List<Transaction> txList) {
-        //TODO pierre 检查冲突???
         return ValidateResult.getSuccessResult();
     }
 }

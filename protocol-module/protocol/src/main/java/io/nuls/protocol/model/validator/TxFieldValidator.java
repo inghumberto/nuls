@@ -37,8 +37,7 @@ public class TxFieldValidator implements NulsDataValidator<Transaction> {
 
     public final static int MAX_REMARK_LEN = 100;
     public final static int MAX_TX_TYPE = 10000;
-    public static final int MAX_TX_SIZE = 100000;
-    public static final int MAX_TX_DATA_SIZE = 1024;
+    public static final int MAX_TX_DATA_SIZE = 30 * 1024;
 
 
     @Override
@@ -66,10 +65,6 @@ public class TxFieldValidator implements NulsDataValidator<Transaction> {
                 break;
             }
             if (tx.getTxData() != null && tx.getTxData().size() > MAX_TX_DATA_SIZE) {
-                result = false;
-                break;
-            }
-            if (tx.size() > MAX_TX_SIZE) {
                 result = false;
                 break;
             }

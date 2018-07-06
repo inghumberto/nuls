@@ -29,6 +29,7 @@ import io.nuls.contract.rpc.form.ContractCall;
 import io.nuls.contract.rpc.form.ContractCreate;
 import io.nuls.contract.rpc.form.ContractDelete;
 import io.nuls.contract.service.ContractTxService;
+import io.nuls.core.tools.crypto.Hex;
 import io.nuls.core.tools.str.StringUtils;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Component;
@@ -77,7 +78,7 @@ public class ContractResource {
             return Result.getFailed(ContractErrorCode.NULL_PARAMETER);
         }
 
-        byte[] contractCodeBytes = Base64.getDecoder().decode(contractCode);
+        byte[] contractCodeBytes = Hex.decode(contractCode);
 
         return contractTxService.contractCreateTx(create.getSender(),
                 create.getGasLimit(),

@@ -25,6 +25,7 @@ package io.nuls.contract.entity.tx.processor;
 
 import io.nuls.contract.entity.tx.ContractTransferTransaction;
 import io.nuls.contract.entity.tx.CreateContractTransaction;
+import io.nuls.kernel.lite.annotation.Component;
 import io.nuls.kernel.model.Result;
 import io.nuls.kernel.model.Transaction;
 import io.nuls.kernel.processor.TransactionProcessor;
@@ -37,22 +38,20 @@ import java.util.List;
  * @author: PierreLuo
  * @date: 2018/6/7
  */
+@Component
 public class ContractTransferTxProcessor implements TransactionProcessor<ContractTransferTransaction> {
     @Override
     public Result onRollback(ContractTransferTransaction tx, Object secondaryData) {
-        //TODO pierre auto-generated method stub
-        return null;
+        return Result.getSuccess();
     }
 
     @Override
     public Result onCommit(ContractTransferTransaction tx, Object secondaryData) {
-        //TODO pierre auto-generated method stub
-        return null;
+        return Result.getSuccess();
     }
 
     @Override
     public ValidateResult conflictDetect(List<Transaction> txList) {
-        //TODO pierre 检查冲突???
         return ValidateResult.getSuccessResult();
     }
 }

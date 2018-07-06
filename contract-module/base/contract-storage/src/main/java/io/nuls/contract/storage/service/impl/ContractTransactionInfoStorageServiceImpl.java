@@ -32,6 +32,7 @@ import io.nuls.db.service.DBService;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.exception.NulsRuntimeException;
 import io.nuls.kernel.lite.annotation.Autowired;
+import io.nuls.kernel.lite.annotation.Component;
 import io.nuls.kernel.lite.annotation.Service;
 import io.nuls.kernel.lite.core.bean.InitializingBean;
 import io.nuls.kernel.model.Address;
@@ -48,7 +49,7 @@ import java.util.List;
  * @author: PierreLuo
  * @date: 2018/6/5
  */
-@Service
+@Component
 public class ContractTransactionInfoStorageServiceImpl implements ContractTransactionInfoStorageService, InitializingBean {
     @Autowired
     private DBService dbService;

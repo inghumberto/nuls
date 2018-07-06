@@ -51,6 +51,7 @@ import io.nuls.contract.entity.tx.CallContractTransaction;
 import io.nuls.contract.entity.tx.ContractTransferTransaction;
 import io.nuls.contract.entity.tx.CreateContractTransaction;
 import io.nuls.contract.service.ContractService;
+import io.nuls.core.tools.crypto.Hex;
 import io.nuls.core.tools.date.DateUtil;
 import io.nuls.core.tools.log.Log;
 import io.nuls.kernel.constant.TransactionErrorCode;
@@ -60,6 +61,7 @@ import io.nuls.kernel.func.TimeService;
 import io.nuls.kernel.model.*;
 import io.nuls.kernel.validate.ValidateResult;
 import io.nuls.ledger.service.LedgerService;
+import io.nuls.network.model.Node;
 import io.nuls.network.service.NetworkService;
 import io.nuls.protocol.cache.TemporaryCacheManager;
 import io.nuls.protocol.constant.ProtocolConstant;
@@ -389,9 +391,11 @@ public class ConsensusProcess {
 
             // 打包时发现智能合约交易就调用智能合约
             callContractResult = contractService.callContract(tx, height, stateRoot);
+            Log.info("=========================================doPacking stateRoot: " + Hex.encode(stateRoot));
             contractResult = callContractResult.getData();
             if(contractResult != null) {
                 stateRoot = contractResult.getStateRoot();
+                Log.info("=========================================doPacking result StateRoot: " + Hex.encode(stateRoot));
                 if(callContractResult.isSuccess()) {
                     transfers = contractResult.getTransfers();
                     contractEvents = contractResult.getEvents();
@@ -501,10 +505,15 @@ public class ConsensusProcess {
         addConsensusTx(bestBlock, packingTxList, self, round);
         bd.setTxList(packingTxList);
 
+
         Block newBlock = ConsensusTool.createBlock(bd, round.getLocalPacker());
 
         Log.info("make block height:" + newBlock.getHeader().getHeight() + ",txCount: " + newBlock.getTxs().size() + " , block size: " + newBlock.size() + " , time:" + DateUtil.convertDate(new Date(newBlock.getHeader().getTime())) + ",packEndTime:" +
                 DateUtil.convertDate(new Date(self.getPackEndTime())));
+
+        Log.info("=========================================newBlock height: " + newBlock.getHeader().getHeight()
+            + ", newBlock hash: " + newBlock.getHeader().getHash().getDigestHex()
+            + ", newBlock stateRoot: " + Hex.encode(newBlock.getHeader().getStateRoot()));
 
         return newBlock;
     }

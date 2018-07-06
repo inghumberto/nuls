@@ -42,6 +42,7 @@ import io.nuls.kernel.model.*;
 import io.nuls.kernel.utils.VarInt;
 import io.nuls.ledger.service.LedgerService;
 import io.nuls.protocol.service.TransactionService;
+import org.ehcache.core.spi.time.TimeSourceService;
 
 import java.io.IOException;
 import java.util.*;
@@ -91,6 +92,7 @@ public class CheckUnConfirmTxThread implements Runnable {
         Map<String, Coin> toMaps = new HashMap<>();
         Set<String> fromSet = new HashSet<>();
         for (Transaction tx : list) {
+            Log.info("========================================= tx: " + tx.toString());
             if (TimeService.currentTimeMillis() - tx.getTime() < 120000L) {
                 return;
             }

@@ -42,6 +42,7 @@ import io.nuls.kernel.constant.KernelErrorCode;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.exception.NulsRuntimeException;
 import io.nuls.kernel.lite.annotation.Autowired;
+import io.nuls.kernel.lite.annotation.Component;
 import io.nuls.kernel.lite.annotation.Service;
 import io.nuls.kernel.model.*;
 import io.nuls.kernel.utils.AddressTool;
@@ -57,7 +58,7 @@ import java.util.*;
  * @author: PierreLuo
  * @date: 2018/6/5
  */
-@Service
+@Component
 public class ContractUtxoServiceImpl implements ContractUtxoService {
 
     @Autowired
