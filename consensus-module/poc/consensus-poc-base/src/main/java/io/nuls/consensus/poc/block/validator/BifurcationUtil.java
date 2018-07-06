@@ -45,6 +45,7 @@ import io.nuls.kernel.model.CoinData;
 import io.nuls.kernel.model.NulsDigestData;
 import io.nuls.kernel.validate.NulsDataValidator;
 import io.nuls.kernel.validate.ValidateResult;
+import io.nuls.protocol.message.BlocksHashMessage;
 import io.nuls.protocol.service.BlockService;
 
 import java.io.IOException;
@@ -54,18 +55,23 @@ import java.util.List;
 /**
  * @author: Niels Wang
  */
-@Component
-public class BifurcationValidator implements NulsDataValidator<BlockHeader> {
+public class BifurcationUtil {
 
-    private static String CLASS_NAME = BifurcationValidator.class.getName();
+    private static final BifurcationUtil INSTANCE = new BifurcationUtil();
 
-    @Autowired
-    private BlockService blockService;
+    private static String CLASS_NAME = BifurcationUtil.class.getName();
 
-    @Autowired
-    private ConsensusService consensusService;
+    private BifurcationUtil() {
+    }
 
-    @Override
+    public static BifurcationUtil getInstance() {
+        return INSTANCE;
+    }
+
+    private BlockService blockService = NulsContext.getServiceBean(BlockService.class);
+
+    private ConsensusService consensusService = NulsContext.getServiceBean(ConsensusService.class);
+
     public ValidateResult validate(BlockHeader header) {
         ValidateResult result = ValidateResult.getSuccessResult();
         if (header.getHeight() == 0L) {

@@ -5,14 +5,14 @@
     <parent>
         <artifactId>contract-module</artifactId>
         <groupId>io.nuls</groupId>
-        <version>0.9.11</version>
+        <version>1.0.0</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.nuls.contract-module</groupId>
     <artifactId>contract-base</artifactId>
-    <version>0.9.11</version>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
     <name>contract-base</name>
 
@@ -21,37 +21,37 @@
         <dependency>
             <groupId>io.nuls.contract-module</groupId>
             <artifactId>contract</artifactId>
-            <version>0.9.11</version>
+            <version>1.0.0</version>
         </dependency>
 
         <dependency>
             <groupId>io.nuls.contract-module</groupId>
             <artifactId>contract-storage</artifactId>
-            <version>0.9.11</version>
+            <version>1.0.0</version>
         </dependency>
 
         <dependency>
             <groupId>io.nuls.contract-module</groupId>
             <artifactId>contract-tx</artifactId>
-            <version>0.9.11</version>
+            <version>1.0.0</version>
         </dependency>
 
         <dependency>
             <groupId>io.nuls.contract-module</groupId>
             <artifactId>contract-ledger</artifactId>
-            <version>0.9.11</version>
+            <version>1.0.0</version>
         </dependency>
 
         <dependency>
             <groupId>io.nuls.ledger-module</groupId>
             <artifactId>ledger</artifactId>
-            <version>0.9.11</version>
+            <version>1.0.0</version>
         </dependency>
 
         <dependency>
             <groupId>io.nuls.contract-module</groupId>
             <artifactId>contract-vm</artifactId>
-            <version>0.9.11</version>
+            <version>1.0.0</version>
         </dependency>
 
     </dependencies>

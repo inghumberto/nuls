@@ -495,6 +495,8 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
                     fee = TransactionFeeCalculator.getFee(size + changeCoin.size(), price);
                     if (values.isLessThan(amount.add(fee))) {
                         continue;
+                    } else {
+                        break;
                     }
                 }
             }
@@ -567,8 +569,8 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
             if (saveResult.isFailed()) {
                 return saveResult;
             }
-            transactionService.newTx(tx);
-            Result sendResult = transactionService.forwardTx(tx, null);
+//            transactionService.newTx(tx);
+            Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
                 this.rollbackTransaction(tx);
                 return sendResult;
@@ -599,7 +601,8 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
         CoinData coinData = new CoinData();
         Coin toCoin = new Coin(to, values);
         coinData.getTo().add(toCoin);
-        Na fee = getTxFee(from, values, tx.size(), price);
+        tx.setCoinData(coinData);
+        Na fee = getTxFee(from, values, tx.size() + P2PKHScriptSig.DEFAULT_SERIALIZE_LENGTH, price);
         Result result = Result.getSuccess().setData(fee);
         return result;
     }
