@@ -25,16 +25,11 @@
 
 package io.nuls.account.ledger.rpc;
 
-import io.nuls.core.tools.log.Log;
-import io.nuls.core.tools.str.StringUtils;
-
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import io.nuls.account.ledger.BaseTest;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TransferTest {
+public class TransferTest extends BaseTest {
 
     public static List<String> getAddressList() {
         List<String> list = new ArrayList<>();
@@ -144,7 +139,7 @@ public class TransferTest {
     private static int successCount = 0;
 
     public static void main(String[] args) {
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 50; i++) {
             doit();
         }
     }
@@ -153,7 +148,7 @@ public class TransferTest {
         List<String> addressList = getAddressList();
 
         for (String toAddress : addressList) {
-            String address = "6HgVwmpKaAbPaU1CVU51VFTJwPvyKUUn";
+            String address = "6HgaqsowQbVM8AXbHbssSAAHddeypwcc";
 //            String toAddress = "2Cg7BLHWBSxMhq3FpjR9BrkyxXp4m4j";
             long amount = 201800L;
             String password = "";
@@ -175,69 +170,4 @@ public class TransferTest {
 
     }
 
-    public static String post(String url, final String param, String encoding) {
-        StringBuffer sb = new StringBuffer();
-        OutputStream os = null;
-        InputStream is = null;
-        InputStreamReader isr = null;
-        BufferedReader br = null;
-        // 默认编码UTF-8
-        if (StringUtils.isNull(encoding)) {
-            encoding = "UTF-8";
-        }
-        try {
-            URL u = new URL(url);
-            HttpURLConnection connection = (HttpURLConnection) u.openConnection();
-            connection.setRequestProperty("Content-Type", "application/json");
-            connection.setDoOutput(true);
-            connection.setDoInput(true);
-            connection.setRequestMethod("POST");
-
-            connection.connect();
-
-            os = connection.getOutputStream();
-            os.write(param.getBytes(encoding));
-            os.flush();
-            is = connection.getInputStream();
-            isr = new InputStreamReader(is, encoding);
-            br = new BufferedReader(isr);
-            String line;
-            while ((line = br.readLine()) != null) {
-                sb.append(line);
-                sb.append("\n");
-            }
-        } catch (Exception ex) {
-            System.err.println(ex);
-        } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException e) {
-                    Log.error(e);
-                }
-            }
-            if (os != null) {
-                try {
-                    os.close();
-                } catch (IOException e) {
-                    Log.error(e);
-                }
-            }
-            if (isr != null) {
-                try {
-                    isr.close();
-                } catch (IOException e) {
-                    Log.error(e);
-                }
-            }
-            if (br != null) {
-                try {
-                    br.close();
-                } catch (IOException e) {
-                    Log.error(e);
-                }
-            }
-        }
-        return sb.toString();
-    }
 }
