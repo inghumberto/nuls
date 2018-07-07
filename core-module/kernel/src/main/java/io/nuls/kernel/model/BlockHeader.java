@@ -24,6 +24,7 @@
  */
 package io.nuls.kernel.model;
 
+import io.nuls.core.tools.crypto.Hex;
 import io.nuls.core.tools.log.Log;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.exception.NulsRuntimeException;
@@ -34,6 +35,7 @@ import io.nuls.kernel.utils.NulsOutputStreamBuffer;
 import io.nuls.kernel.utils.SerializeUtils;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * @author vivi
@@ -212,5 +214,22 @@ public class BlockHeader extends BaseNulsData {
 
     public void setStateRoot(byte[] stateRoot) {
         this.stateRoot = stateRoot;
+    }
+
+    @Override
+    public String toString() {
+        return "BlockHeader{" +
+                "hash=" + hash.getDigestHex() +
+                ", preHash=" + preHash.getDigestHex() +
+                ", merkleHash=" + merkleHash.getDigestHex() +
+                ", time=" + time +
+                ", height=" + height +
+                ", txCount=" + txCount +
+                ", scriptSign=" + scriptSign +
+                //", extend=" + Arrays.toString(extend) +
+                ", stateRoot=" + Hex.encode(stateRoot) +
+                ", size=" + size +
+                ", packingAddress=" + AddressTool.getStringAddressByBytes(packingAddress) +
+                '}';
     }
 }

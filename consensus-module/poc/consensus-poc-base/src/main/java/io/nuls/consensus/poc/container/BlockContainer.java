@@ -75,4 +75,13 @@ public class BlockContainer {
     public void setNode(Node node) {
         this.node = node;
     }
+
+    @Override
+    public String toString() {
+        return "BlockContainer{" +
+                "block=" + block +
+                ", node=" + node +
+                ", status=" + status +
+                '}';
+    }
 }

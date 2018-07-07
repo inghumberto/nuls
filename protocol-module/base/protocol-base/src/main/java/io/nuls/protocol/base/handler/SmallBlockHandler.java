@@ -126,8 +126,13 @@ public class SmallBlockHandler extends AbstractMessageHandler<SmallBlockMessage>
                 txMap.put(tx.getHash(), tx);
             }
         }
+        smallBlock.getTxHashList().stream().forEach(
+                a -> BlockLog.debug("=========================SmallBlock: " + a.getDigestHex())
+        );
+
 
         Block block = AssemblyBlockUtil.assemblyBlock(header, txMap, smallBlock.getTxHashList());
+        BlockLog.debug("=========================================SmallBlock make block: " + block.toString());
         consensusService.newBlock(block, fromNode);
     }
 }

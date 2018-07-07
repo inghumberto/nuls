@@ -36,6 +36,7 @@ import io.nuls.consensus.poc.process.RewardStatisticsProcess;
 import io.nuls.consensus.poc.provider.BlockQueueProvider;
 import io.nuls.consensus.poc.scheduler.ConsensusScheduler;
 import io.nuls.consensus.service.ConsensusService;
+import io.nuls.core.tools.log.BlockLog;
 import io.nuls.core.tools.log.Log;
 import io.nuls.kernel.constant.TransactionErrorCode;
 import io.nuls.kernel.context.NulsContext;
@@ -90,6 +91,7 @@ public class ConsensusPocServiceImpl implements ConsensusService {
     public Result newBlock(Block block, Node node) {
         BlockContainer blockContainer = new BlockContainer(block, node, BlockContainerStatus.RECEIVED);
         boolean success = blockQueueProvider.put(blockContainer);
+        BlockLog.debug("=========================================newBlock - success: " + success + ", blockContainer: " + blockContainer.toString());
         return new Result(success, null);
     }
 
