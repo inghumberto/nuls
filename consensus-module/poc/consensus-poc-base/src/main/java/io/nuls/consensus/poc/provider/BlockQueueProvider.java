@@ -93,18 +93,22 @@ public class BlockQueueProvider {
 
         //check can destory the download queue
         if (!downloadBlockQueueHasDestory) {
+            BlockLog.debug("=========================================111");
             blockContainer = downloadBlockQueue.poll();
         }
         checkDownloadService();
         boolean hasDownloadSuccess = downloadService.isDownloadSuccess().isSuccess();
         if (blockContainer == null && hasDownloadSuccess && !downloadBlockQueueHasDestory) {
+            BlockLog.debug("=========================================222");
             downloadBlockQueueHasDestory = true;
             if (blockContainer == null) {
                 blockContainer = blockQueue.poll();
             }
         } else if (hasDownloadSuccess && blockContainer == null) {
+            BlockLog.debug("=========================================333");
             blockContainer = blockQueue.poll();
         }
+        BlockLog.debug("=========================================444 blockContainer: " + blockContainer.toString());
         return blockContainer;
     }
 
