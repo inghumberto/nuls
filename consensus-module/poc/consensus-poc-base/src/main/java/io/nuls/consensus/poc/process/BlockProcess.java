@@ -124,7 +124,7 @@ public class BlockProcess {
      * @return boolean
      */
     public boolean addBlock(BlockContainer blockContainer) throws IOException {
-        Log.info("=========================================Begin to add Block." + System.currentTimeMillis());
+        Log.info("=========================================Begin to add Block. height: " + blockContainer.getBlock().getHeader().getHeight());
 
 //        long t = System.currentTimeMillis();
 
