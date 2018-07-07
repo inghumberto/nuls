@@ -229,7 +229,7 @@ public class BlockHeader extends BaseNulsData {
                 //", extend=" + Arrays.toString(extend) +
                 ", stateRoot=" + Hex.encode(stateRoot) +
                 ", size=" + size +
-                ", packingAddress=" + AddressTool.getStringAddressByBytes(packingAddress) +
+                ", packingAddress=" + (packingAddress == null ? packingAddress : AddressTool.getStringAddressByBytes(packingAddress)) +
                 '}';
     }
 }
