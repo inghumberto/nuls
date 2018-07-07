@@ -28,6 +28,7 @@ package io.nuls.consensus.poc.provider;
 
 import io.nuls.consensus.poc.constant.BlockContainerStatus;
 import io.nuls.consensus.poc.container.BlockContainer;
+import io.nuls.core.tools.log.BlockLog;
 import io.nuls.kernel.context.NulsContext;
 import io.nuls.protocol.service.DownloadService;
 
@@ -69,7 +70,7 @@ public class BlockQueueProvider {
                 status = BlockContainerStatus.DOWNLOADING;
             }
             blockContainer.setStatus(status);
-
+            BlockLog.debug("=========================================Before blockQueue offer blockContainer: " + blockContainer.toString());
             blockQueue.offer(blockContainer);
         } else {
             if (downloadBlockQueueHasDestory) {
