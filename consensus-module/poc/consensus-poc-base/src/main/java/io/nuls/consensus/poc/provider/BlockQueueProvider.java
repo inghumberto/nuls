@@ -108,7 +108,7 @@ public class BlockQueueProvider {
             BlockLog.debug("=========================================333");
             blockContainer = blockQueue.poll();
         }
-        BlockLog.debug("=========================================444 blockContainer: " + blockContainer.toString());
+        BlockLog.debug("=========================================444 blockContainer: " + (blockContainer == null ? blockContainer :blockContainer.toString()));
         return blockContainer;
     }
 
