@@ -103,7 +103,7 @@ public class AddressTool {
             Log.error(e);
             return false;
         }
-        if (NulsContext.DEFAULT_CHAIN_ID != chainId || NulsContext.DEFAULT_ADDRESS_TYPE != type) {
+        if (NulsContext.DEFAULT_CHAIN_ID != chainId) {
             return false;
         }
         try {

@@ -149,6 +149,7 @@ public class ConsensusProcess {
 
     private void packing(MeetingMember self, MeetingRound round) throws IOException, NulsException {
         Log.debug(round.toString());
+        Log.info("packing 入口==========================");
 
         boolean needCheckAgain = waitReceiveNewestBlock(self, round);
 

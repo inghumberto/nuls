@@ -245,8 +245,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             }
 
             // 广播交易
-            transactionService.newTx(tx);
-            Result sendResult = transactionService.forwardTx(tx, null);
+            Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
                 accountLedgerService.rollbackTransaction(tx);
                 return sendResult;
@@ -440,8 +439,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             }
 
             // 广播
-            transactionService.newTx(tx);
-            Result sendResult = transactionService.forwardTx(tx, null);
+            Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
                 // 失败则回滚
                 accountLedgerService.rollbackTransaction(tx);
@@ -546,8 +544,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
                 return saveResult;
             }
             // 广播交易
-            transactionService.newTx(tx);
-            Result sendResult = transactionService.forwardTx(tx, null);
+            Result sendResult = transactionService.broadcastTx(tx);
             if (sendResult.isFailed()) {
                 // 失败则回滚
                 accountLedgerService.rollbackTransaction(tx);
