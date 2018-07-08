@@ -75,6 +75,7 @@ public class ConsensusScheduler {
             initDatas();
             ConsensusStatusContext.setConsensusStatus(ConsensusStatus.WAIT_RUNNING);
         } catch (Exception e) {
+            Log.error("=========================================", e);
             Log.warn(e.getMessage());
         }
 
