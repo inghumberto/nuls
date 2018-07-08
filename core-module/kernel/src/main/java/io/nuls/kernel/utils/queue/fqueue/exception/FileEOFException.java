@@ -22,39 +22,34 @@
  * SOFTWARE.
  *
  */
-
-package io.nuls.protocol.base.download.tx;
-
-import io.nuls.kernel.model.NulsDigestData;
-import io.nuls.kernel.model.Transaction;
-import io.nuls.network.model.Node;
-
-import java.util.concurrent.Future;
+package io.nuls.kernel.utils.queue.fqueue.exception;
 
 /**
- * @author: Niels Wang
+ * @author opensource
  */
-public class TransactionContainer {
+public class FileEOFException extends Exception {
 
-    private final NulsDigestData txHash;
-    private final Node node;
-    private final Future<Transaction> future;
+    private static final long serialVersionUID = -1L;
 
-    public TransactionContainer(Node node, Future<Transaction> future, NulsDigestData hash) {
-        this.node = node;
-        this.future = future;
-        this.txHash = hash;
+    public FileEOFException() {
+        super();
     }
 
-    public Node getNode() {
-        return node;
+    public FileEOFException(String message) {
+        super(message);
     }
 
-    public Future<Transaction> getFuture() {
-        return future;
+    public FileEOFException(String message, Throwable cause) {
+        super(message, cause);
     }
 
-    public NulsDigestData getTxHash() {
-        return txHash;
+    public FileEOFException(Throwable cause) {
+        super(cause);
     }
+
+    @Override
+    public Throwable fillInStackTrace() {
+        return this;
+    }
+
 }

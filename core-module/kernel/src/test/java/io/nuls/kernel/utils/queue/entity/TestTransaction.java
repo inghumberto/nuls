@@ -23,38 +23,31 @@
  *
  */
 
-package io.nuls.protocol.base.download.smblock;
+package io.nuls.kernel.utils.queue.entity;
 
-import io.nuls.kernel.model.NulsDigestData;
-import io.nuls.network.model.Node;
-import io.nuls.protocol.model.SmallBlock;
-
-import java.util.concurrent.Future;
+import io.nuls.kernel.exception.NulsException;
+import io.nuls.kernel.model.Transaction;
+import io.nuls.kernel.model.TransactionLogicData;
+import io.nuls.kernel.utils.NulsByteBuffer;
 
 /**
  * @author: Niels Wang
+ * @date: 2018/7/8
  */
-public class SmallBlockContainer {
-
-    private final NulsDigestData blockHash;
-    private final Node node;
-    private final Future<SmallBlock> future;
-
-    public SmallBlockContainer(Node node, Future<SmallBlock> future, NulsDigestData hash) {
-        this.node = node;
-        this.future = future;
-        this.blockHash = hash;
+public class TestTransaction extends Transaction {
+    public TestTransaction( ) {
+        super(101);
     }
 
-    public Node getNode() {
-        return node;
+    @Override
+    protected TransactionLogicData parseTxData(NulsByteBuffer byteBuffer) throws NulsException {
+        // todo auto-generated method stub
+        return null;
     }
 
-    public Future<SmallBlock> getFuture() {
-        return future;
-    }
-
-    public NulsDigestData getBlockHash() {
-        return blockHash;
+    @Override
+    public String getInfo(byte[] address) {
+        // todo auto-generated method stub
+        return null;
     }
 }

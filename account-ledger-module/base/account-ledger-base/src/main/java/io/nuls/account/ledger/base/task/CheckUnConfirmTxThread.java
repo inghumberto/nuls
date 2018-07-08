@@ -39,10 +39,11 @@ import io.nuls.kernel.func.TimeService;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Component;
 import io.nuls.kernel.model.*;
+import io.nuls.kernel.utils.AddressTool;
 import io.nuls.kernel.utils.VarInt;
 import io.nuls.ledger.service.LedgerService;
 import io.nuls.protocol.service.TransactionService;
-import org.ehcache.core.spi.time.TimeSourceService;
+import io.nuls.protocol.utils.TransactionTimeComparator;
 
 import java.io.IOException;
 import java.util.*;
@@ -74,6 +75,8 @@ public class CheckUnConfirmTxThread implements Runnable {
     @Autowired
     private TransactionInfoService transactionInfoService;
 
+    private TransactionTimeComparator comparator = TransactionTimeComparator.getInstance();
+
     @Override
     public void run() {
         try {
@@ -91,13 +94,13 @@ public class CheckUnConfirmTxThread implements Runnable {
 
         Map<String, Coin> toMaps = new HashMap<>();
         Set<String> fromSet = new HashSet<>();
+        Collections.sort(list, this.comparator);
         for (Transaction tx : list) {
-            Log.info("========================================= tx: " + tx.toString());
-            if (TimeService.currentTimeMillis() - tx.getTime() < 120000L) {
-                return;
-            }
             Result result = verifyTransaction(tx, toMaps, fromSet);
             if (result.isSuccess()) {
+                if (TimeService.currentTimeMillis() - tx.getTime() < 300000L) {
+                    return;
+                }
                 result = reBroadcastTransaction(tx);
                 if (result.isFailed()) {
                     Log.info("reBroadcastTransaction tx error");
@@ -105,8 +108,9 @@ public class CheckUnConfirmTxThread implements Runnable {
             } else {
                 deleteUnconfirmedTransaction(tx);
                 List<byte[]> addresses = tx.getAllRelativeAddress();
+                Set<String> set = new HashSet<>();
                 for (byte[] address : addresses) {
-                    if (AccountLegerUtils.isLocalAccount(address)) {
+                    if (AccountLegerUtils.isLocalAccount(address) && set.add(AddressTool.getStringAddressByBytes(address))) {
                         balanceManager.refreshBalance(address);
                     }
                 }
@@ -158,7 +162,7 @@ public class CheckUnConfirmTxThread implements Runnable {
                         continue;
                     }
                     Coin fromCoinFromLedger = ledgerService.getUtxo(fromSource);
-                    if(fromCoinFromLedger == null || !fromCoinFromLedger.usable()){
+                    if (fromCoinFromLedger == null || !fromCoinFromLedger.usable()) {
                         continue;
                     }
                     fromList.add(new Entry<>(from.getOwner(), fromCoin.serialize()));
@@ -191,7 +195,7 @@ public class CheckUnConfirmTxThread implements Runnable {
 
 
     private Result reBroadcastTransaction(Transaction tx) {
-        Result sendResult = transactionService.forwardTx(tx, null);
+        Result sendResult = transactionService.forwardTxAndCacche(tx, null);
         if (sendResult.isFailed()) {
             return sendResult;
         }

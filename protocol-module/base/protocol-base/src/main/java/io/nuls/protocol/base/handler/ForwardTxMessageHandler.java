@@ -26,30 +26,20 @@ package io.nuls.protocol.base.handler;
 
 import io.nuls.kernel.model.NulsDigestData;
 import io.nuls.kernel.model.Result;
-import io.nuls.kernel.model.Transaction;
 import io.nuls.message.bus.handler.AbstractMessageHandler;
 import io.nuls.network.model.Node;
-import io.nuls.protocol.base.cache.ProtocolCacheHandler;
-import io.nuls.protocol.base.download.tx.TransactionContainer;
-import io.nuls.protocol.base.download.tx.TransactionDownloadProcessor;
+import io.nuls.protocol.base.cache.TransactionDuplicateRemoval;
 import io.nuls.protocol.cache.TemporaryCacheManager;
 import io.nuls.protocol.message.ForwardTxMessage;
 import io.nuls.protocol.message.GetTxMessage;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * @author facjas
  */
 public class ForwardTxMessageHandler extends AbstractMessageHandler<ForwardTxMessage> {
-
-    private TransactionDownloadProcessor txDownloadProcessor = TransactionDownloadProcessor.getInstance();
-    private TemporaryCacheManager cacheManager = TemporaryCacheManager.getInstance();
-
-    private Set<NulsDigestData> set = new HashSet<>();
-    private Set<NulsDigestData> tempSet = new HashSet<>();
 
     @Override
     public void onMessage(ForwardTxMessage message, Node fromNode) {
@@ -57,25 +47,15 @@ public class ForwardTxMessageHandler extends AbstractMessageHandler<ForwardTxMes
             return;
         }
         NulsDigestData hash = message.getMsgBody();
-        if (!set.add(hash)) {
+        boolean consains = TransactionDuplicateRemoval.FILTER.contains(hash.getDigestBytes());
+        if (consains) {
             return;
-        } else if (cacheManager.containsTx(hash)) {
-            return;
         }
-        tempSet.add(hash);
-        if (set.size() >= 100000) {
-            set.clear();
-            set.addAll(tempSet);
-            tempSet.clear();
-        }
-        if (tempSet.size() == 50000) {
-            tempSet.clear();
-        }
+        TransactionDuplicateRemoval.FILTER.insert(hash.getDigestBytes());
         GetTxMessage getTxMessage = new GetTxMessage();
         getTxMessage.setMsgBody(hash);
         Result result = messageBusService.sendToNode(getTxMessage, fromNode, true);
         if (result.isFailed()) {
-            set.remove(hash);
             return;
         }
     }

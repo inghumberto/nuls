@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingDeque;
 
 /**
  * @author: Niels Wang
@@ -40,26 +41,33 @@ public class LimitHashMap<K, V> {
     private final int maxSize;
     private Map<K, V> map = new ConcurrentHashMap<>();
 
-    private LinkedList<K> queue = new LinkedList<>();
+    private LinkedBlockingDeque<K> queue = new LinkedBlockingDeque<>();
 
     public LimitHashMap(int maxSize) {
         this.maxSize = maxSize;
     }
 
-    public void put(K k, V v) {
-        map.put(k, v);
+    public boolean put(K k, V v) {
+        V other = map.put(k, v);
+        if(other != null) {
+            return false;
+        }
         queue.offer(k);
         if (maxSize > queue.size()) {
-            return;
+            return true;
         }
-        int count = maxSize / 50;
+        int count = maxSize / 2;
         for (int i = 0; i < count; i++) {
             K key = queue.poll();
             if (null == key) {
-                return;
+                return true;
             }
             map.remove(key);
+            if (count % 100 == 0 && count > queue.size()) {
+                break;
+            }
         }
+        return true;
     }
 
     public void remove(K k) {
@@ -86,5 +94,13 @@ public class LimitHashMap<K, V> {
 
     public Collection<V> values() {
         return map.values();
+    }
+
+    public Map<K, V> getMap() {
+        return map;
+    }
+
+    public LinkedBlockingDeque<K> getQueue() {
+        return queue;
     }
 }

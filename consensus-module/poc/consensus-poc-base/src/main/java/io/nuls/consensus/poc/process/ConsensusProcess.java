@@ -31,7 +31,6 @@ import io.nuls.consensus.poc.constant.BlockContainerStatus;
 import io.nuls.consensus.poc.constant.ConsensusStatus;
 import io.nuls.consensus.poc.constant.PocConsensusConstant;
 import io.nuls.consensus.poc.container.BlockContainer;
-import io.nuls.consensus.poc.container.TxContainer;
 import io.nuls.consensus.poc.context.ConsensusStatusContext;
 import io.nuls.consensus.poc.manager.ChainManager;
 import io.nuls.consensus.poc.model.BlockData;
@@ -70,6 +69,7 @@ import io.nuls.protocol.model.tx.CoinBaseTransaction;
 import io.nuls.protocol.service.BlockService;
 import io.nuls.protocol.service.TransactionService;
 
+import javax.ws.rs.HEAD;
 import java.io.IOException;
 import java.util.*;
 
@@ -152,9 +152,9 @@ public class ConsensusProcess {
         Log.info("packing 入口==========================");
 
         boolean needCheckAgain = waitReceiveNewestBlock(self, round);
-
+        long start = System.currentTimeMillis();
         Block block = doPacking(self, round);
-
+        Log.info("doPacking use:" + (System.currentTimeMillis() - start) + "ms");
         if (needCheckAgain && hasReceiveNewestBlock(self, round)) {
             Block realBestBlock = chainManager.getBestBlock();
             if (null != realBestBlock) {
@@ -166,9 +166,11 @@ public class ConsensusProcess {
                     if (txHashList.contains(transaction.getHash())) {
                         continue;
                     }
-                    txMemoryPool.add(new TxContainer(transaction), false);
+                    txMemoryPool.add(transaction, false);
                 }
+                start = System.currentTimeMillis();
                 block = doPacking(self, round);
+                Log.info("doPacking2 use:" + (System.currentTimeMillis() - start) + "ms");
             }
         }
         if (null == block) {
@@ -331,16 +333,30 @@ public class ConsensusProcess {
         Map<String, Coin> contractUsedCoinMap = new HashMap<>();
         int txType;
 
+        int count = 0;
+        long start = 0;
+        long ledgerUse = 0;
+        long verifyUse = 0;
+        long outHashSetUse = 0;
+        long getTxUse = 0;
+        long sleepTIme = 0;
+        long whileTime = 0;
+        long startWhile = System.currentTimeMillis();
+        long sizeTime = 0;
+        long failed1Use = 0;
+        long addTime = 0;
         while (true) {
             isCorrectContractTransfer = true;
 
             if ((self.getPackEndTime() - TimeService.currentTimeMillis()) <= 500L) {
                 break;
             }
-            TxContainer txContainer = txMemoryPool.get();
-
-            if (txContainer == null) {
+            start = System.nanoTime();
+            Transaction tx = txMemoryPool.get();
+            getTxUse += (System.nanoTime() - start);
+            if (tx == null) {
                 try {
+                    sleepTIme += 100;
                     Thread.sleep(100L);
                 } catch (InterruptedException e) {
                     Log.error("packaging error ", e);
@@ -348,49 +364,48 @@ public class ConsensusProcess {
                 continue;
             }
 
-            Transaction tx = txContainer.getTx();
             txType = tx.getType();
 
+            start = System.nanoTime();
             long txSize = tx.size();
+            sizeTime += (System.nanoTime() - start);
             if ((totalSize + txSize) > ProtocolConstant.MAX_BLOCK_SIZE) {
-                txMemoryPool.addInFirst(txContainer, false);
+                txMemoryPool.addInFirst(tx, false);
                 break;
             }
-
+            count++;
+            start = System.nanoTime();
             Transaction repeatTx = ledgerService.getTx(tx.getHash());
-
+            ledgerUse += (System.nanoTime() - start);
             if (repeatTx != null) {
                 continue;
             }
 
             ValidateResult result = ValidateResult.getSuccessResult();
             if (!tx.isSystemTx()) {
+                start = System.nanoTime();
                 result = ledgerService.verifyCoinData(tx, toMaps, fromSet);
+                verifyUse += (System.nanoTime() - start);
             }
+            start = System.nanoTime();
             if (result.isFailed()) {
-
-                if (txContainer.getTx() == null || txContainer.getPackageCount() >= 2) {
+                if (tx == null) {
                     continue;
                 }
-
                 if (result.getErrorCode().equals(TransactionErrorCode.ORPHAN_TX)) {
-                    txMemoryPool.add(txContainer, true);
-                    txContainer.setPackageCount(txContainer.getPackageCount() + 1);
+                    txMemoryPool.add(tx, true);
                 }
-
-                Log.warn(result.getMsg());
-                try {
-                    Thread.sleep(1L);
-                } catch (InterruptedException e) {
-                    Log.error("packaging error ", e);
-                }
+                failed1Use += (System.nanoTime() - start);
                 continue;
             }
-
+            start = System.nanoTime();
             if (!outHashSet.add(tx.getHash())) {
+                outHashSetUse += (System.nanoTime() - start);
                 Log.warn("重复的交易");
                 continue;
             }
+            outHashSetUse += (System.nanoTime() - start);
+
 
             // 打包时发现智能合约交易就调用智能合约
             callContractResult = contractService.callContract(tx, height, stateRoot);
@@ -451,7 +466,7 @@ public class ConsensusProcess {
                             contractService.rollbackContractTempBalance(tx, contractResult);
 
                             contractService.rollbackContractTransferTxs(successContractTransferTxs, toMaps, fromSet, contractUsedCoinMap);
-                            txMemoryPool.addInFirst(txContainer, false);
+                            txMemoryPool.addInFirst(tx, false);
                             break;
                         }
                         totalSize += contractTransferTxTotalSize;
@@ -479,15 +494,23 @@ public class ConsensusProcess {
             }
 
             tx.setBlockHeight(bd.getHeight());
+            start = System.nanoTime();
             packingTxList.add(tx);
+            addTime += (System.nanoTime() - start);
 
             totalSize += txSize;
         }
         // 打包结束后移除临时余额区
         contractService.removeContractTempBalance();
 
+        whileTime = System.currentTimeMillis() - startWhile;
         ValidateResult validateResult = null;
+        int failedCount = 0;
+        long failedUse = 0;
+
+        start = System.nanoTime();
         while (null == validateResult || validateResult.isFailed()) {
+            failedCount++;
             validateResult = transactionService.conflictDetect(packingTxList);
             if (validateResult.isFailed()) {
                 if (validateResult.getData() instanceof Transaction) {
@@ -505,12 +528,17 @@ public class ConsensusProcess {
             }
         }
         // 组装CoinBase交易，另外合约调用退还剩余的Gas
+        failedUse = System.nanoTime() - start;
+
+        start = System.nanoTime();
         addConsensusTx(bestBlock, packingTxList, self, round);
+        long consensusTxUse = System.nanoTime() - start;
         bd.setTxList(packingTxList);
 
 
+        start = System.nanoTime();
         Block newBlock = ConsensusTool.createBlock(bd, round.getLocalPacker());
-
+        long createBlockUser = System.nanoTime() - start;
         Log.info("make block height:" + newBlock.getHeader().getHeight() + ",txCount: " + newBlock.getTxs().size() + " , block size: " + newBlock.size() + " , time:" + DateUtil.convertDate(new Date(newBlock.getHeader().getTime())) + ",packEndTime:" +
                 DateUtil.convertDate(new Date(self.getPackEndTime())));
 
@@ -518,6 +546,9 @@ public class ConsensusProcess {
             + ", newBlock hash: " + newBlock.getHeader().getHash().getDigestHex()
             + ", newBlock stateRoot: " + Hex.encode(newBlock.getHeader().getStateRoot()));
 
+        Log.info("\ncheck count:" + count + "\ngetTxUse:" + getTxUse / 1000000 + " ,\nledgerExistUse:" + ledgerUse / 1000000 + ", \nverifyUse:" + verifyUse / 1000000 + " ,\noutHashSetUse:" + outHashSetUse / 1000000 + " ,\nfailedTimes:" + failedCount + ", \nfailedUse:" + failedUse / 1000000
+                + " ,\nconsensusTx:" + consensusTxUse / 1000000 + ", \nblockUse:" + createBlockUser / 1000000 + ", \nsleepTIme:" + sleepTIme + ",\nwhileTime:" + whileTime
+                + ", \naddTime:" + addTime / 1000000 + " ,\nsizeTime:" + sizeTime / 1000000 + " ,\nfailed1Use:" + failed1Use / 1000000);
         return newBlock;
     }
 

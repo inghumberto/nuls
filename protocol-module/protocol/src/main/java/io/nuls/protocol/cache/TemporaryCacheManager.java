@@ -24,14 +24,10 @@
  */
 package io.nuls.protocol.cache;
 
-import io.nuls.cache.CacheMap;
 import io.nuls.cache.LimitHashMap;
 import io.nuls.kernel.model.NulsDigestData;
 import io.nuls.kernel.model.Transaction;
 import io.nuls.protocol.model.SmallBlock;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Used for sharing temporary data between multiple hander.
@@ -42,10 +38,11 @@ import java.util.Map;
 public class TemporaryCacheManager {
     private static final TemporaryCacheManager INSTANCE = new TemporaryCacheManager();
 
-    private CacheMap<NulsDigestData, SmallBlock> smallBlockCacheMap = new CacheMap<>("temp-small-block-cache", 16, NulsDigestData.class, SmallBlock.class, 1000, 0, null);
+    private LimitHashMap<NulsDigestData, SmallBlock> smallBlockCacheMap = new LimitHashMap<>(100);
+    private LimitHashMap<NulsDigestData, NulsDigestData> smallBlockHashCacheMap = new LimitHashMap<>(100);
 //    private CacheMap<NulsDigestData, Transaction> txCacheMap = new CacheMap<>("temp-tx-cache", 128, NulsDigestData.class, Transaction.class, 0, 3600);
 
-    private LimitHashMap<NulsDigestData, Transaction> txCacheMap = new LimitHashMap<>(200000);
+    private LimitHashMap<NulsDigestData, Transaction> txCacheMap = new LimitHashMap<>(100000);
 
     private TemporaryCacheManager() {
 
@@ -63,21 +60,28 @@ public class TemporaryCacheManager {
      */
     public void cacheSmallBlock(SmallBlock smallBlock) {
         smallBlockCacheMap.put(smallBlock.getHeader().getHash(), smallBlock);
-        smallBlockCacheMap.remove(smallBlock.getHeader().getPreHash());
+    }
+
+    public void cacheSmallBlockWithRequest(NulsDigestData requestHash, SmallBlock smallBlock) {
+        NulsDigestData blockHash = smallBlock.getHeader().getHash();
+        smallBlockHashCacheMap.put(requestHash, blockHash);
+        smallBlockCacheMap.put(blockHash, smallBlock);
     }
 
     /**
      * 根据区块hash获取完整的SmallBlock
      * get SmallBlock by block header digest data
      *
-     * @param hash blockHash
+     * @param requestHash getTxGroupRequestHash
      * @return SmallBlock
      */
-    public SmallBlock getSmallBlock(NulsDigestData hash) {
-        if (null == smallBlockCacheMap) {
-            return null;
-        }
-        return smallBlockCacheMap.get(hash);
+    public SmallBlock getSmallBlockByRequest(NulsDigestData requestHash) {
+
+        return getSmallBlockByHash(smallBlockHashCacheMap.get(requestHash));
+    }
+    public SmallBlock getSmallBlockByHash(NulsDigestData blockHash) {
+
+        return smallBlockCacheMap.get(blockHash);
     }
 
     /**
@@ -87,8 +91,8 @@ public class TemporaryCacheManager {
      *
      * @param tx transaction
      */
-    public void cacheTx(Transaction tx) {
-        txCacheMap.put(tx.getHash(), tx);
+    public boolean cacheTx(Transaction tx) {
+        return txCacheMap.put(tx.getHash(), tx);
     }
 
     /**
@@ -133,7 +137,7 @@ public class TemporaryCacheManager {
      * destroy cache
      */
     public void destroy() {
-        this.smallBlockCacheMap.destroy();
+        this.smallBlockCacheMap.clear();
         this.txCacheMap.clear();
     }
 

@@ -25,24 +25,22 @@
 package io.nuls.protocol.base.handler;
 
 import io.nuls.kernel.context.NulsContext;
-import io.nuls.kernel.func.TimeService;
+import io.nuls.kernel.model.NulsDigestData;
 import io.nuls.kernel.model.Transaction;
-import io.nuls.kernel.validate.ValidateResult;
 import io.nuls.message.bus.handler.AbstractMessageHandler;
 import io.nuls.network.model.Node;
-import io.nuls.protocol.base.cache.ProtocolCacheHandler;
-import io.nuls.protocol.cache.TemporaryCacheManager;
-import io.nuls.protocol.constant.MessageDataType;
+import io.nuls.protocol.base.cache.TransactionDuplicateRemoval;
 import io.nuls.protocol.message.TransactionMessage;
-import io.nuls.protocol.model.NotFound;
 import io.nuls.protocol.service.TransactionService;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author Niels
  */
 public class TransactionMessageHandler extends AbstractMessageHandler<TransactionMessage> {
 
-    private TemporaryCacheManager temporaryCacheManager = TemporaryCacheManager.getInstance();
     private TransactionService transactionService = NulsContext.getServiceBean(TransactionService.class);
 
     @Override
@@ -53,26 +51,15 @@ public class TransactionMessageHandler extends AbstractMessageHandler<Transactio
             return;
         }
         if (tx.isSystemTx()) {
-            NotFound notFound = new NotFound();
-            notFound.setHash(tx.getHash());
-            notFound.setType(MessageDataType.TRANSACTION);
-            ProtocolCacheHandler.notFound(notFound);
             return;
         }
-        ValidateResult result = tx.verify();
-        if (result.isFailed()) {
+        NulsDigestData hash = tx.getHash();
+        boolean consains = TransactionDuplicateRemoval.FILTER.contains(hash.getDigestBytes());
+        if (consains) {
             return;
         }
-
-        Transaction tempTx = temporaryCacheManager.getTx(tx.getHash());
-        if (tempTx == null) {
-            transactionService.newTx(tx);
-            if(TimeService.currentTimeMillis() - tx.getTime() < 300000L) {
-                transactionService.forwardTx(tx, fromNode);
-            }
-        } else {
-            transactionService.newTx(tx);
-        }
+        TransactionDuplicateRemoval.FILTER.insert(hash.getDigestBytes());
+        transactionService.newTx(tx);
     }
 
 }
