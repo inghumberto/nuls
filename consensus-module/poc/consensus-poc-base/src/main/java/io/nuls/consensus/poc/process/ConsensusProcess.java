@@ -215,7 +215,9 @@ public class ConsensusProcess {
         boolean hasReceiveNewestBlock = false;
 
         try {
+            int i=0;
             while (!hasReceiveNewestBlock) {
+                Log.info("=========================================waitReceiveNewestBlock: " + ++i);
                 hasReceiveNewestBlock = hasReceiveNewestBlock(self, round);
                 if (hasReceiveNewestBlock) {
                     break;
