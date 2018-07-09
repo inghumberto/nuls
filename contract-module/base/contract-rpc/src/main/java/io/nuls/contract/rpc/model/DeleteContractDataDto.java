@@ -21,31 +21,36 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package io.nuls.contract.constant;
+package io.nuls.contract.rpc.model;
 
-import io.nuls.kernel.constant.NulsConstant;
+import io.nuls.contract.entity.txdata.DeleteContractData;
+import io.nuls.kernel.utils.AddressTool;
 
-public interface ContractConstant extends NulsConstant {
+/**
+ * @author: PierreLuo
+ */
+public class DeleteContractDataDto {
+    private String sender;
+    private String contractAddress;
 
-    short MODULE_ID_CONTRACT = 10;
+    public DeleteContractDataDto(DeleteContractData delete) {
+        this.sender = AddressTool.getStringAddressByBytes(delete.getSender());
+        this.contractAddress = AddressTool.getStringAddressByBytes(delete.getContractAddress());
+    }
 
-    /**
-     * CONTRACT
-     */
-    int TX_TYPE_CREATE_CONTRACT = 100;
-    int TX_TYPE_CALL_CONTRACT = 101;
-    int TX_TYPE_DELETE_CONTRACT = 102;
+    public String getSender() {
+        return sender;
+    }
 
-    /**
-     * contract transfer
-     */
-    int TX_TYPE_CONTRACT_TRANSFER = 103;
+    public void setSender(String sender) {
+        this.sender = sender;
+    }
 
-    String BALANCE_TRIGGER_METHOD_NAME = "_payable";
-    String BALANCE_TRIGGER_METHOD_DESC = "()V";
+    public String getContractAddress() {
+        return contractAddress;
+    }
 
-    String CALL = "call";
-    String CREATE = "create";
-    String DELETE = "delete";
-
+    public void setContractAddress(String contractAddress) {
+        this.contractAddress = contractAddress;
+    }
 }

@@ -50,7 +50,7 @@ public class ContractResult {
     private byte[] stateRoot;
 
     /**
-     *
+     * 调用者向合约转入的资金
      */
     private long value;
 
@@ -88,6 +88,8 @@ public class ContractResult {
      * 消息事件
      */
     private List<String> events = new ArrayList<>();
+
+    private String remark;
 
 
     public byte[] getContractAddress() {
@@ -184,5 +186,13 @@ public class ContractResult {
 
     public void setValue(long value) {
         this.value = value;
+    }
+
+    public String getRemark() {
+        return remark;
+    }
+
+    public void setRemark(String remark) {
+        this.remark = remark;
     }
 }

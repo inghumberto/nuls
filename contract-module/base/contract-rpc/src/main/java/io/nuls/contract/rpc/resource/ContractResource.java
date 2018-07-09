@@ -30,9 +30,7 @@ import io.nuls.contract.helper.VMHelper;
 import io.nuls.contract.rpc.form.ContractCall;
 import io.nuls.contract.rpc.form.ContractCreate;
 import io.nuls.contract.rpc.form.ContractDelete;
-import io.nuls.contract.rpc.model.ContractAccountUtxoDto;
-import io.nuls.contract.rpc.model.ContractResultDto;
-import io.nuls.contract.rpc.model.ContractUtxoDto;
+import io.nuls.contract.rpc.model.*;
 import io.nuls.contract.service.ContractService;
 import io.nuls.contract.service.ContractTxService;
 import io.nuls.contract.storage.service.ContractAddressStorageService;
@@ -44,14 +42,21 @@ import io.nuls.core.tools.crypto.Hex;
 import io.nuls.core.tools.log.Log;
 import io.nuls.core.tools.str.StringUtils;
 import io.nuls.db.model.Entry;
+import io.nuls.kernel.constant.NulsConstant;
+import io.nuls.kernel.constant.TxStatusEnum;
 import io.nuls.kernel.context.NulsContext;
 import io.nuls.kernel.exception.NulsException;
+import io.nuls.kernel.exception.NulsRuntimeException;
+import io.nuls.kernel.func.TimeService;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Component;
 import io.nuls.kernel.lite.core.bean.InitializingBean;
 import io.nuls.kernel.model.*;
 import io.nuls.kernel.utils.AddressTool;
+import io.nuls.kernel.utils.VarInt;
 import io.nuls.ledger.constant.LedgerErrorCode;
+import io.nuls.ledger.service.LedgerService;
+import io.nuls.ledger.util.LedgerUtil;
 import io.swagger.annotations.*;
 
 import javax.ws.rs.*;
@@ -73,6 +78,9 @@ public class ContractResource implements InitializingBean {
 
     @Autowired
     private ContractService contractService;
+
+    @Autowired
+    private LedgerService ledgerService;
 
     @Autowired
     private ContractAddressStorageService contractAddressStorageService;
@@ -235,7 +243,7 @@ public class ContractResource implements InitializingBean {
 
 
     @GET
-    @Path("/tx/{hash}")
+    @Path("/result/{hash}")
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "获取智能合约执行结果")
     @ApiResponses(value = {
@@ -267,11 +275,154 @@ public class ContractResource implements InitializingBean {
                 contractResultDto.setNonce(contractExecuteResult.getNonce());
                 contractResultDto.setTransfers(contractExecuteResult.getTransfers());
                 contractResultDto.setEvents(contractExecuteResult.getEvents());
+                contractResultDto.setRemark(contractExecuteResult.getRemark());
             }
             return Result.getSuccess().setData(contractResultDto).toRpcClientResult();
         } catch (NulsException e) {
             return Result.getFailed().setData(e.getMessage()).toRpcClientResult();
         }
+    }
+
+    @GET
+    @Path("/tx/{hash}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "获取智能合约交易详情")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "success", response = ContractTransactionDto.class)
+    })
+    public RpcClientResult getContractTx(@ApiParam(name="hash", value="交易hash", required = true)
+                                          @PathParam("hash") String hash) {
+        if (StringUtils.isBlank(hash)) {
+            return Result.getFailed(LedgerErrorCode.NULL_PARAMETER).toRpcClientResult();
+        }
+        if (!NulsDigestData.validHash(hash)) {
+            return Result.getFailed(LedgerErrorCode.PARAMETER_ERROR).toRpcClientResult();
+        }
+
+        Result result = null;
+        try {
+            Transaction tx = ledgerService.getTx(NulsDigestData.fromDigestHex(hash));
+            if (tx == null) {
+                result = Result.getFailed(LedgerErrorCode.DATA_NOT_FOUND);
+            } else {
+                tx.setStatus(TxStatusEnum.CONFIRMED);
+                ContractTransactionDto txDto = null;
+                CoinData coinData = tx.getCoinData();
+                if(coinData != null) {
+                    // 组装from数据
+                    List<Coin> froms = coinData.getFrom();
+                    if(froms != null && froms.size() > 0) {
+                        byte[] fromHash, owner;
+                        int fromIndex;
+                        NulsDigestData fromHashObj;
+                        Transaction fromTx;
+                        Coin fromUtxo;
+                        for(Coin from : froms) {
+                            owner = from.getOwner();
+                            // owner拆分出txHash和index
+                            fromHash = LedgerUtil.getTxHashBytes(owner);
+                            fromIndex = LedgerUtil.getIndex(owner);
+                            // 查询from UTXO
+                            fromHashObj = new NulsDigestData();
+                            fromHashObj.parse(fromHash,0);
+                            fromTx = ledgerService.getTx(fromHashObj);
+                            fromUtxo = fromTx.getCoinData().getTo().get(fromIndex);
+                            from.setFrom(fromUtxo);
+                        }
+                    }
+                    txDto = new ContractTransactionDto(tx);
+                    List<OutputDto> outputDtoList = new ArrayList<>();
+                    // 组装to数据
+                    List<Coin> tos = coinData.getTo();
+                    if(tos != null && tos.size() > 0) {
+                        byte[] txHashBytes = tx.getHash().serialize();
+                        String txHash = hash;
+                        OutputDto outputDto = null;
+                        Coin to, temp;
+                        long bestHeight = NulsContext.getInstance().getBestHeight();
+                        long currentTime = TimeService.currentTimeMillis();
+                        long lockTime;
+                        for(int i = 0, length = tos.size(); i < length; i++) {
+                            to = tos.get(i);
+                            outputDto = new OutputDto(to);
+                            outputDto.setTxHash(txHash);
+                            outputDto.setIndex(i);
+                            temp = ledgerService.getUtxo(org.spongycastle.util.Arrays.concatenate(txHashBytes, new VarInt(i).encode()));
+                            if(temp == null) {
+                                // 已花费
+                                outputDto.setStatus(3);
+                            } else {
+                                lockTime = temp.getLockTime();
+                                if (lockTime < 0) {
+                                    // 共识锁定
+                                    outputDto.setStatus(2);
+                                } else if (lockTime == 0) {
+                                    // 正常未花费
+                                    outputDto.setStatus(0);
+                                } else if (lockTime > NulsConstant.BlOCKHEIGHT_TIME_DIVIDE) {
+                                    // 判定是否时间高度锁定
+                                    if (lockTime > currentTime) {
+                                        // 时间高度锁定
+                                        outputDto.setStatus(1);
+                                    } else {
+                                        // 正常未花费
+                                        outputDto.setStatus(0);
+                                    }
+                                } else {
+                                    // 判定是否区块高度锁定
+                                    if (lockTime > bestHeight) {
+                                        // 区块高度锁定
+                                        outputDto.setStatus(1);
+                                    } else {
+                                        // 正常未花费
+                                        outputDto.setStatus(0);
+                                    }
+                                }
+                            }
+                            outputDtoList.add(outputDto);
+                        }
+                    }
+                    txDto.setOutputs(outputDtoList);
+                    // 计算交易实际发生的金额
+                    calTransactionValue(txDto);
+                }
+                result = Result.getSuccess();
+                result.setData(txDto);
+            }
+        } catch (NulsRuntimeException e) {
+            Log.error(e);
+            result = Result.getFailed(e.getErrorCode());
+        } catch (Exception e) {
+            Log.error(e);
+            result = Result.getFailed(LedgerErrorCode.SYS_UNKOWN_EXCEPTION);
+        }
+        return result.toRpcClientResult();
+    }
+
+    /**
+     * 计算交易实际发生的金额
+     * Calculate the actual amount of the transaction.
+     *
+     * @param txDto
+     */
+    private void calTransactionValue(ContractTransactionDto txDto) {
+        if(txDto == null) {
+            return;
+        }
+        List<InputDto> inputDtoList = txDto.getInputs();
+        Set<String> inputAdressSet = new HashSet<>(inputDtoList.size());
+        for(InputDto inputDto : inputDtoList) {
+            inputAdressSet.add(inputDto.getAddress());
+        }
+        Na value = Na.ZERO;
+        List<OutputDto> outputDtoList = txDto.getOutputs();
+        for(OutputDto outputDto : outputDtoList) {
+            if(inputAdressSet.contains(outputDto.getAddress())) {
+                continue;
+            }
+            value = value.add(Na.valueOf(outputDto.getValue()));
+        }
+        txDto.setValue(value.getValue());
     }
 
 

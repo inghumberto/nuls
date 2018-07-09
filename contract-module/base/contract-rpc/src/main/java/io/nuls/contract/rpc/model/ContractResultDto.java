@@ -73,6 +73,9 @@ public class ContractResultDto {
     @ApiModelProperty(name = "hash", value = "交易的hash值")
     private List<String> events = null;
 
+    @ApiModelProperty(name = "remark", value = "备注")
+    private String remark;
+
     public String getContractAddress() {
         return contractAddress;
     }
@@ -167,5 +170,13 @@ public class ContractResultDto {
 
     public void setEvents(List<String> events) {
         this.events = events;
+    }
+
+    public String getRemark() {
+        return remark;
+    }
+
+    public void setRemark(String remark) {
+        this.remark = remark;
     }
 }
