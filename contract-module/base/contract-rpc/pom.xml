@@ -39,7 +39,7 @@
         </dependency>
         <dependency>
             <groupId>io.nuls.contract-module</groupId>
-            <artifactId>contract-tx</artifactId>
+            <artifactId>contract-base</artifactId>
             <version>1.0.0</version>
         </dependency>
     </dependencies>
