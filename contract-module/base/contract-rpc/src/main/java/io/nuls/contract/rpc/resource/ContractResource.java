@@ -64,12 +64,10 @@ import javax.ws.rs.core.MediaType;
 import java.util.*;
 
 /**
- * @desription:
  * @author: PierreLuo
- * @date: 2018/5/23
  */
-@Path("/contranct")
-@Api(value = "/contranct", description = "contranct")
+@Path("/contract")
+@Api(value = "/contract", description = "contract")
 @Component
 public class ContractResource implements InitializingBean {
 
