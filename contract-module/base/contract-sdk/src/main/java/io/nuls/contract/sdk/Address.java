@@ -19,10 +19,28 @@ public class Address {
         return value;
     }
 
+    /**
+     * 获取该地址的余额（只能获取合约地址余额）
+     *
+     * @return
+     */
     public native BigInteger balance();
 
+    /**
+     * 合约向该地址转账（不能转给合约地址）
+     *
+     * @param value 转账金额（多少Na）
+     */
     public native void transfer(BigInteger value);
 
+    /**
+     * 调用该地址的合约方法
+     *
+     * @param methodName 方法名
+     * @param methodDesc 方法签名
+     * @param args       参数
+     * @param value      附带的货币量（多少Na）
+     */
     public native void call(String methodName, String methodDesc, String[] args, BigInteger value);
 
     @Override

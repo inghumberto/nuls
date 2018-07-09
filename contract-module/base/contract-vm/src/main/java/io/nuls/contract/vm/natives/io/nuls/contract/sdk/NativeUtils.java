@@ -15,6 +15,9 @@ public class NativeUtils {
     public static Result run(MethodCode methodCode, MethodArgs methodArgs, Frame frame) {
         Result result = null;
         switch (methodCode.getName()) {
+            case "revert":
+                result = revert(methodCode, methodArgs, frame);
+                break;
             case "emit":
                 result = emit(methodCode, methodArgs, frame);
                 break;
@@ -28,6 +31,17 @@ public class NativeUtils {
                 frame.nonsupportMethod(methodCode);
                 break;
         }
+        return result;
+    }
+
+    private static Result revert(MethodCode methodCode, MethodArgs methodArgs, Frame frame) {
+        ObjectRef objectRef = (ObjectRef) methodArgs.getInvokeArgs()[0];
+        String errorMessage = null;
+        if (objectRef != null) {
+            errorMessage = frame.getHeap().toString(objectRef);
+        }
+        frame.getVm().revert(errorMessage);
+        Result result = NativeMethod.result(methodCode, null, frame);
         return result;
     }
 

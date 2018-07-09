@@ -196,4 +196,41 @@ public class ContractTest {
         }
     }
 
+    @Test
+    public void testTransfer() throws IOException {
+        ProgramCall programCall = new ProgramCall();
+        programCall.setContractAddress(ADDRESS.getBytes());
+        programCall.setSender(SENDER.getBytes());
+        programCall.setPrice(0);
+        programCall.setGasLimit(1000000);
+        programCall.setNumber(1);
+        programCall.setMethodName("transfer");
+        programCall.setMethodDesc("");
+        programCall.args(Hex.toHexString(BUYER.getBytes()), "-1000");
+        System.out.println(programCall);
+
+        byte[] prevStateRoot = Hex.decode("959c21fc0539d7a8df5da6ed705288f2c0c5b8bbda2bee8ae25a82cd541e061d");
+
+        ProgramExecutor track = programExecutor.begin(prevStateRoot);
+        ProgramResult programResult = track.call(programCall);
+        track.commit();
+
+        System.out.println(programResult);
+        System.out.println("pierre - stateRoot: " + Hex.toHexString(track.getRoot()));
+        System.out.println();
+
+        programCall.setMethodName("balanceOf");
+        programCall.setMethodDesc("");
+        programCall.args(Hex.toHexString(BUYER.getBytes()));
+        System.out.println(programCall);
+
+        track = programExecutor.begin(track.getRoot());
+        programResult = track.call(programCall);
+        track.commit();
+
+        System.out.println(programResult);
+        System.out.println("pierre - stateRoot: " + Hex.toHexString(track.getRoot()));
+        System.out.println();
+    }
+
 }

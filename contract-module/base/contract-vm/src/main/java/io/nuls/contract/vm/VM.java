@@ -66,6 +66,10 @@ public class VM {
 
     private long elapsedTime;
 
+    private boolean revert;
+
+    private String revertMessage;
+
     private List<ProgramTransfer> transfers = new ArrayList<>();
 
     private List<String> events = new ArrayList<>();
@@ -169,7 +173,7 @@ public class VM {
         if (this.startTime < 1) {
             this.startTime = System.currentTimeMillis();
         }
-        if (this.result.isError()) {
+        if (this.revert || this.result.isError()) {
             endTime();
             return;
         }
@@ -991,6 +995,10 @@ public class VM {
         return gas;
     }
 
+    public long getGasLeft() {
+        return gas - gasUsed;
+    }
+
     public long getStartTime() {
         return startTime;
     }
@@ -1021,6 +1029,19 @@ public class VM {
 
     public void setGasUsed(long gasUsed) {
         this.gasUsed = gasUsed;
+    }
+
+    public void revert(String message) {
+        this.revert = true;
+        this.revertMessage = message;
+    }
+
+    public boolean isRevert() {
+        return revert;
+    }
+
+    public String getRevertMessage() {
+        return revertMessage;
     }
 
 }

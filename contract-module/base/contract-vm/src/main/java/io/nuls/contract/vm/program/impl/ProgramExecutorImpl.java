@@ -149,6 +149,13 @@ public class ProgramExecutorImpl implements ProgramExecutor {
             vm.setProgramExecutor(this);
             vm.setGasUsed(programInvoke.getData() == null ? 0 : programInvoke.getData().length);
             vm.run(objectRef, methodCode, vmContext, programInvoke);
+
+            if (vm.isRevert()) {
+                programResult.error(vm.getRevertMessage());
+                programResult.setBalance(repository.getBalance(programInvoke.getAddress()));
+                return programResult;
+            }
+
             vm.getHeap().contractState();
 
             repository.increaseNonce(programInvoke.getAddress());

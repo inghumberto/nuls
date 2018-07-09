@@ -13,8 +13,8 @@ public class NativeMsg {
     public static Result run(MethodCode methodCode, MethodArgs methodArgs, Frame frame) {
         Result result = null;
         switch (methodCode.getName()) {
-            case "gas":
-                result = gas(methodCode, methodArgs, frame);
+            case "gasleft":
+                result = gasleft(methodCode, methodArgs, frame);
                 break;
             case "sender":
                 result = sender(methodCode, methodArgs, frame);
@@ -35,8 +35,8 @@ public class NativeMsg {
         return result;
     }
 
-    private static Result gas(MethodCode methodCode, MethodArgs methodArgs, Frame frame) {
-        Result result = NativeMethod.result(methodCode, frame.getVm().getProgramContext().getGas(), frame);
+    private static Result gasleft(MethodCode methodCode, MethodArgs methodArgs, Frame frame) {
+        Result result = NativeMethod.result(methodCode, frame.getVm().getGasLeft(), frame);
         return result;
     }
 
