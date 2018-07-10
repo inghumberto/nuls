@@ -62,11 +62,6 @@ public class ContractTransferTransaction extends Transaction {
         return false;
     }
 
-    @Override
-    public boolean isSystemTx() {
-        return true;
-    }
-
     public ContractTransfer getTransfer() {
         return transfer;
     }
