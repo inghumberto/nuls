@@ -457,11 +457,11 @@ public class ContractResource implements InitializingBean {
                 if (coin.getNa().equals(Na.ZERO)) {
                     continue;
                 }
-                list.add(new ContractUtxoDto(coin));
-                i++;
                 if(i >= limitValue) {
                     break;
                 }
+                i++;
+                list.add(new ContractUtxoDto(coin));
             }
             accountUtxoDto.setUtxoDtoList(list);
             result = Result.getSuccess().setData(accountUtxoDto);
