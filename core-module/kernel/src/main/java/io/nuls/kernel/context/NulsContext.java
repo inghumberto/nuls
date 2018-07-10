@@ -230,4 +230,17 @@ public class NulsContext {
         return null;
     }
 
+    /**
+     * 获取本地最新世界状态
+     * Get the latest local stateRoot.
+     *
+     * @return
+     */
+    public byte[] getBestStateRoot() {
+        if (bestBlock == null) {
+            bestBlock = getGenesisBlock();
+        }
+        return bestBlock.getHeader().getStateRoot();
+    }
+
 }

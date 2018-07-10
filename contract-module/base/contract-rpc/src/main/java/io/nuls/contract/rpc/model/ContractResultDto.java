@@ -1,18 +1,18 @@
-/*
+/**
  * MIT License
- *
+ * <p>
  * Copyright (c) 2017-2018 nuls.io
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,83 +20,67 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
+package io.nuls.contract.rpc.model;
 
-package io.nuls.contract.dto;
+import io.nuls.contract.dto.ContractTransfer;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ContractResult {
+/**
+ * @author: PierreLuo
+ */
+@ApiModel(value = "contractResultDtoJSON")
+public class ContractResultDto {
 
-    /**
-     * 合约地址
-     */
-    private byte[] contractAddress;
+    @ApiModelProperty(name = "contractAddress", value = "合约地址")
+    private String contractAddress;
 
-    /**
-     * 合约执行结果
-     */
+    @ApiModelProperty(name = "result", value = "合约执行结果")
     private String result;
-    /**
-     * 已使用Gas
-     */
-    private long gasUsed;
-    /**
-     * 状态根
-     */
-    private byte[] stateRoot;
 
-    /**
-     * 调用者向合约转入的资金
-     */
+    @ApiModelProperty(name = "gasUsed", value = "已使用Gas")
+    private long gasUsed;
+
+    @ApiModelProperty(name = "stateRoot", value = "状态根")
+    private String stateRoot;
+
+    @ApiModelProperty(name = "value", value = "交易附带的货币量")
     private long value;
 
-    /**
-     *
-     */
+    @ApiModelProperty(name = "error", value = "合约执行是否失败")
     private boolean error;
 
-    /**
-     *
-     */
+    @ApiModelProperty(name = "errorMessage", value = "执行失败信息")
     private String errorMessage;
 
-    /**
-     *
-     */
+    @ApiModelProperty(name = "stackTrace", value = "堆栈踪迹")
     private String stackTrace;
 
-    /**
-     *
-     */
+    @ApiModelProperty(name = "balance", value = "合约余额")
     private BigInteger balance;
 
-    /**
-     *
-     */
+    @ApiModelProperty(name = "nonce", value = "nonce")
     private BigInteger nonce;
 
-    /**
-     * 合约转账交易
-     */
-    private List<ContractTransfer> transfers = new ArrayList<>();
+    @ApiModelProperty(name = "transfers", value = "合约内部转账")
+    private List<ContractTransfer> transfers = null;
 
-    /**
-     * 消息事件
-     */
-    private List<String> events = new ArrayList<>();
+    @ApiModelProperty(name = "hash", value = "交易的hash值")
+    private List<String> events = null;
 
+    @ApiModelProperty(name = "remark", value = "备注")
     private String remark;
 
-
-    public byte[] getContractAddress() {
+    public String getContractAddress() {
         return contractAddress;
     }
 
-    public void setContractAddress(byte[] contractAddress) {
+    public void setContractAddress(String contractAddress) {
         this.contractAddress = contractAddress;
     }
 
@@ -108,14 +92,6 @@ public class ContractResult {
         this.result = result;
     }
 
-    public byte[] getStateRoot() {
-        return stateRoot;
-    }
-
-    public void setStateRoot(byte[] stateRoot) {
-        this.stateRoot = stateRoot;
-    }
-
     public long getGasUsed() {
         return gasUsed;
     }
@@ -124,20 +100,20 @@ public class ContractResult {
         this.gasUsed = gasUsed;
     }
 
-    public List<String> getEvents() {
-        return events;
+    public String getStateRoot() {
+        return stateRoot;
     }
 
-    public void setEvents(List<String> events) {
-        this.events = events;
+    public void setStateRoot(String stateRoot) {
+        this.stateRoot = stateRoot;
     }
 
-    public List<ContractTransfer> getTransfers() {
-        return transfers;
+    public long getValue() {
+        return value;
     }
 
-    public void setTransfers(List<ContractTransfer> transfers) {
-        this.transfers = transfers;
+    public void setValue(long value) {
+        this.value = value;
     }
 
     public boolean isError() {
@@ -180,12 +156,20 @@ public class ContractResult {
         this.nonce = nonce;
     }
 
-    public long getValue() {
-        return value;
+    public List<ContractTransfer> getTransfers() {
+        return transfers;
     }
 
-    public void setValue(long value) {
-        this.value = value;
+    public void setTransfers(List<ContractTransfer> transfers) {
+        this.transfers = transfers;
+    }
+
+    public List<String> getEvents() {
+        return events;
+    }
+
+    public void setEvents(List<String> events) {
+        this.events = events;
     }
 
     public String getRemark() {

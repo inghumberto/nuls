@@ -24,8 +24,10 @@
 package io.nuls.contract.module.impl;
 
 
+import io.nuls.contract.entity.tx.CallContractTransaction;
 import io.nuls.contract.module.AbstractContractModule;
 import io.nuls.core.tools.log.Log;
+import io.nuls.kernel.utils.TransactionManager;
 
 /**
  * @Desription:
@@ -40,7 +42,7 @@ public class ContractModuleBootstrap extends AbstractContractModule {
     @Override
     public void init() {
         Log.debug("contract init");
-        //TODO do something or not
+        TransactionManager.putTx(CallContractTransaction.class, null);
     }
 
     /**

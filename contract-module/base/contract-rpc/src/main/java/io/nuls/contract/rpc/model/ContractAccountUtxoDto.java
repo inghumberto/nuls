@@ -21,31 +21,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package io.nuls.contract.constant;
+package io.nuls.contract.rpc.model;
 
-import io.nuls.kernel.constant.NulsConstant;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
-public interface ContractConstant extends NulsConstant {
+import java.util.List;
 
-    short MODULE_ID_CONTRACT = 10;
+/**
+ * @author: PierreLuo
+ */
+@ApiModel(value = "AccountUtxoDtoJSON")
+public class ContractAccountUtxoDto {
 
-    /**
-     * CONTRACT
-     */
-    int TX_TYPE_CREATE_CONTRACT = 100;
-    int TX_TYPE_CALL_CONTRACT = 101;
-    int TX_TYPE_DELETE_CONTRACT = 102;
+    @ApiModelProperty(name = "utxoDtoList", value = "未花费金额")
+    private List<ContractUtxoDto> utxoDtoList;
 
-    /**
-     * contract transfer
-     */
-    int TX_TYPE_CONTRACT_TRANSFER = 103;
+    public List<ContractUtxoDto> getUtxoDtoList() {
+        return utxoDtoList;
+    }
 
-    String BALANCE_TRIGGER_METHOD_NAME = "_payable";
-    String BALANCE_TRIGGER_METHOD_DESC = "()V";
-
-    String CALL = "call";
-    String CREATE = "create";
-    String DELETE = "delete";
-
+    public void setUtxoDtoList(List<ContractUtxoDto> utxoDtoList) {
+        this.utxoDtoList = utxoDtoList;
+    }
 }

@@ -164,6 +164,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
                 contractResult.setGasUsed(programResult.getGasUsed());
                 contractResult.setStateRoot(stateRoot);
                 contractResult.setContractAddress(contractAddress);
+                contractResult.setRemark(ContractConstant.CREATE);
                 result.setMsg(programResult.getErrorMessage());
                 result.setData(contractResult);
                 return result;
@@ -178,6 +179,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             contractResult.setEvents(programResult.getEvents());
             contractResult.setTransfers(generateContractTransfer(programResult.getTransfers()));
             contractResult.setContractAddress(contractAddress);
+            contractResult.setRemark(ContractConstant.CREATE);
 
             Result<ContractResult> result = Result.getSuccess();
             result.setData(contractResult);
@@ -248,6 +250,8 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
                 contractResult.setGasUsed(programResult.getGasUsed());
                 contractResult.setStateRoot(stateRoot);
                 contractResult.setContractAddress(contractAddress);
+                contractResult.setValue(programCall.getValue().longValue());
+                contractResult.setRemark(ContractConstant.CALL);
                 result.setMsg(programResult.getErrorMessage());
                 result.setData(contractResult);
                 return result;
@@ -263,6 +267,8 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             contractResult.setEvents(programResult.getEvents());
             contractResult.setTransfers(generateContractTransfer(programResult.getTransfers()));
             contractResult.setContractAddress(contractAddress);
+            contractResult.setValue(programCall.getValue().longValue());
+            contractResult.setRemark(ContractConstant.CALL);
 
             Result<ContractResult> result = Result.getSuccess();
             result.setData(contractResult);
@@ -306,6 +312,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
                 contractResult.setGasUsed(programResult.getGasUsed());
                 contractResult.setStateRoot(stateRoot);
                 contractResult.setContractAddress(contractAddress);
+                contractResult.setRemark(ContractConstant.DELETE);
                 result.setMsg(programResult.getErrorMessage());
                 result.setData(contractResult);
                 return result;
@@ -317,6 +324,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             contractResult.setNonce(programResult.getNonce());
             contractResult.setStateRoot(stateRoot);
             contractResult.setContractAddress(contractAddress);
+            contractResult.setRemark(ContractConstant.DELETE);
 
             Result<ContractResult> result = Result.getSuccess();
             result.setData(contractResult);
