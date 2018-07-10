@@ -106,7 +106,6 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
      * @param sender          交易创建者
      * @param gasLimit        最大gas消耗
      * @param price           执行合约单价
-     * @param contractAddress 合约地址
      * @param contractCode    合约代码
      * @param args            参数列表
      * @param password        账户密码

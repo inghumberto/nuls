@@ -70,16 +70,26 @@ public class ContractBalanceManager {
 
     private Map<String, ContractBalance> balanceMap = new ConcurrentHashMap<>();
 
-    private Map<String, ContractBalance> tempBalanceMap;
+    private volatile Map<String, ContractBalance> tempBalanceMap;
 
     private Lock lock = new ReentrantLock();
 
     public Map<String, ContractBalance> getTempBalanceMap() {
-        return tempBalanceMap;
+        lock.lock();
+        try {
+            return tempBalanceMap;
+        } finally {
+            lock.unlock();
+        }
     }
 
     public void setTempBalanceMap(Map<String, ContractBalance> tempBalanceMap) {
-        this.tempBalanceMap = tempBalanceMap;
+        lock.lock();
+        try {
+            this.tempBalanceMap = tempBalanceMap;
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -195,6 +205,7 @@ public class ContractBalanceManager {
                     }
                 }
             } else {
+                balance = balanceMap.get(addressKey);
                 if (balance == null) {
                     balance = new ContractBalance();
                     balanceMap.put(addressKey, balance);
@@ -229,8 +240,6 @@ public class ContractBalanceManager {
 
     /**
      * 刷新余额
-     *
-     * @param address
      */
     public void refreshBalance(List<Entry<byte[], byte[]>> addUtxoList, List<Entry<byte[], byte[]>> deleteUtxoList) {
         lock.lock();
