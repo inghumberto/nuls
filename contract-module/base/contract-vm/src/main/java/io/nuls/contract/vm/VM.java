@@ -68,7 +68,9 @@ public class VM {
 
     private boolean revert;
 
-    private String revertMessage;
+    private boolean error;
+
+    private String errorMessage;
 
     private List<ProgramTransfer> transfers = new ArrayList<>();
 
@@ -173,7 +175,7 @@ public class VM {
         if (this.startTime < 1) {
             this.startTime = System.currentTimeMillis();
         }
-        if (this.revert || this.result.isError()) {
+        if (this.error || this.revert || this.result.isError()) {
             endTime();
             return;
         }
@@ -183,7 +185,7 @@ public class VM {
             while (frame.getCurrentInsnNode() != null && !frame.getResult().isEnded()) {
                 step(frame);
                 frame.step();
-                if (this.result.isError()) {
+                if (this.error || this.revert || this.result.isError()) {
                     endTime();
                     return;
                 }
@@ -225,7 +227,8 @@ public class VM {
 
         int gasCost = gasCost(frame, opCode);
         if (0 < this.gas && this.gas < (this.gasUsed + gasCost)) {
-            throw new RuntimeException(String.format("not enough gas for '%s' cause spending: invokeGas[%d], gas[%d], usedGas[%d]", opCode, gasCost, this.gas, this.gasUsed));
+            error(String.format("not enough gas for '%s' cause spending: invokeGas[%d], gas[%d], usedGas[%d]", opCode, gasCost, this.gas, this.gasUsed));
+            return;
         }
         this.gasUsed += gasCost;
 
@@ -1031,17 +1034,26 @@ public class VM {
         this.gasUsed = gasUsed;
     }
 
-    public void revert(String message) {
+    public void revert(String errorMessage) {
         this.revert = true;
-        this.revertMessage = message;
+        this.errorMessage = errorMessage;
+    }
+
+    public void error(String errorMessage) {
+        this.error = true;
+        this.errorMessage = errorMessage;
     }
 
     public boolean isRevert() {
         return revert;
     }
 
-    public String getRevertMessage() {
-        return revertMessage;
+    public boolean isError() {
+        return error;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
     }
 
 }

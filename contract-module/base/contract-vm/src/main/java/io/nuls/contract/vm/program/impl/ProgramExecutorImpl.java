@@ -100,7 +100,7 @@ public class ProgramExecutorImpl implements ProgramExecutor {
         Set<ConstraintViolation<ProgramInvoke>> constraintViolations = Validators.validate(programInvoke);
         if (!constraintViolations.isEmpty()) {
             String message = Validators.message(constraintViolations);
-            return programResult.error(message);
+            return programResult.revert(message);
         }
 
         try {
@@ -115,10 +115,10 @@ public class ProgramExecutorImpl implements ProgramExecutor {
                 newContract = true;
             } else {
                 if ("<init>".equals(programInvoke.getMethodName())) {
-                    return programResult.error("can't invoke <init> method");
+                    return programResult.revert("can't invoke <init> method");
                 }
                 if (accountState.getNonce().compareTo(BigInteger.ZERO) <= 0) {
-                    return programResult.error("contract has been stopped");
+                    return programResult.revert("contract has been stopped");
                 }
                 byte[] codes = repository.getCode(programInvoke.getAddress());
                 classCodes = ClassCodeLoader.loadJar(codes);
@@ -130,13 +130,13 @@ public class ProgramExecutorImpl implements ProgramExecutor {
             MethodCode methodCode = vm.getMethodArea().loadMethod(contractClassCode.getName(), programInvoke.getMethodName(), programInvoke.getMethodDesc());
 
             if (methodCode == null) {
-                return programResult.error(String.format("can't find method %s.%s", programInvoke.getMethodName(), programInvoke.getMethodDesc()));
+                return programResult.revert(String.format("can't find method %s.%s", programInvoke.getMethodName(), programInvoke.getMethodDesc()));
             }
             if (!methodCode.isPublic()) {
-                return programResult.error("can only invoke public method");
+                return programResult.revert("can only invoke public method");
             }
             if (methodCode.getArgsVariableType().size() != programInvoke.getArgs().length) {
-                return programResult.error("method args error");
+                return programResult.revert("method args error");
             }
 
             ObjectRef objectRef;
@@ -151,9 +151,7 @@ public class ProgramExecutorImpl implements ProgramExecutor {
             vm.run(objectRef, methodCode, vmContext, programInvoke);
 
             if (vm.isRevert()) {
-                programResult.error(vm.getRevertMessage());
-                programResult.setBalance(repository.getBalance(programInvoke.getAddress()));
-                return programResult;
+                return programResult.revert(vm.getErrorMessage());
             }
 
             vm.getHeap().contractState();
@@ -174,6 +172,10 @@ public class ProgramExecutorImpl implements ProgramExecutor {
             }
             programResult.setBalance(repository.getBalance(programInvoke.getAddress()));
 
+            if (vm.isError()) {
+                return programResult.error(vm.getErrorMessage());
+            }
+
             Object resultValue = vm.getResult().getValue();
             if (resultValue != null) {
                 if (resultValue instanceof ObjectRef) {
@@ -193,7 +195,7 @@ public class ProgramExecutorImpl implements ProgramExecutor {
             }
         } catch (Exception e) {
             log.error("", e);
-            return programResult.error(e.getMessage());
+            return programResult.revert(e.getMessage());
         }
 
         return programResult;
