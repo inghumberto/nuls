@@ -47,6 +47,10 @@ public class ProgramResult {
     public ProgramResult() {
     }
 
+    public boolean isSuccess() {
+        return !error && !revert;
+    }
+
     public long getGasUsed() {
         return gasUsed;
     }
