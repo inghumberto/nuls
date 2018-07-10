@@ -664,7 +664,6 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
         }
     }
 
-    /*****************************************************************************/
 
     @Override
     public Result<ContractResult> invokeContract(Transaction tx, long height, byte[] stateRoot) {
@@ -672,11 +671,17 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             return Result.getFailed(KernelErrorCode.PARAMETER_ERROR);
         }
         int txType = tx.getType();
+        // 打包、验证区块，合约只执行一次
+        ContractResult contractExecutedResult = getContractExecuteResult(tx.getHash());
+        if(contractExecutedResult != null) {
+            return Result.getSuccess().setData(contractExecutedResult);
+        }
+
         if (txType == ContractConstant.TX_TYPE_CREATE_CONTRACT) {
             CreateContractTransaction createContractTransaction = (CreateContractTransaction) tx;
             CreateContractData createContractData = createContractTransaction.getTxData();
-            Result<ContractResult> contractResult = createContract(height, stateRoot, createContractData);
-            return contractResult;
+            Result<ContractResult> result = createContract(height, stateRoot, createContractData);
+            return result;
         } else if(txType == ContractConstant.TX_TYPE_CALL_CONTRACT) {
             CallContractTransaction callContractTransaction = (CallContractTransaction) tx;
             CallContractData callContractData = callContractTransaction.getTxData();
@@ -707,8 +712,8 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
         } else if(txType == ContractConstant.TX_TYPE_DELETE_CONTRACT) {
             DeleteContractTransaction deleteContractTransaction = (DeleteContractTransaction) tx;
             DeleteContractData deleteContractData = deleteContractTransaction.getTxData();
-            Result<ContractResult> contractResult = deleteContract(height, stateRoot, deleteContractData);
-            return contractResult;
+            Result<ContractResult> result = deleteContract(height, stateRoot, deleteContractData);
+            return result;
         } else {
             return Result.getSuccess();
         }

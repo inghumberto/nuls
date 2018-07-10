@@ -456,7 +456,7 @@ public class ConsensusProcess {
 
                         // 如果合约内部转账出现错误，跳过整笔合约交易
                         if(!isCorrectContractTransfer) {
-                            // 清除临时余额
+                            // 回滚临时余额
                             contractService.rollbackContractTempBalance(tx, contractResult);
                             Log.warn(result.getMsg());
                             continue;
@@ -464,9 +464,10 @@ public class ConsensusProcess {
 
                         // 整笔合约交易的大小 = 合约交易的大小 + 合约内部产生的转账交易的大小
                         if ((totalSize + contractTransferTxTotalSize + txSize) > ProtocolConstant.MAX_BLOCK_SIZE) {
-                            // 清除临时余额
+                            // 回滚整笔交易的临时余额
                             contractService.rollbackContractTempBalance(tx, contractResult);
 
+                            // 回滚内部转账交易
                             contractService.rollbackContractTransferTxs(successContractTransferTxs, toMaps, fromSet, contractUsedCoinMap);
                             txMemoryPool.addInFirst(tx, false);
                             break;
