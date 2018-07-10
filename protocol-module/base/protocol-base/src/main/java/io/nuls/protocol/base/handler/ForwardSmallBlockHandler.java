@@ -30,12 +30,9 @@ import io.nuls.kernel.model.Result;
 import io.nuls.message.bus.handler.AbstractMessageHandler;
 import io.nuls.message.bus.service.MessageBusService;
 import io.nuls.network.model.Node;
-import io.nuls.protocol.base.cache.SmallBlockDuplicateRemoval;
+import io.nuls.protocol.utils.SmallBlockDuplicateRemoval;
 import io.nuls.protocol.message.ForwardSmallBlockMessage;
 import io.nuls.protocol.message.GetSmallBlockMessage;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * @author facjas
@@ -50,9 +47,12 @@ public class ForwardSmallBlockHandler extends AbstractMessageHandler<ForwardSmal
             return;
         }
         NulsDigestData hash = message.getMsgBody();
+//        System.out.println("接收到转发：" + hash + ", node:" + fromNode.getId());
         if (!SmallBlockDuplicateRemoval.needDownloadSmallBlock(hash)) {
+//            System.out.println("丢弃转发：" + hash + ", node:" + fromNode.getId());
             return;
         }
+        System.out.println("请求区块：" + hash + ", node:" + fromNode.getId());
         GetSmallBlockMessage getSmallBlockMessage = new GetSmallBlockMessage();
         getSmallBlockMessage.setMsgBody(hash);
         Result result = messageBusService.sendToNode(getSmallBlockMessage, fromNode, true);

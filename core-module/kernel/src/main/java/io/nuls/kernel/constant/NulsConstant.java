@@ -34,7 +34,7 @@ import io.nuls.kernel.utils.AddressTool;
  */
 public interface NulsConstant {
 
-    byte[] BLACK_HOLE_ADDRESS = AddressTool.getAddress("NsdxH6CwiJDrcTbfnTjaK9MyU1Q9uiRK");
+    byte[] BLACK_HOLE_ADDRESS = AddressTool.getAddress("Nse5FeeiYk1opxdc5RqYpEWkiUDGNuLs");
 
     /**
      * 系统配置文件名称
