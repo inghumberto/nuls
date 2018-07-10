@@ -33,6 +33,10 @@ public class ProgramExecutorImpl implements ProgramExecutor {
 
     private Repository repository;
 
+    private byte[] prevStateRoot;
+
+    private boolean revert;
+
     public ProgramExecutorImpl(VMContext vmContext, DBService dbService) {
         this(vmContext, new KeyValueSource(dbService), null);
     }
@@ -45,6 +49,7 @@ public class ProgramExecutorImpl implements ProgramExecutor {
 
     @Override
     public ProgramExecutor begin(byte[] prevStateRoot) {
+        this.prevStateRoot = prevStateRoot;
         Repository repository = new RepositoryRoot(keyValueSource, prevStateRoot);
         return new ProgramExecutorImpl(vmContext, keyValueSource, repository);
     }
@@ -57,12 +62,18 @@ public class ProgramExecutorImpl implements ProgramExecutor {
 
     @Override
     public void commit() {
-        repository.commit();
+        if (!revert) {
+            repository.commit();
+        }
     }
 
     @Override
     public byte[] getRoot() {
-        return repository.getRoot();
+        if (!revert) {
+            return repository.getRoot();
+        } else {
+            return this.prevStateRoot;
+        }
     }
 
     @Override
@@ -100,7 +111,7 @@ public class ProgramExecutorImpl implements ProgramExecutor {
         Set<ConstraintViolation<ProgramInvoke>> constraintViolations = Validators.validate(programInvoke);
         if (!constraintViolations.isEmpty()) {
             String message = Validators.message(constraintViolations);
-            return programResult.revert(message);
+            return revert(programResult, message);
         }
 
         try {
@@ -115,10 +126,10 @@ public class ProgramExecutorImpl implements ProgramExecutor {
                 newContract = true;
             } else {
                 if ("<init>".equals(programInvoke.getMethodName())) {
-                    return programResult.revert("can't invoke <init> method");
+                    return revert(programResult, "can't invoke <init> method");
                 }
                 if (accountState.getNonce().compareTo(BigInteger.ZERO) <= 0) {
-                    return programResult.revert("contract has been stopped");
+                    return revert(programResult, "contract has been stopped");
                 }
                 byte[] codes = repository.getCode(programInvoke.getAddress());
                 classCodes = ClassCodeLoader.loadJar(codes);
@@ -130,13 +141,13 @@ public class ProgramExecutorImpl implements ProgramExecutor {
             MethodCode methodCode = vm.getMethodArea().loadMethod(contractClassCode.getName(), programInvoke.getMethodName(), programInvoke.getMethodDesc());
 
             if (methodCode == null) {
-                return programResult.revert(String.format("can't find method %s.%s", programInvoke.getMethodName(), programInvoke.getMethodDesc()));
+                return revert(programResult, String.format("can't find method %s.%s", programInvoke.getMethodName(), programInvoke.getMethodDesc()));
             }
             if (!methodCode.isPublic()) {
-                return programResult.revert("can only invoke public method");
+                return revert(programResult, "can only invoke public method");
             }
             if (methodCode.getArgsVariableType().size() != programInvoke.getArgs().length) {
-                return programResult.revert("method args error");
+                return revert(programResult, "method args error");
             }
 
             ObjectRef objectRef;
@@ -151,7 +162,7 @@ public class ProgramExecutorImpl implements ProgramExecutor {
             vm.run(objectRef, methodCode, vmContext, programInvoke);
 
             if (vm.isRevert()) {
-                return programResult.revert(vm.getErrorMessage());
+                return revert(programResult, vm.getErrorMessage());
             }
 
             vm.getHeap().contractState();
@@ -195,10 +206,15 @@ public class ProgramExecutorImpl implements ProgramExecutor {
             }
         } catch (Exception e) {
             log.error("", e);
-            return programResult.revert(e.getMessage());
+            return revert(programResult, e.getMessage());
         }
 
         return programResult;
+    }
+
+    private ProgramResult revert(ProgramResult programResult, String errorMessage) {
+        this.revert = true;
+        return programResult.revert(errorMessage);
     }
 
     @Override
@@ -206,9 +222,9 @@ public class ProgramExecutorImpl implements ProgramExecutor {
         ProgramResult programResult = new ProgramResult();
         AccountState accountState = repository.getAccountState(address);
         if (accountState == null) {
-            return programResult.revert("can't find contract");
+            return revert(programResult, "can't find contract");
         } else if (!FastByteComparisons.equal(sender, accountState.getOwner())) {
-            return programResult.revert("only the owner can stop the contract");
+            return revert(programResult, "only the owner can stop the contract");
         } else {
             repository.setNonce(address, BigInteger.ZERO);
         }
