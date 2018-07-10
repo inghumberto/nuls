@@ -206,9 +206,9 @@ public class ProgramExecutorImpl implements ProgramExecutor {
         ProgramResult programResult = new ProgramResult();
         AccountState accountState = repository.getAccountState(address);
         if (accountState == null) {
-            return programResult.error("can't find contract");
+            return programResult.revert("can't find contract");
         } else if (!FastByteComparisons.equal(sender, accountState.getOwner())) {
-            return programResult.error("only the creator can stop the contract");
+            return programResult.revert("only the owner can stop the contract");
         } else {
             repository.setNonce(address, BigInteger.ZERO);
         }
