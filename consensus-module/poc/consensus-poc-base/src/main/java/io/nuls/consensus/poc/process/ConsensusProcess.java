@@ -343,6 +343,8 @@ public class ConsensusProcess {
         long sizeTime = 0;
         long failed1Use = 0;
         long addTime = 0;
+        // 为本次打包区块增加一个合约的临时余额区，用于记录本次合约地址余额的变化
+        contractService.createContractTempBalance();
         while (true) {
             isCorrectContractTransfer = true;
 
@@ -406,7 +408,7 @@ public class ConsensusProcess {
 
 
             // 打包时发现智能合约交易就调用智能合约
-            callContractResult = contractService.callContract(tx, height, stateRoot);
+            callContractResult = contractService.invokeContract(tx, height, stateRoot);
             Log.info("=========================================doPacking stateRoot: " + Hex.encode(stateRoot));
             contractResult = callContractResult.getData();
             if(contractResult != null) {

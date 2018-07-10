@@ -70,26 +70,17 @@ public class ContractBalanceManager {
 
     private Map<String, ContractBalance> balanceMap = new ConcurrentHashMap<>();
 
-    private volatile Map<String, ContractBalance> tempBalanceMap;
-
     private Lock lock = new ReentrantLock();
 
-    public Map<String, ContractBalance> getTempBalanceMap() {
-        lock.lock();
-        try {
-            return tempBalanceMap;
-        } finally {
-            lock.unlock();
-        }
+    private ThreadLocal<Map<String, ContractBalance>> tempBalanceMapManager = new ThreadLocal<>();
+
+    public void createTempBalanceMap() {
+        tempBalanceMapManager.remove();
+        tempBalanceMapManager.set(new ConcurrentHashMap<>());
     }
 
-    public void setTempBalanceMap(Map<String, ContractBalance> tempBalanceMap) {
-        lock.lock();
-        try {
-            this.tempBalanceMap = tempBalanceMap;
-        } finally {
-            lock.unlock();
-        }
+    public void removeTempBalanceMap() {
+        tempBalanceMapManager.remove();
     }
 
     /**
@@ -194,6 +185,7 @@ public class ContractBalanceManager {
             String addressKey = asString(address);
             ContractBalance balance = null;
             // 打包或验证区块前创建一个临时余额区，实时更新余额，打包完或验证区块后移除
+            Map<String, ContractBalance> tempBalanceMap = tempBalanceMapManager.get();
             if(tempBalanceMap != null) {
                 balance = tempBalanceMap.get(addressKey);
                 if(balance == null) {
@@ -219,6 +211,7 @@ public class ContractBalanceManager {
     }
 
     public void addTempBalance(byte[] address, long amount) {
+        Map<String, ContractBalance> tempBalanceMap = tempBalanceMapManager.get();
         String addressKey = asString(address);
         ContractBalance contractBalance = tempBalanceMap.get(addressKey);
 
@@ -228,6 +221,7 @@ public class ContractBalanceManager {
     }
 
     public void minusTempBalance(byte[] address, long amount) {
+        Map<String, ContractBalance> tempBalanceMap = tempBalanceMapManager.get();
         String addressKey = asString(address);
         ContractBalance contractBalance = tempBalanceMap.get(addressKey);
 
@@ -316,4 +310,5 @@ public class ContractBalanceManager {
         }
         return coinList;
     }
+
 }

@@ -338,18 +338,6 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
     }
 
     @Override
-    public Result<Object> getContractInfo(String address) {
-        //TODO pierre auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Result<Object> getVmStatus() {
-        //TODO pierre auto-generated method stub
-        return null;
-    }
-
-    @Override
     public boolean isContractAddress(byte[] addressBytes) {
         return ContractLedgerUtil.isContractAddress(addressBytes);
     }
@@ -676,7 +664,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
     /*****************************************************************************/
 
     @Override
-    public Result<ContractResult> callContract(Transaction tx, long height, byte[] stateRoot) {
+    public Result<ContractResult> invokeContract(Transaction tx, long height, byte[] stateRoot) {
         if(tx == null || height < 0 || stateRoot == null) {
             return Result.getFailed(KernelErrorCode.PARAMETER_ERROR);
         }
@@ -687,11 +675,6 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             Result<ContractResult> contractResult = createContract(height, stateRoot, createContractData);
             return contractResult;
         } else if(txType == ContractConstant.TX_TYPE_CALL_CONTRACT) {
-            // 调用合约方法时，才有可能发生合约地址的余额变化
-            if(contractBalanceManager.getTempBalanceMap() == null) {
-                contractBalanceManager.setTempBalanceMap(new ConcurrentHashMap<>());
-            }
-
             CallContractTransaction callContractTransaction = (CallContractTransaction) tx;
             CallContractData callContractData = callContractTransaction.getTxData();
             Result<ContractResult> result = callContract(height, stateRoot, callContractData);
@@ -752,8 +735,13 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
     }
 
     @Override
+    public void createContractTempBalance() {
+        contractBalanceManager.createTempBalanceMap();
+    }
+
+    @Override
     public void removeContractTempBalance() {
-        contractBalanceManager.setTempBalanceMap(null);
+        contractBalanceManager.removeTempBalanceMap();
     }
 
     @Override

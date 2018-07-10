@@ -230,6 +230,9 @@ public class BlockProcess {
                     Map<String, Coin> contractUsedCoinMap = new HashMap<>();
                     int txType;
 
+
+                    // 为本次验证区块增加一个合约的临时余额区，用于记录本次合约地址余额的变化
+                    contractService.createContractTempBalance();
                     for (Transaction tx : txs) {
                         if (tx.isSystemTx()) {
                             continue;
@@ -248,7 +251,7 @@ public class BlockProcess {
                         }
 
                         // 验证区块时发现智能合约交易就调用智能合约
-                        callContractResult = contractService.callContract(tx, bestHeight, stateRoot);
+                        callContractResult = contractService.invokeContract(tx, bestHeight, stateRoot);
                         Log.info("=========================================verifyBlock StateRoot: " + Hex.encode(stateRoot));
                         contractResult = callContractResult.getData();
                         if(contractResult != null) {
@@ -316,9 +319,9 @@ public class BlockProcess {
                         }
 
                     }
+                    // 验证区块交易结束后移除临时余额区
+                    contractService.removeContractTempBalance();
                     if(contractResult != null) {
-                        // 验证区块交易结束后移除临时余额区
-                        contractService.removeContractTempBalance();
 
                         // 验证世界状态根
                         if(!Arrays.equals(receiveStateRoot, stateRoot)) {
@@ -393,6 +396,9 @@ public class BlockProcess {
                 } while (false);
             } catch (Exception e) {
                 Log.error("save block error : " + e.getMessage(), e);
+            } finally {
+                // 验证区块交易结束后移除临时余额区
+                contractService.removeContractTempBalance();
             }
             if (success) {
                 long t = System.currentTimeMillis();

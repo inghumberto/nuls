@@ -62,16 +62,6 @@ public interface ContractService {
      */
     //Result<ContractResult> deleteContract(long number, byte[] prevStateRoot, DeleteContractData delete);
 
-    /**
-     * @param address
-     * @return
-     */
-    Result<Object> getContractInfo(String address);
-
-    /**
-     * @return
-     */
-    Result<Object> getVmStatus();
 
     boolean isContractAddress(byte[] addressBytes);
 
@@ -162,13 +152,18 @@ public interface ContractService {
      * @param stateRoot
      * @return
      */
-    Result<ContractResult> callContract(Transaction tx, long height, byte[] stateRoot);
+    Result<ContractResult> invokeContract(Transaction tx, long height, byte[] stateRoot);
 
     /**
      * @param tx
      * @param contractResult
      */
     void rollbackContractTempBalance(Transaction tx, ContractResult contractResult);
+
+    /**
+     *
+     */
+    void createContractTempBalance();
 
     /**
      *
