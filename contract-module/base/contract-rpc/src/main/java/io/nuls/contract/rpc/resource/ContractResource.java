@@ -38,8 +38,10 @@ import io.nuls.contract.storage.service.ContractUtxoStorageService;
 import io.nuls.contract.util.ContractCoinComparator;
 import io.nuls.contract.vm.program.ProgramExecutor;
 import io.nuls.contract.vm.program.ProgramMethod;
+import io.nuls.contract.vm.program.ProgramStatus;
 import io.nuls.core.tools.crypto.Hex;
 import io.nuls.core.tools.log.Log;
+import io.nuls.core.tools.map.MapUtil;
 import io.nuls.core.tools.str.StringUtils;
 import io.nuls.db.model.Entry;
 import io.nuls.kernel.constant.NulsConstant;
@@ -230,15 +232,16 @@ public class ContractResource implements InitializingBean {
         byte[] contractAddressBytes = AddressTool.getAddress(contractAddress);
 
         ProgramExecutor track = programExecutor.begin(prevStateRoot);
+        ProgramStatus status = track.status(contractAddressBytes);
         List<ProgramMethod> methods = track.method(contractAddressBytes);
 
-        for (ProgramMethod method : methods) {
-            Log.info(method.toString());
-        }
+        Map<String, Object> resultMap = MapUtil.createHashMap(3);
+        resultMap.put("address", contractAddress);
+        resultMap.put("status", status.name());
+        resultMap.put("method", methods);
 
-        return Result.getSuccess().setData(methods).toRpcClientResult();
+        return Result.getSuccess().setData(resultMap).toRpcClientResult();
     }
-
 
     @GET
     @Path("/result/{hash}")
@@ -448,10 +451,9 @@ public class ContractResource implements InitializingBean {
             List<ContractUtxoDto> list = new LinkedList<>();
             int i = 0;
             for (Coin coin : coinList) {
-                //TODO pierre 测试时注释
-                /*if (!coin.usable()) {
+                if (!coin.usable()) {
                     continue;
-                }*/
+                }
                 if (coin.getNa().equals(Na.ZERO)) {
                     continue;
                 }
@@ -496,10 +498,9 @@ public class ContractResource implements InitializingBean {
             List<ContractUtxoDto> list = new LinkedList<>();
             Na values = Na.ZERO;
             for (Coin coin : coinList) {
-                //TODO pierre 测试时注释
-                /*if (!coin.usable()) {
+                if (!coin.usable()) {
                     continue;
-                }*/
+                }
                 if (coin.getNa().equals(Na.ZERO)) {
                     continue;
                 }
