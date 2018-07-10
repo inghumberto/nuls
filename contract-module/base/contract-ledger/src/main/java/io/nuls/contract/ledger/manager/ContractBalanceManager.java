@@ -188,12 +188,16 @@ public class ContractBalanceManager {
             Map<String, ContractBalance> tempBalanceMap = tempBalanceMapManager.get();
             if(tempBalanceMap != null) {
                 balance = tempBalanceMap.get(addressKey);
+                // 临时余额区没有余额，则从真实余额中取值
                 if(balance == null) {
                     balance = balanceMap.get(addressKey);
+                    // 真实余额区也没有值时，初始化真实余额区和临时余额区
                     if (balance == null) {
-                        balance = new ContractBalance();
-                        balanceMap.put(addressKey, balance);
-                        tempBalanceMap.put(addressKey, balance);
+                        balanceMap.put(addressKey, new ContractBalance());
+                        tempBalanceMap.put(addressKey, new ContractBalance());
+                    } else {
+                        // 真实余额区有值时，深度复制这个值到临时余额区，避免真实余额被临时余额所影响
+                        tempBalanceMap.put(addressKey, depthClone(balance));
                     }
                 }
             } else {
@@ -208,6 +212,15 @@ public class ContractBalanceManager {
         } finally {
             lock.unlock();
         }
+    }
+
+    private ContractBalance depthClone(ContractBalance contractBalance) {
+        if(contractBalance == null) {
+            return null;
+        }
+        ContractBalance result = new ContractBalance(Na.valueOf(contractBalance.getUsable().getValue()),
+                Na.valueOf(contractBalance.getLocked().getValue()));
+        return result;
     }
 
     public void addTempBalance(byte[] address, long amount) {
@@ -259,7 +272,6 @@ public class ContractBalanceManager {
                     if (coin.usable()) {
                         balance.addUsable(coin.getNa());
                     } else {
-                        //TODO pierre 合约地址的金额不会存在锁定金额，因为金额都是转账转入，锁定有两种，一种是共识锁定，一种是高度锁定，这两种情况都不会发生在合约地址上
                         balance.addLocked(coin.getNa());
                     }
                 }

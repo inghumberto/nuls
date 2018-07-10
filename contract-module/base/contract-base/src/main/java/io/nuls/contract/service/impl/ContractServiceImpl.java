@@ -624,6 +624,9 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
                 if (!coin.usable()) {
                     continue;
                 }
+                if (coin.getNa().equals(Na.ZERO)) {
+                    continue;
+                }
                 // for contract, 使用过的UTXO不能再使用
                 if(StringUtils.isNotBlank(coin.getKey())) {
                     if(contractUsedCoinMap.containsKey(coin.getKey())) {
