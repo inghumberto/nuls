@@ -24,9 +24,12 @@
 package io.nuls.contract.module.impl;
 
 
+import io.nuls.consensus.constant.ConsensusConstant;
 import io.nuls.contract.entity.tx.CallContractTransaction;
+import io.nuls.contract.ledger.manager.ContractBalanceManager;
 import io.nuls.contract.module.AbstractContractModule;
 import io.nuls.core.tools.log.Log;
+import io.nuls.kernel.context.NulsContext;
 import io.nuls.kernel.utils.TransactionManager;
 
 /**
@@ -51,7 +54,9 @@ public class ContractModuleBootstrap extends AbstractContractModule {
     @Override
     public void start() {
         Log.debug("contract start");
-        //TODO do something or not
+        this.waitForDependencyRunning(ConsensusConstant.MODULE_ID_CONSENSUS);
+        ContractBalanceManager balanceManager = NulsContext.getServiceBean(ContractBalanceManager.class);
+        balanceManager.initContractBalance();
     }
 
     @Override

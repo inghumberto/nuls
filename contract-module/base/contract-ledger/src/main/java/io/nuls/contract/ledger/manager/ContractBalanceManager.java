@@ -39,6 +39,7 @@ import io.nuls.db.service.BatchOperation;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Component;
+import io.nuls.kernel.lite.core.bean.InitializingBean;
 import io.nuls.kernel.model.Address;
 import io.nuls.kernel.model.Coin;
 import io.nuls.kernel.model.Na;
@@ -68,7 +69,7 @@ public class ContractBalanceManager {
     @Autowired
     private AccountService accountService;
 
-    private Map<String, ContractBalance> balanceMap = new ConcurrentHashMap<>();
+    private Map<String, ContractBalance> balanceMap;
 
     private Lock lock = new ReentrantLock();
 
@@ -87,7 +88,7 @@ public class ContractBalanceManager {
      * 初始化缓存本地所有合约账户的余额信息
      */
     public void initContractBalance() {
-        balanceMap.clear();
+        balanceMap = new ConcurrentHashMap<>();
         List<Coin> coinList = new ArrayList<>();
         List<Entry<byte[], byte[]>> rawList = contractUtxoStorageService.loadAllCoinList();
         Coin coin;
@@ -193,11 +194,12 @@ public class ContractBalanceManager {
                     balance = balanceMap.get(addressKey);
                     // 真实余额区也没有值时，初始化真实余额区和临时余额区
                     if (balance == null) {
-                        balanceMap.put(addressKey, new ContractBalance());
-                        tempBalanceMap.put(addressKey, new ContractBalance());
+                        balance = new ContractBalance();
+                        tempBalanceMap.put(addressKey, balance);
                     } else {
                         // 真实余额区有值时，深度复制这个值到临时余额区，避免真实余额被临时余额所影响
-                        tempBalanceMap.put(addressKey, depthClone(balance));
+                        balance = depthClone(balance);
+                        tempBalanceMap.put(addressKey, balance);
                     }
                 }
             } else {

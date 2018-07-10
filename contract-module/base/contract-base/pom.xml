@@ -54,6 +54,12 @@
             <version>1.0.0</version>
         </dependency>
 
+        <dependency>
+            <groupId>io.nuls.consensus-module</groupId>
+            <artifactId>consensus</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
     </dependencies>
 
     <build>
