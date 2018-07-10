@@ -38,26 +38,26 @@ public class ProgramExecutorImpl implements ProgramExecutor {
     private boolean revert;
 
     public ProgramExecutorImpl(VMContext vmContext, DBService dbService) {
-        this(vmContext, new KeyValueSource(dbService), null);
+        this(vmContext, new KeyValueSource(dbService), null, null);
     }
 
-    private ProgramExecutorImpl(VMContext vmContext, KeyValueSource keyValueSource, Repository repository) {
+    private ProgramExecutorImpl(VMContext vmContext, KeyValueSource keyValueSource, Repository repository, byte[] prevStateRoot) {
         this.vmContext = vmContext;
         this.keyValueSource = keyValueSource;
         this.repository = repository;
+        this.prevStateRoot = prevStateRoot;
     }
 
     @Override
     public ProgramExecutor begin(byte[] prevStateRoot) {
-        this.prevStateRoot = prevStateRoot;
         Repository repository = new RepositoryRoot(keyValueSource, prevStateRoot);
-        return new ProgramExecutorImpl(vmContext, keyValueSource, repository);
+        return new ProgramExecutorImpl(vmContext, keyValueSource, repository, prevStateRoot);
     }
 
     @Override
     public ProgramExecutor startTracking() {
         Repository track = repository.startTracking();
-        return new ProgramExecutorImpl(vmContext, keyValueSource, track);
+        return new ProgramExecutorImpl(vmContext, keyValueSource, track, null);
     }
 
     @Override
@@ -223,12 +223,32 @@ public class ProgramExecutorImpl implements ProgramExecutor {
         AccountState accountState = repository.getAccountState(address);
         if (accountState == null) {
             return revert(programResult, "can't find contract");
-        } else if (!FastByteComparisons.equal(sender, accountState.getOwner())) {
-            return revert(programResult, "only the owner can stop the contract");
-        } else {
-            repository.setNonce(address, BigInteger.ZERO);
         }
+        if (!FastByteComparisons.equal(sender, accountState.getOwner())) {
+            return revert(programResult, "only the owner can stop the contract");
+        }
+        if (BigInteger.ZERO.compareTo(accountState.getBalance()) != 0) {
+            return revert(programResult, "contract balance is not zero");
+        }
+
+        repository.setNonce(address, BigInteger.ZERO);
+
         return programResult;
+    }
+
+    @Override
+    public ProgramStatus status(byte[] address) {
+        AccountState accountState = repository.getAccountState(address);
+        if (accountState == null) {
+            return ProgramStatus.not_found;
+        } else {
+            BigInteger nonce = repository.getNonce(address);
+            if (BigInteger.ZERO.compareTo(nonce) == 0) {
+                return ProgramStatus.stop;
+            } else {
+                return ProgramStatus.normal;
+            }
+        }
     }
 
     @Override

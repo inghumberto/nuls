@@ -137,6 +137,20 @@ public class ContractTest {
     }
 
     @Test
+    public void testStatus() throws IOException {
+        byte[] prevStateRoot = Hex.decode("08cf9c62806d73378bf64f03ea401fbbd08a318ec580d2bfc4c45641b0921a9e");
+        byte[] address = ADDRESS.getBytes();
+        byte[] sender = SENDER.getBytes();
+
+        ProgramExecutor track = programExecutor.begin(prevStateRoot);
+        ProgramStatus programStatus = track.status(address);
+
+        System.out.println(programStatus);
+        System.out.println("stateRoot: " + Hex.toHexString(track.getRoot()));
+        System.out.println();
+    }
+
+    @Test
     public void testTransactions() {
         List<ProgramCall> transactions = new ArrayList<>();
 

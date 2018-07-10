@@ -20,4 +20,6 @@ public interface ProgramExecutor {
 
     List<ProgramMethod> method(byte[] address);
 
+    ProgramStatus status(byte[] address);
+
 }
