@@ -269,7 +269,7 @@ public class ContractResource implements InitializingBean {
                 contractResultDto.setGasUsed(contractExecuteResult.getGasUsed());
                 contractResultDto.setStateRoot(Hex.encode(contractExecuteResult.getStateRoot()));
                 contractResultDto.setValue(contractExecuteResult.getValue());
-                contractResultDto.setError(contractExecuteResult.isError());
+                contractResultDto.setError(!contractExecuteResult.isSuccess());
                 contractResultDto.setErrorMessage(contractExecuteResult.getErrorMessage());
                 contractResultDto.setStackTrace(contractExecuteResult.getStackTrace());
                 contractResultDto.setBalance(contractExecuteResult.getBalance());

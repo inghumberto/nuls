@@ -241,7 +241,7 @@ public class ConsensusTool {
                         returnMap.put(sender, senderNa);
                     }
                     // 合约调用失败，退还调用者转入合约地址的资金
-                    if(contractResult.isError()) {
+                    if(!contractResult.isSuccess()) {
                         Na returnValue = Na.valueOf(contractResult.getValue());
                         Na senderNa = returnMap.get(sender);
                         if(senderNa == null) {

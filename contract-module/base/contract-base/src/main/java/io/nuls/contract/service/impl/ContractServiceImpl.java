@@ -155,9 +155,10 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             // current state root
             byte[] stateRoot = track.getRoot();
             ContractResult contractResult = new ContractResult();
-            if(programResult.isError()) {
+            if(!programResult.isSuccess()) {
                 Result<ContractResult> result = Result.getFailed(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
-                contractResult.setError(true);
+                contractResult.setError(programResult.isError());
+                contractResult.setRevert(programResult.isRevert());
                 contractResult.setErrorMessage(programResult.getErrorMessage());
                 contractResult.setStackTrace(programResult.getStackTrace());
                 contractResult.setNonce(programResult.getNonce());
@@ -172,6 +173,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
 
             // 返回已使用gas、状态根、消息事件、合约转账
             contractResult.setError(false);
+            contractResult.setRevert(false);
             contractResult.setStackTrace(programResult.getStackTrace());
             contractResult.setNonce(programResult.getNonce());
             contractResult.setGasUsed(programResult.getGasUsed());
@@ -243,7 +245,8 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             ContractResult contractResult = new ContractResult();
             if(programResult.isError()) {
                 Result<ContractResult> result = Result.getFailed(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
-                contractResult.setError(true);
+                contractResult.setError(programResult.isError());
+                contractResult.setRevert(programResult.isRevert());
                 contractResult.setErrorMessage(programResult.getErrorMessage());
                 contractResult.setStackTrace(programResult.getStackTrace());
                 contractResult.setNonce(programResult.getNonce());
@@ -259,6 +262,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
 
             // 返回调用结果、已使用Gas、状态根、消息事件、合约转账
             contractResult.setError(false);
+            contractResult.setRevert(false);
             contractResult.setStackTrace(programResult.getStackTrace());
             contractResult.setNonce(programResult.getNonce());
             contractResult.setResult(programResult.getResult());
@@ -305,7 +309,8 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             ContractResult contractResult = new ContractResult();
             if(programResult.isError()) {
                 Result<ContractResult> result = Result.getFailed(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
-                contractResult.setError(true);
+                contractResult.setError(programResult.isError());
+                contractResult.setRevert(programResult.isRevert());
                 contractResult.setErrorMessage(programResult.getErrorMessage());
                 contractResult.setStackTrace(programResult.getStackTrace());
                 contractResult.setNonce(programResult.getNonce());
@@ -320,6 +325,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
 
             // 返回状态根
             contractResult.setError(false);
+            contractResult.setRevert(false);
             contractResult.setStackTrace(programResult.getStackTrace());
             contractResult.setNonce(programResult.getNonce());
             contractResult.setStateRoot(stateRoot);
