@@ -245,7 +245,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             // current state root
             byte[] stateRoot = track.getRoot();
             ContractResult contractResult = new ContractResult();
-            if(programResult.isError()) {
+            if(!programResult.isSuccess()) {
                 Result<ContractResult> result = Result.getFailed(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
                 contractResult.setError(programResult.isError());
                 contractResult.setRevert(programResult.isRevert());
@@ -311,7 +311,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             // current state root
             byte[] stateRoot = track.getRoot();
             ContractResult contractResult = new ContractResult();
-            if(programResult.isError()) {
+            if(!programResult.isSuccess()) {
                 Result<ContractResult> result = Result.getFailed(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
                 contractResult.setError(programResult.isError());
                 contractResult.setRevert(programResult.isRevert());
