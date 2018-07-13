@@ -55,7 +55,12 @@ public class ContractResult {
     private long value;
 
     /**
-     *
+     * 有错误，还原状态
+     */
+    private boolean revert;
+
+    /**
+     * 有错误，状态改变
      */
     private boolean error;
 
@@ -91,6 +96,9 @@ public class ContractResult {
 
     private String remark;
 
+    public boolean isSuccess() {
+        return !error && !revert;
+    }
 
     public byte[] getContractAddress() {
         return contractAddress;
@@ -138,6 +146,14 @@ public class ContractResult {
 
     public void setTransfers(List<ContractTransfer> transfers) {
         this.transfers = transfers;
+    }
+
+    public boolean isRevert() {
+        return revert;
+    }
+
+    public void setRevert(boolean revert) {
+        this.revert = revert;
     }
 
     public boolean isError() {

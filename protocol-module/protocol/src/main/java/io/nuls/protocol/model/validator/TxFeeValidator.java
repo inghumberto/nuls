@@ -41,7 +41,8 @@ import io.nuls.protocol.constant.ProtocolConstant;
 public class TxFeeValidator implements NulsDataValidator<Transaction> {
     @Override
     public ValidateResult validate(Transaction tx) {
-        if (tx.isSystemTx()) {
+        int txType = tx.getType();
+        if (tx.isSystemTx() || txType == ContractConstant.TX_TYPE_CONTRACT_TRANSFER) {
             return ValidateResult.getSuccessResult();
         }
         CoinData coinData = tx.getCoinData();
@@ -50,7 +51,6 @@ public class TxFeeValidator implements NulsDataValidator<Transaction> {
         }
         Na realFee = tx.getFee();
         Na fee = null;
-        int txType = tx.getType();
         if(txType == ProtocolConstant.TX_TYPE_TRANSFER
                 || txType == ContractConstant.TX_TYPE_CREATE_CONTRACT
                 || txType == ContractConstant.TX_TYPE_CALL_CONTRACT

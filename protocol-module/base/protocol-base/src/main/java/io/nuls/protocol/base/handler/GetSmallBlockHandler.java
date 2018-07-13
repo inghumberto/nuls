@@ -26,6 +26,7 @@ package io.nuls.protocol.base.handler;
 
 import io.nuls.kernel.context.NulsContext;
 import io.nuls.kernel.model.NulsDigestData;
+import io.nuls.kernel.model.Result;
 import io.nuls.message.bus.handler.AbstractMessageHandler;
 import io.nuls.message.bus.service.MessageBusService;
 import io.nuls.network.model.Node;

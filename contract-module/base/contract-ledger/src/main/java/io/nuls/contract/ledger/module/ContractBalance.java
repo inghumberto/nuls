@@ -47,6 +47,12 @@ public class ContractBalance implements Serializable {
     }
 
     public ContractBalance(Na usable, Na locked) {
+        if(usable == null) {
+            usable = Na.ZERO;
+        }
+        if(locked == null) {
+            locked = Na.ZERO;
+        }
         this.usable = usable;
         this.locked = locked;
         this.balance = locked.add(usable);

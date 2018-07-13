@@ -38,87 +38,24 @@ import java.util.Set;
 
 public interface ContractService {
 
-    /**
-     * @param number 当前块编号
-     * @param prevStateRoot 上一区块状态根
-     * @param create 创建智能合约的参数
-     * @return
-     */
-    //Result<ContractResult> createContract(long number, byte[] prevStateRoot, CreateContractData create);
 
     /**
-     * @param number 当前块编号
-     * @param prevStateRoot 上一区块状态根
-     * @param call 调用智能合约的参数
+     * 是否为合约地址
+     *
+     * @param addressBytes
      * @return
      */
-    //Result<ContractResult> callContract(long number, byte[] prevStateRoot, CallContractData call);
-
-    /**
-     * @param number 当前块编号
-     * @param prevStateRoot 上一区块状态根
-     * @param delete 删除智能合约的参数
-     * @return
-     */
-    //Result<ContractResult> deleteContract(long number, byte[] prevStateRoot, DeleteContractData delete);
-
-    /**
-     * @param address
-     * @return
-     */
-    Result<Object> getContractInfo(String address);
-
-    /**
-     * @return
-     */
-    Result<Object> getVmStatus();
-
     boolean isContractAddress(byte[] addressBytes);
 
-    /**
-     * 保存 txInfo : key -> contractAddress + txHash, status is unconfirmed
-     * 保存 UTXO : key -> contractAddress + txHash + index
-     *
-     * @param tx
-     * @return
-     */
-    //Result<Integer> saveUnconfirmedTransaction(Transaction tx);
-
-
-    /**
-     * 合约转账交易
-     *
-     * @param from
-     * @param to
-     * @param values
-     * @param blockTime
-     * @param toMaps
-     * @param contractUsedCoinMap
-     * @return
-     */
-    /*Result transfer(byte[] from, byte[] to, Na values, long blockTime,
-                                                Map<String, Coin> toMaps,
-                                                Map<String, Coin> contractUsedCoinMap);*/
 
     /**
      * 保存 txInfo : key -> contractAddress + txHash, status is confirmed
-     * 如果是非交易创建者则保存 UTXO : key -> contractAddress + txHash + index
+     * 保存 UTXO : key -> txHash + index
      *
-     * @param tx
+     * @param txs
      * @return
      */
-    //Result<Integer> saveConfirmedTransaction(Transaction tx);
     Result<Integer> saveConfirmedTransactionList(List<Transaction> txs);
-
-
-    /**
-     *
-     *
-     * @param tx
-     * @return
-     */
-    //Result<Integer> rollbackTransaction(Transaction tx);
-    //Result<Integer> rollbackTransactionList(List<Transaction> txs);
 
 
     /**
@@ -154,28 +91,40 @@ public interface ContractService {
      */
     ContractResult getContractExecuteResult(NulsDigestData hash);
 
-    /*****************************************************************************/
 
     /**
+     * 执行合约
+     *
      * @param tx
      * @param height
      * @param stateRoot
      * @return
      */
-    Result<ContractResult> callContract(Transaction tx, long height, byte[] stateRoot);
+    Result<ContractResult> invokeContract(Transaction tx, long height, byte[] stateRoot);
 
     /**
+     * 回滚一笔交易的合约临时余额区
+     *
      * @param tx
      * @param contractResult
      */
     void rollbackContractTempBalance(Transaction tx, ContractResult contractResult);
 
     /**
+     * 打包或者验证区块时，创建合约临时余额区
+     *
+     */
+    void createContractTempBalance();
+
+    /**
+     * 移除合约临时余额区
      *
      */
     void removeContractTempBalance();
 
     /**
+     * 验证合约内部转账的数据
+     *
      * @param contractTransferTx
      * @param toMaps
      * @param fromSet
@@ -184,6 +133,17 @@ public interface ContractService {
     ValidateResult verifyContractTransferCoinData(ContractTransferTransaction contractTransferTx, Map<String,Coin> toMaps, Set<String> fromSet);
 
     /**
+     * 回滚验证数据
+     *
+     * @param tx
+     * @param toMaps
+     * @param fromSet
+     */
+    void rollbackVerifyData(Transaction tx, Map<String,Coin> toMaps, Set<String> fromSet);
+
+    /**
+     * 创建合约内部转账交易
+     *
      * @param transfer
      * @param blockTime
      * @param toMaps
@@ -193,6 +153,8 @@ public interface ContractService {
     Result<ContractTransferTransaction> createContractTransferTx(ContractTransfer transfer, long blockTime, Map<String, Coin> toMaps, Map<String, Coin> contractUsedCoinMap);
 
     /**
+     * 回滚合约内部转账交易列表
+     *
      * @param successContractTransferTxs
      * @param toMaps
      * @param fromSet
@@ -201,6 +163,8 @@ public interface ContractService {
     void rollbackContractTransferTxs(Map<String, ContractTransferTransaction> successContractTransferTxs, Map<String, Coin> toMaps, Set<String> fromSet, Map<String, Coin> contractUsedCoinMap);
 
     /**
+     * 回滚合约内部转账交易
+     *
      * @param tx
      * @param toMaps
      * @param fromSet
@@ -209,6 +173,8 @@ public interface ContractService {
     void rollbackContractTransferTx(ContractTransferTransaction tx, Map<String, Coin> toMaps, Set<String> fromSet, Map<String, Coin> contractUsedCoinMap);
 
     /**
+     * 创建调用合约的交易
+     *
      * @param sender
      * @param value
      * @param gasLimit
@@ -223,12 +189,5 @@ public interface ContractService {
      */
     Result contractCallTx(byte[] sender, Na value, Long gasLimit, Long price, byte[] contractAddress,
                           String methodName, String methodDesc, String[] args, String password, String remark);
-
-    /**
-     * @param tx
-     * @param toMaps
-     * @param fromSet
-     */
-    void rollbackVerifyData(Transaction tx, Map<String,Coin> toMaps, Set<String> fromSet);
 
 }

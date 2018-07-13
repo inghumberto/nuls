@@ -186,7 +186,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             }
             ProgramExecutor track = programExecutor.begin(prevStateRoot);
             ProgramResult programResult = track.create(programCreate);
-            if(programResult.isError()) {
+            if(!programResult.isSuccess()) {
                 Result result = Result.getFailed(ContractErrorCode.DATA_ERROR);
                 result.setMsg(programResult.getErrorMessage());
                 return result;
@@ -343,7 +343,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
                 ProgramExecutor track = programExecutor.begin(prevStateRoot);
                 ProgramResult programResult = track.call(programCall);
                 Result result = null;
-                if(programResult.isError()) {
+                if(!programResult.isSuccess()) {
                     result = Result.getFailed(ContractErrorCode.DATA_ERROR);
                     result.setMsg(programResult.getErrorMessage());
                 } else {
@@ -384,7 +384,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             ProgramExecutor track = programExecutor.begin(prevStateRoot);
             ProgramResult programResult = track.call(programCall);
 
-            if(programResult.isError()) {
+            if(!programResult.isSuccess()) {
                 Result result = Result.getFailed(ContractErrorCode.DATA_ERROR);
                 result.setMsg(programResult.getErrorMessage());
                 return result;

@@ -67,6 +67,7 @@ import io.nuls.protocol.model.SmallBlock;
 import io.nuls.protocol.model.tx.CoinBaseTransaction;
 import io.nuls.protocol.service.BlockService;
 import io.nuls.protocol.service.TransactionService;
+import io.nuls.protocol.utils.SmallBlockDuplicateRemoval;
 
 import java.io.IOException;
 import java.util.*;
@@ -276,6 +277,7 @@ public class ConsensusProcess {
     private void broadcastSmallBlock(Block block) {
         SmallBlock smallBlock = ConsensusTool.getSmallBlock(block);
         temporaryCacheManager.cacheSmallBlock(smallBlock);
+        SmallBlockDuplicateRemoval.needDownloadSmallBlock(smallBlock.getHeader().getHash());
         blockService.broadcastBlock(smallBlock);
     }
 
@@ -343,6 +345,8 @@ public class ConsensusProcess {
         long sizeTime = 0;
         long failed1Use = 0;
         long addTime = 0;
+        // 为本次打包区块增加一个合约的临时余额区，用于记录本次合约地址余额的变化
+        contractService.createContractTempBalance();
         while (true) {
             isCorrectContractTransfer = true;
 
@@ -406,7 +410,7 @@ public class ConsensusProcess {
 
 
             // 打包时发现智能合约交易就调用智能合约
-            callContractResult = contractService.callContract(tx, height, stateRoot);
+            callContractResult = contractService.invokeContract(tx, height, stateRoot);
             Log.info("=========================================doPacking stateRoot: " + Hex.encode(stateRoot));
             contractResult = callContractResult.getData();
             if(contractResult != null) {
@@ -452,7 +456,7 @@ public class ConsensusProcess {
 
                         // 如果合约内部转账出现错误，跳过整笔合约交易
                         if(!isCorrectContractTransfer) {
-                            // 清除临时余额
+                            // 回滚临时余额
                             contractService.rollbackContractTempBalance(tx, contractResult);
                             Log.warn(result.getMsg());
                             continue;
@@ -460,9 +464,10 @@ public class ConsensusProcess {
 
                         // 整笔合约交易的大小 = 合约交易的大小 + 合约内部产生的转账交易的大小
                         if ((totalSize + contractTransferTxTotalSize + txSize) > ProtocolConstant.MAX_BLOCK_SIZE) {
-                            // 清除临时余额
+                            // 回滚整笔交易的临时余额
                             contractService.rollbackContractTempBalance(tx, contractResult);
 
+                            // 回滚内部转账交易
                             contractService.rollbackContractTransferTxs(successContractTransferTxs, toMaps, fromSet, contractUsedCoinMap);
                             txMemoryPool.addInFirst(tx, false);
                             break;

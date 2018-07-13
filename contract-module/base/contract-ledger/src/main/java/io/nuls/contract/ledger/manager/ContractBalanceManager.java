@@ -39,6 +39,7 @@ import io.nuls.db.service.BatchOperation;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Component;
+import io.nuls.kernel.lite.core.bean.InitializingBean;
 import io.nuls.kernel.model.Address;
 import io.nuls.kernel.model.Coin;
 import io.nuls.kernel.model.Na;
@@ -68,35 +69,26 @@ public class ContractBalanceManager {
     @Autowired
     private AccountService accountService;
 
-    private Map<String, ContractBalance> balanceMap = new ConcurrentHashMap<>();
-
-    private volatile Map<String, ContractBalance> tempBalanceMap;
+    private Map<String, ContractBalance> balanceMap;
 
     private Lock lock = new ReentrantLock();
 
-    public Map<String, ContractBalance> getTempBalanceMap() {
-        lock.lock();
-        try {
-            return tempBalanceMap;
-        } finally {
-            lock.unlock();
-        }
+    private ThreadLocal<Map<String, ContractBalance>> tempBalanceMapManager = new ThreadLocal<>();
+
+    public void createTempBalanceMap() {
+        tempBalanceMapManager.remove();
+        tempBalanceMapManager.set(new ConcurrentHashMap<>());
     }
 
-    public void setTempBalanceMap(Map<String, ContractBalance> tempBalanceMap) {
-        lock.lock();
-        try {
-            this.tempBalanceMap = tempBalanceMap;
-        } finally {
-            lock.unlock();
-        }
+    public void removeTempBalanceMap() {
+        tempBalanceMapManager.remove();
     }
 
     /**
      * 初始化缓存本地所有合约账户的余额信息
      */
     public void initContractBalance() {
-        balanceMap.clear();
+        balanceMap = new ConcurrentHashMap<>();
         List<Coin> coinList = new ArrayList<>();
         List<Entry<byte[], byte[]>> rawList = contractUtxoStorageService.loadAllCoinList();
         Coin coin;
@@ -194,13 +186,19 @@ public class ContractBalanceManager {
             String addressKey = asString(address);
             ContractBalance balance = null;
             // 打包或验证区块前创建一个临时余额区，实时更新余额，打包完或验证区块后移除
+            Map<String, ContractBalance> tempBalanceMap = tempBalanceMapManager.get();
             if(tempBalanceMap != null) {
                 balance = tempBalanceMap.get(addressKey);
+                // 临时余额区没有余额，则从真实余额中取值
                 if(balance == null) {
                     balance = balanceMap.get(addressKey);
+                    // 真实余额区也没有值时，初始化真实余额区和临时余额区
                     if (balance == null) {
                         balance = new ContractBalance();
-                        balanceMap.put(addressKey, balance);
+                        tempBalanceMap.put(addressKey, balance);
+                    } else {
+                        // 真实余额区有值时，深度复制这个值到临时余额区，避免真实余额被临时余额所影响
+                        balance = depthClone(balance);
                         tempBalanceMap.put(addressKey, balance);
                     }
                 }
@@ -218,7 +216,17 @@ public class ContractBalanceManager {
         }
     }
 
+    private ContractBalance depthClone(ContractBalance contractBalance) {
+        if(contractBalance == null) {
+            return null;
+        }
+        ContractBalance result = new ContractBalance(Na.valueOf(contractBalance.getUsable().getValue()),
+                Na.valueOf(contractBalance.getLocked().getValue()));
+        return result;
+    }
+
     public void addTempBalance(byte[] address, long amount) {
+        Map<String, ContractBalance> tempBalanceMap = tempBalanceMapManager.get();
         String addressKey = asString(address);
         ContractBalance contractBalance = tempBalanceMap.get(addressKey);
 
@@ -228,6 +236,7 @@ public class ContractBalanceManager {
     }
 
     public void minusTempBalance(byte[] address, long amount) {
+        Map<String, ContractBalance> tempBalanceMap = tempBalanceMapManager.get();
         String addressKey = asString(address);
         ContractBalance contractBalance = tempBalanceMap.get(addressKey);
 
@@ -265,7 +274,6 @@ public class ContractBalanceManager {
                     if (coin.usable()) {
                         balance.addUsable(coin.getNa());
                     } else {
-                        //TODO pierre 合约地址的金额不会存在锁定金额，因为金额都是转账转入，锁定有两种，一种是共识锁定，一种是高度锁定，这两种情况都不会发生在合约地址上
                         balance.addLocked(coin.getNa());
                     }
                 }
@@ -316,4 +324,5 @@ public class ContractBalanceManager {
         }
         return coinList;
     }
+
 }

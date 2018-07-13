@@ -155,14 +155,16 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             // current state root
             byte[] stateRoot = track.getRoot();
             ContractResult contractResult = new ContractResult();
-            if(programResult.isError()) {
+            if(!programResult.isSuccess()) {
                 Result<ContractResult> result = Result.getFailed(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
-                contractResult.setError(true);
+                contractResult.setError(programResult.isError());
+                contractResult.setRevert(programResult.isRevert());
                 contractResult.setErrorMessage(programResult.getErrorMessage());
                 contractResult.setStackTrace(programResult.getStackTrace());
                 contractResult.setNonce(programResult.getNonce());
                 contractResult.setGasUsed(programResult.getGasUsed());
                 contractResult.setStateRoot(stateRoot);
+                contractResult.setBalance(programResult.getBalance());
                 contractResult.setContractAddress(contractAddress);
                 contractResult.setRemark(ContractConstant.CREATE);
                 result.setMsg(programResult.getErrorMessage());
@@ -172,10 +174,12 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
 
             // 返回已使用gas、状态根、消息事件、合约转账
             contractResult.setError(false);
+            contractResult.setRevert(false);
             contractResult.setStackTrace(programResult.getStackTrace());
             contractResult.setNonce(programResult.getNonce());
             contractResult.setGasUsed(programResult.getGasUsed());
             contractResult.setStateRoot(stateRoot);
+            contractResult.setBalance(programResult.getBalance());
             contractResult.setEvents(programResult.getEvents());
             contractResult.setTransfers(generateContractTransfer(programResult.getTransfers()));
             contractResult.setContractAddress(contractAddress);
@@ -241,14 +245,16 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             // current state root
             byte[] stateRoot = track.getRoot();
             ContractResult contractResult = new ContractResult();
-            if(programResult.isError()) {
+            if(!programResult.isSuccess()) {
                 Result<ContractResult> result = Result.getFailed(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
-                contractResult.setError(true);
+                contractResult.setError(programResult.isError());
+                contractResult.setRevert(programResult.isRevert());
                 contractResult.setErrorMessage(programResult.getErrorMessage());
                 contractResult.setStackTrace(programResult.getStackTrace());
                 contractResult.setNonce(programResult.getNonce());
                 contractResult.setGasUsed(programResult.getGasUsed());
                 contractResult.setStateRoot(stateRoot);
+                contractResult.setBalance(programResult.getBalance());
                 contractResult.setContractAddress(contractAddress);
                 contractResult.setValue(programCall.getValue().longValue());
                 contractResult.setRemark(ContractConstant.CALL);
@@ -259,11 +265,13 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
 
             // 返回调用结果、已使用Gas、状态根、消息事件、合约转账
             contractResult.setError(false);
+            contractResult.setRevert(false);
             contractResult.setStackTrace(programResult.getStackTrace());
             contractResult.setNonce(programResult.getNonce());
             contractResult.setResult(programResult.getResult());
             contractResult.setGasUsed(programResult.getGasUsed());
             contractResult.setStateRoot(stateRoot);
+            contractResult.setBalance(programResult.getBalance());
             contractResult.setEvents(programResult.getEvents());
             contractResult.setTransfers(generateContractTransfer(programResult.getTransfers()));
             contractResult.setContractAddress(contractAddress);
@@ -303,14 +311,16 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             // current state root
             byte[] stateRoot = track.getRoot();
             ContractResult contractResult = new ContractResult();
-            if(programResult.isError()) {
+            if(!programResult.isSuccess()) {
                 Result<ContractResult> result = Result.getFailed(ContractErrorCode.CONTRACT_EXECUTE_ERROR);
-                contractResult.setError(true);
+                contractResult.setError(programResult.isError());
+                contractResult.setRevert(programResult.isRevert());
                 contractResult.setErrorMessage(programResult.getErrorMessage());
                 contractResult.setStackTrace(programResult.getStackTrace());
                 contractResult.setNonce(programResult.getNonce());
                 contractResult.setGasUsed(programResult.getGasUsed());
                 contractResult.setStateRoot(stateRoot);
+                contractResult.setBalance(programResult.getBalance());
                 contractResult.setContractAddress(contractAddress);
                 contractResult.setRemark(ContractConstant.DELETE);
                 result.setMsg(programResult.getErrorMessage());
@@ -320,9 +330,11 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
 
             // 返回状态根
             contractResult.setError(false);
+            contractResult.setRevert(false);
             contractResult.setStackTrace(programResult.getStackTrace());
             contractResult.setNonce(programResult.getNonce());
             contractResult.setStateRoot(stateRoot);
+            contractResult.setBalance(programResult.getBalance());
             contractResult.setContractAddress(contractAddress);
             contractResult.setRemark(ContractConstant.DELETE);
 
@@ -335,18 +347,6 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             result.setMsg(e.getMessage());
             return result;
         }
-    }
-
-    @Override
-    public Result<Object> getContractInfo(String address) {
-        //TODO pierre auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Result<Object> getVmStatus() {
-        //TODO pierre auto-generated method stub
-        return null;
     }
 
     @Override
@@ -636,6 +636,9 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
                 if (!coin.usable()) {
                     continue;
                 }
+                if (coin.getNa().equals(Na.ZERO)) {
+                    continue;
+                }
                 // for contract, 使用过的UTXO不能再使用
                 if(StringUtils.isNotBlank(coin.getKey())) {
                     if(contractUsedCoinMap.containsKey(coin.getKey())) {
@@ -673,25 +676,25 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
         }
     }
 
-    /*****************************************************************************/
 
     @Override
-    public Result<ContractResult> callContract(Transaction tx, long height, byte[] stateRoot) {
+    public Result<ContractResult> invokeContract(Transaction tx, long height, byte[] stateRoot) {
         if(tx == null || height < 0 || stateRoot == null) {
             return Result.getFailed(KernelErrorCode.PARAMETER_ERROR);
         }
         int txType = tx.getType();
+        // 打包、验证区块，合约只执行一次
+        ContractResult contractExecutedResult = getContractExecuteResult(tx.getHash());
+        if(contractExecutedResult != null) {
+            return Result.getSuccess().setData(contractExecutedResult);
+        }
+
         if (txType == ContractConstant.TX_TYPE_CREATE_CONTRACT) {
             CreateContractTransaction createContractTransaction = (CreateContractTransaction) tx;
             CreateContractData createContractData = createContractTransaction.getTxData();
-            Result<ContractResult> contractResult = createContract(height, stateRoot, createContractData);
-            return contractResult;
+            Result<ContractResult> result = createContract(height, stateRoot, createContractData);
+            return result;
         } else if(txType == ContractConstant.TX_TYPE_CALL_CONTRACT) {
-            // 调用合约方法时，才有可能发生合约地址的余额变化
-            if(contractBalanceManager.getTempBalanceMap() == null) {
-                contractBalanceManager.setTempBalanceMap(new ConcurrentHashMap<>());
-            }
-
             CallContractTransaction callContractTransaction = (CallContractTransaction) tx;
             CallContractData callContractData = callContractTransaction.getTxData();
             Result<ContractResult> result = callContract(height, stateRoot, callContractData);
@@ -721,8 +724,8 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
         } else if(txType == ContractConstant.TX_TYPE_DELETE_CONTRACT) {
             DeleteContractTransaction deleteContractTransaction = (DeleteContractTransaction) tx;
             DeleteContractData deleteContractData = deleteContractTransaction.getTxData();
-            Result<ContractResult> contractResult = deleteContract(height, stateRoot, deleteContractData);
-            return contractResult;
+            Result<ContractResult> result = deleteContract(height, stateRoot, deleteContractData);
+            return result;
         } else {
             return Result.getSuccess();
         }
@@ -752,8 +755,13 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
     }
 
     @Override
+    public void createContractTempBalance() {
+        contractBalanceManager.createTempBalanceMap();
+    }
+
+    @Override
     public void removeContractTempBalance() {
-        contractBalanceManager.setTempBalanceMap(null);
+        contractBalanceManager.removeTempBalanceMap();
     }
 
     @Override

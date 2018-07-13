@@ -16,4 +16,8 @@
     <packaging>jar</packaging>
     <name>contract-sdk</name>
 
+
+    <build>
+        <finalName>${artifactId}-${version}</finalName>
+    </build>
 </project>
