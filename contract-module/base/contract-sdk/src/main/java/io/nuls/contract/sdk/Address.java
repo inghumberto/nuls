@@ -12,7 +12,7 @@ public class Address {
     }
 
     public Address(String value) {
-        this.value = Utils.decodeHex(value);
+        this.value = toBytes(value);
     }
 
     public byte[] getValue() {
@@ -43,6 +43,24 @@ public class Address {
      */
     public native void call(String methodName, String methodDesc, String[] args, BigInteger value);
 
+    /**
+     * 地址二进制转换为字符串
+     *
+     * @param bytes
+     * @return
+     * @see io.nuls.kernel.utils.AddressTool#getStringAddressByBytes(byte[])
+     */
+    private native String toString(byte[] bytes);
+
+    /**
+     * 地址字符串转换为二进制
+     *
+     * @param str
+     * @return
+     * @see io.nuls.kernel.utils.AddressTool#getAddress(String)
+     */
+    private native byte[] toBytes(String str);
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -62,7 +80,7 @@ public class Address {
 
     @Override
     public String toString() {
-        return Utils.encodeHexString(value);
+        return toString(value);
     }
 
 }

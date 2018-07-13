@@ -4,12 +4,12 @@ import io.nuls.contract.vm.code.ClassCode;
 import io.nuls.contract.vm.code.FieldCode;
 import io.nuls.contract.vm.code.MethodCode;
 import io.nuls.contract.vm.code.VariableType;
+import io.nuls.contract.vm.natives.io.nuls.contract.sdk.NativeAddress;
 import io.nuls.contract.vm.util.CloneUtils;
 import io.nuls.contract.vm.util.JsonUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
-import org.spongycastle.util.encoders.Hex;
 
 import java.lang.reflect.Array;
 import java.math.BigInteger;
@@ -399,7 +399,7 @@ public class Heap {
     }
 
     public ObjectRef newContract(byte[] address, ClassCode contractCode, Repository repository) {
-        ObjectRef objectRef = newObject(Hex.toHexString(address), contractCode);
+        ObjectRef objectRef = newObject(NativeAddress.toString(address), contractCode);
         this.contract = objectRef;
         this.address = address;
         this.repository = repository;
@@ -407,7 +407,7 @@ public class Heap {
     }
 
     public ObjectRef loadContract(byte[] address, ClassCode contractCode, Repository repository) {
-        ObjectRef objectRef = new ObjectRef(Hex.toHexString(address), contractCode.getVariableType().getDesc());
+        ObjectRef objectRef = new ObjectRef(NativeAddress.toString(address), contractCode.getVariableType().getDesc());
         this.contract = objectRef;
         this.address = address;
         this.repository = repository;

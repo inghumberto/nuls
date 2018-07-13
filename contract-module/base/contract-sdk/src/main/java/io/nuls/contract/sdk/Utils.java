@@ -49,20 +49,4 @@ public class Utils {
      */
     public static native void emit(Event event);
 
-    /**
-     * byte数组转为16进制字符串
-     *
-     * @param data
-     * @return
-     */
-    public static native String encodeHexString(byte[] data);
-
-    /**
-     * 16进制字符串转为byte数组
-     *
-     * @param data
-     * @return
-     */
-    public static native byte[] decodeHex(String data);
-
 }

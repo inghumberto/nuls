@@ -7,7 +7,7 @@ import io.nuls.contract.vm.program.ProgramCall;
 import io.nuls.contract.vm.program.ProgramResult;
 import io.nuls.contract.vm.program.ProgramTransfer;
 import io.nuls.contract.vm.program.impl.ProgramInvoke;
-import org.spongycastle.util.encoders.Hex;
+import io.nuls.kernel.utils.AddressTool;
 
 import java.math.BigInteger;
 
@@ -27,6 +27,12 @@ public class NativeAddress {
             case "call":
                 result = call(methodCode, methodArgs, frame);
                 break;
+            case "toString":
+                result = toString(methodCode, methodArgs, frame);
+                break;
+            case "toBytes":
+                result = toBytes(methodCode, methodArgs, frame);
+                break;
             default:
                 frame.nonsupportMethod(methodCode);
                 break;
@@ -45,7 +51,7 @@ public class NativeAddress {
     private static Result balance(MethodCode methodCode, MethodArgs methodArgs, Frame frame) {
         ObjectRef objectRef = methodArgs.getObjectRef();
         String address = (String) frame.getHeap().getObject(objectRef);
-        BigInteger balance = balance(Hex.decode(address), frame);
+        BigInteger balance = balance(NativeAddress.toBytes(address), frame);
         ObjectRef balanceRef = frame.getHeap().newBigInteger(balance.toString());
         Result result = NativeMethod.result(methodCode, balanceRef, frame);
         return result;
@@ -57,7 +63,7 @@ public class NativeAddress {
         String address = (String) frame.getHeap().getObject(addressRef);
         BigInteger value = (BigInteger) frame.getHeap().getObject(valueRef);
         byte[] from = frame.getVm().getProgramInvoke().getAddress();
-        byte[] to = Hex.decode(address);
+        byte[] to = NativeAddress.toBytes(address);
         if (frame.getHeap().existContract(to)) {
             throw new RuntimeException("Cannot transfer to contract");
         }
@@ -93,7 +99,7 @@ public class NativeAddress {
         programCall.setValue(value != null ? value : BigInteger.ZERO);
         programCall.setGasLimit(programInvoke.getGas() - frame.getVm().getGasUsed());
         programCall.setPrice(programInvoke.getGasPrice());
-        programCall.setContractAddress(Hex.decode(address));
+        programCall.setContractAddress(NativeAddress.toBytes(address));
         programCall.setMethodName(methodName);
         programCall.setMethodDesc(methodDesc);
         programCall.setArgs(args);
@@ -103,7 +109,7 @@ public class NativeAddress {
         frame.getVm().setGasUsed(frame.getVm().getGasUsed() + programResult.getGasUsed());
         if (!programResult.isError()) {
             if (programCall.getValue().compareTo(BigInteger.ZERO) > 0) {
-                ProgramTransfer programTransfer = new ProgramTransfer(programInvoke.getAddress(), Hex.decode(address), programCall.getValue());
+                ProgramTransfer programTransfer = new ProgramTransfer(programInvoke.getAddress(), NativeAddress.toBytes(address), programCall.getValue());
                 frame.getVm().getTransfers().add(programTransfer);
             }
             frame.getVm().getTransfers().addAll(programResult.getTransfers());
@@ -115,6 +121,40 @@ public class NativeAddress {
 
         Result result = NativeMethod.result(methodCode, null, frame);
         return result;
+    }
+
+    private static Result toString(MethodCode methodCode, MethodArgs methodArgs, Frame frame) {
+        ObjectRef objectRef = (ObjectRef) methodArgs.getInvokeArgs()[0];
+        byte[] bytes = (byte[]) frame.getHeap().getObject(objectRef);
+        String str = toString(bytes);
+        ObjectRef ref = frame.getHeap().newString(str);
+        Result result = NativeMethod.result(methodCode, ref, frame);
+        return result;
+    }
+
+    private static Result toBytes(MethodCode methodCode, MethodArgs methodArgs, Frame frame) {
+        ObjectRef objectRef = (ObjectRef) methodArgs.getInvokeArgs()[0];
+        String str = (String) frame.getHeap().getObject(objectRef);
+        byte[] bytes = toBytes(str);
+        ObjectRef ref = frame.getHeap().newArray(bytes);
+        Result result = NativeMethod.result(methodCode, ref, frame);
+        return result;
+    }
+
+    public static String toString(byte[] bytes) {
+        try {
+            return AddressTool.getStringAddressByBytes(bytes);
+        } catch (Exception e) {
+            throw new RuntimeException("address error", e);
+        }
+    }
+
+    public static byte[] toBytes(String str) {
+        try {
+            return AddressTool.getAddress(str);
+        } catch (Exception e) {
+            throw new RuntimeException("address error", e);
+        }
     }
 
 }

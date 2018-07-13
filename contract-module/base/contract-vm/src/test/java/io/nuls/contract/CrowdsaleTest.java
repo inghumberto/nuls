@@ -1,6 +1,7 @@
 package io.nuls.contract;
 
 import io.nuls.contract.util.VMContext;
+import io.nuls.contract.vm.natives.io.nuls.contract.sdk.NativeAddress;
 import io.nuls.contract.vm.program.ProgramCall;
 import io.nuls.contract.vm.program.ProgramCreate;
 import io.nuls.contract.vm.program.ProgramExecutor;
@@ -24,11 +25,11 @@ public class CrowdsaleTest {
     private DBService dbService;
     private ProgramExecutor programExecutor;
 
-    private static final String CROWDSALE_ADDRESS = "crowdsale_address";
-    private static final String TOKEN_ADDRESS = "token_address";
-    private static final String WALLET_ADDRESS = "wallet_address";
-    private static final String SENDER = "ccc_address";
-    private static final String BUYER = "buyer_address";
+    private static final String CROWDSALE_ADDRESS = "5s26psNbwH9mQz29tjFHkTYWwTbr2QW2F";
+    private static final String TOKEN_ADDRESS = "5s26psNbwH9mQz29tjFHkTYWwTbr2QVwr";
+    private static final String WALLET_ADDRESS = "5s26psNbwH9mQz29tjFHkTYWwTbr2QWB7";
+    private static final String SENDER = "5s26psNbwH9mQz29tjFHkTYWwTbr2QWFS";
+    private static final String BUYER = "5s26psNbwH9mQz29tjFHkTYWwTbr2QW6i";
 
     @Before
     public void setUp() {
@@ -42,16 +43,16 @@ public class CrowdsaleTest {
         byte[] contractCode = IOUtils.toByteArray(in);
 
         ProgramCreate programCreate = new ProgramCreate();
-        programCreate.setContractAddress(CROWDSALE_ADDRESS.getBytes());
-        programCreate.setSender(SENDER.getBytes());
+        programCreate.setContractAddress(NativeAddress.toBytes(CROWDSALE_ADDRESS));
+        programCreate.setSender(NativeAddress.toBytes(SENDER));
         programCreate.setPrice(0);
         programCreate.setGasLimit(1000000);
         programCreate.setNumber(1);
         programCreate.setContractCode(contractCode);
-        programCreate.args("0", "20000", "10", Hex.toHexString(WALLET_ADDRESS.getBytes()), "20000000", Hex.toHexString(TOKEN_ADDRESS.getBytes()), "10000000");
+        programCreate.args("0", "20000", "10", WALLET_ADDRESS, "20000000", TOKEN_ADDRESS, "10000000");
         System.out.println(programCreate);
 
-        byte[] prevStateRoot = Hex.decode("08cf9c62806d73378bf64f03ea401fbbd08a318ec580d2bfc4c45641b0921a9e");
+        byte[] prevStateRoot = Hex.decode("68bbca9dc63dd96bca3bb47f771e1df9a5076412a4c23de3e462e5b0c56c06d4");
 
         ProgramExecutor track = programExecutor.begin(prevStateRoot);
         ProgramResult programResult = track.create(programCreate);
@@ -65,18 +66,18 @@ public class CrowdsaleTest {
     @Test
     public void testBuyTokens() throws IOException {
         ProgramCall programCall = new ProgramCall();
-        programCall.setContractAddress(CROWDSALE_ADDRESS.getBytes());
-        programCall.setSender(SENDER.getBytes());
+        programCall.setContractAddress(NativeAddress.toBytes(CROWDSALE_ADDRESS));
+        programCall.setSender(NativeAddress.toBytes(SENDER));
         programCall.setValue(new BigInteger("1000"));
         programCall.setPrice(0);
         programCall.setGasLimit(1000000);
         programCall.setNumber(1);
         programCall.setMethodName("buyTokens");
         programCall.setMethodDesc("");
-        programCall.args(Hex.toHexString(BUYER.getBytes()));
+        programCall.args(BUYER);
         System.out.println(programCall);
 
-        byte[] prevStateRoot = Hex.decode("f50a59ea0cde312187e49cdebb30f7c79d6c69c336a897efa534584e81fc48d4");
+        byte[] prevStateRoot = Hex.decode("4f4586e73fda530cdd31d2b1b0f25bd9db0d3526e36770c5892e7da42fd6e984");
 
         ProgramExecutor track = programExecutor.begin(prevStateRoot);
         ProgramResult programResult = track.call(programCall);
@@ -87,14 +88,14 @@ public class CrowdsaleTest {
         System.out.println();
 
         ProgramCall programCall1 = new ProgramCall();
-        programCall1.setContractAddress(TOKEN_ADDRESS.getBytes());
-        programCall1.setSender(SENDER.getBytes());
+        programCall1.setContractAddress(NativeAddress.toBytes(TOKEN_ADDRESS));
+        programCall1.setSender(NativeAddress.toBytes(SENDER));
         programCall1.setPrice(0);
         programCall1.setGasLimit(1000000);
         programCall1.setNumber(1);
         programCall1.setMethodName("balanceOf");
         programCall1.setMethodDesc("");
-        programCall1.args(Hex.toHexString(BUYER.getBytes()));
+        programCall1.args(BUYER);
 
         track = programExecutor.begin(track.getRoot());
         programResult = track.call(programCall1);

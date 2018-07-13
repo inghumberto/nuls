@@ -1,6 +1,7 @@
 package io.nuls.contract;
 
 import io.nuls.contract.util.VMContext;
+import io.nuls.contract.vm.natives.io.nuls.contract.sdk.NativeAddress;
 import io.nuls.contract.vm.program.*;
 import io.nuls.contract.vm.program.impl.ProgramExecutorImpl;
 import io.nuls.db.service.DBService;
@@ -23,9 +24,9 @@ public class ContractTest {
     private DBService dbService;
     private ProgramExecutor programExecutor;
 
-    private static final String ADDRESS = "token_address";
-    private static final String SENDER = "crowdsale_address";
-    private static final String BUYER = "buyer_address";
+    private static final String ADDRESS = "5s26psNbwH9mQz29tjFHkTYWwTbr2QVwr";
+    private static final String SENDER = "5s26psNbwH9mQz29tjFHkTYWwTbr2QW2F";
+    private static final String BUYER = "5s26psNbwH9mQz29tjFHkTYWwTbr2QW6i";
 
     @Before
     public void setUp() {
@@ -40,8 +41,8 @@ public class ContractTest {
         byte[] contractCode = IOUtils.toByteArray(in);
 
         ProgramCreate programCreate = new ProgramCreate();
-        programCreate.setContractAddress(ADDRESS.getBytes());
-        programCreate.setSender(SENDER.getBytes());
+        programCreate.setContractAddress(NativeAddress.toBytes(ADDRESS));
+        programCreate.setSender(NativeAddress.toBytes(SENDER));
         programCreate.setPrice(0);
         programCreate.setGasLimit(1000000);
         programCreate.setNumber(1);
@@ -63,17 +64,17 @@ public class ContractTest {
     @Test
     public void testCall() throws IOException {
         ProgramCall programCall = new ProgramCall();
-        programCall.setContractAddress(ADDRESS.getBytes());
-        programCall.setSender(SENDER.getBytes());
+        programCall.setContractAddress(NativeAddress.toBytes(ADDRESS));
+        programCall.setSender(NativeAddress.toBytes(SENDER));
         programCall.setPrice(0);
         programCall.setGasLimit(1000000);
         programCall.setNumber(1);
         programCall.setMethodName("mint");
         programCall.setMethodDesc("");
-        programCall.args(Hex.toHexString(BUYER.getBytes()), "1000");
+        programCall.args(BUYER, "1000");
         System.out.println(programCall);
 
-        byte[] prevStateRoot = Hex.decode("959c21fc0539d7a8df5da6ed705288f2c0c5b8bbda2bee8ae25a82cd541e061d");
+        byte[] prevStateRoot = Hex.decode("4778363922a25822168828d5acb5df21f7a2ac9d40eecaad82ca64c700719c0f");
 
         ProgramExecutor track = programExecutor.begin(prevStateRoot);
         ProgramResult programResult = track.call(programCall);
@@ -85,7 +86,7 @@ public class ContractTest {
 
         programCall.setMethodName("balanceOf");
         programCall.setMethodDesc("");
-        programCall.args(Hex.toHexString(BUYER.getBytes()));
+        programCall.args(BUYER);
         System.out.println(programCall);
 
         track = programExecutor.begin(track.getRoot());
@@ -100,8 +101,8 @@ public class ContractTest {
     @Test
     public void testAddBalance() throws IOException {
         ProgramCall programCall = new ProgramCall();
-        programCall.setContractAddress(ADDRESS.getBytes());
-        programCall.setSender(SENDER.getBytes());
+        programCall.setContractAddress(NativeAddress.toBytes(ADDRESS));
+        programCall.setSender(NativeAddress.toBytes(SENDER));
         programCall.setPrice(0);
         programCall.setGasLimit(1000000);
         programCall.setNumber(1);
@@ -110,7 +111,7 @@ public class ContractTest {
         programCall.setValue(new BigInteger("100"));
         System.out.println(programCall);
 
-        byte[] prevStateRoot = Hex.decode("08cf9c62806d73378bf64f03ea401fbbd08a318ec580d2bfc4c45641b0921a9e");
+        byte[] prevStateRoot = Hex.decode("68bbca9dc63dd96bca3bb47f771e1df9a5076412a4c23de3e462e5b0c56c06d4");
 
         ProgramExecutor track = programExecutor.begin(prevStateRoot);
         ProgramResult programResult = track.call(programCall);
@@ -123,9 +124,9 @@ public class ContractTest {
 
     @Test
     public void testStop() throws IOException {
-        byte[] prevStateRoot = Hex.decode("08cf9c62806d73378bf64f03ea401fbbd08a318ec580d2bfc4c45641b0921a9e");
-        byte[] address = ADDRESS.getBytes();
-        byte[] sender = SENDER.getBytes();
+        byte[] prevStateRoot = Hex.decode("68bbca9dc63dd96bca3bb47f771e1df9a5076412a4c23de3e462e5b0c56c06d4");
+        byte[] address = NativeAddress.toBytes(ADDRESS);
+        byte[] sender = NativeAddress.toBytes(SENDER);
 
         ProgramExecutor track = programExecutor.begin(prevStateRoot);
         ProgramResult programResult = track.stop(address, sender);
@@ -138,9 +139,9 @@ public class ContractTest {
 
     @Test
     public void testStatus() throws IOException {
-        byte[] prevStateRoot = Hex.decode("08cf9c62806d73378bf64f03ea401fbbd08a318ec580d2bfc4c45641b0921a9e");
-        byte[] address = ADDRESS.getBytes();
-        byte[] sender = SENDER.getBytes();
+        byte[] prevStateRoot = Hex.decode("68bbca9dc63dd96bca3bb47f771e1df9a5076412a4c23de3e462e5b0c56c06d4");
+        byte[] address = NativeAddress.toBytes(ADDRESS);
+        byte[] sender = NativeAddress.toBytes(SENDER);
 
         ProgramExecutor track = programExecutor.begin(prevStateRoot);
         ProgramStatus programStatus = track.status(address);
@@ -155,30 +156,30 @@ public class ContractTest {
         List<ProgramCall> transactions = new ArrayList<>();
 
         ProgramCall programCall = new ProgramCall();
-        programCall.setContractAddress(ADDRESS.getBytes());
-        programCall.setSender(SENDER.getBytes());
+        programCall.setContractAddress(NativeAddress.toBytes(ADDRESS));
+        programCall.setSender(NativeAddress.toBytes(SENDER));
         programCall.setPrice(0);
         programCall.setGasLimit(1000000);
         programCall.setNumber(1);
         programCall.setMethodName("balanceOf");
         programCall.setMethodDesc("");
-        programCall.args(Hex.toHexString(ADDRESS.getBytes()));
+        programCall.args(ADDRESS);
         System.out.println(programCall);
         transactions.add(programCall);
 
         ProgramCall programCall1 = new ProgramCall();
-        programCall1.setContractAddress(ADDRESS.getBytes());
-        programCall1.setSender(SENDER.getBytes());
+        programCall1.setContractAddress(NativeAddress.toBytes(ADDRESS));
+        programCall1.setSender(NativeAddress.toBytes(SENDER));
         programCall1.setPrice(0);
         programCall1.setGasLimit(1000000);
         programCall1.setNumber(1);
         programCall1.setMethodName("balanceOf");
         programCall1.setMethodDesc("");
-        programCall1.args(Hex.toHexString(ADDRESS.getBytes()));
+        programCall1.args(ADDRESS);
         System.out.println(programCall1);
         transactions.add(programCall1);
 
-        byte[] prevStateRoot = Hex.decode("08cf9c62806d73378bf64f03ea401fbbd08a318ec580d2bfc4c45641b0921a9e");
+        byte[] prevStateRoot = Hex.decode("68bbca9dc63dd96bca3bb47f771e1df9a5076412a4c23de3e462e5b0c56c06d4");
 
         ProgramExecutor track = programExecutor.begin(prevStateRoot);
         for (ProgramCall transaction : transactions) {
@@ -197,9 +198,9 @@ public class ContractTest {
 
     @Test
     public void testMethod() throws IOException {
-        byte[] prevStateRoot = Hex.decode("08cf9c62806d73378bf64f03ea401fbbd08a318ec580d2bfc4c45641b0921a9e");
-        byte[] address = ADDRESS.getBytes();
-        byte[] sender = SENDER.getBytes();
+        byte[] prevStateRoot = Hex.decode("68bbca9dc63dd96bca3bb47f771e1df9a5076412a4c23de3e462e5b0c56c06d4");
+        byte[] address = NativeAddress.toBytes(ADDRESS);
+        byte[] sender = NativeAddress.toBytes(SENDER);
 
         ProgramExecutor track = programExecutor.begin(prevStateRoot);
         List<ProgramMethod> methods = track.method(address);
@@ -213,17 +214,17 @@ public class ContractTest {
     @Test
     public void testTransfer() throws IOException {
         ProgramCall programCall = new ProgramCall();
-        programCall.setContractAddress(ADDRESS.getBytes());
-        programCall.setSender(SENDER.getBytes());
+        programCall.setContractAddress(NativeAddress.toBytes(ADDRESS));
+        programCall.setSender(NativeAddress.toBytes(SENDER));
         programCall.setPrice(0);
         programCall.setGasLimit(1000000);
         programCall.setNumber(1);
         programCall.setMethodName("transfer");
         programCall.setMethodDesc("");
-        programCall.args(Hex.toHexString(BUYER.getBytes()), "-1000");
+        programCall.args(BUYER, "-1000");
         System.out.println(programCall);
 
-        byte[] prevStateRoot = Hex.decode("959c21fc0539d7a8df5da6ed705288f2c0c5b8bbda2bee8ae25a82cd541e061d");
+        byte[] prevStateRoot = Hex.decode("68bbca9dc63dd96bca3bb47f771e1df9a5076412a4c23de3e462e5b0c56c06d4");
 
         ProgramExecutor track = programExecutor.begin(prevStateRoot);
         ProgramResult programResult = track.call(programCall);
@@ -235,7 +236,7 @@ public class ContractTest {
 
         programCall.setMethodName("balanceOf");
         programCall.setMethodDesc("");
-        programCall.args(Hex.toHexString(BUYER.getBytes()));
+        programCall.args(BUYER);
         System.out.println(programCall);
 
         track = programExecutor.begin(track.getRoot());

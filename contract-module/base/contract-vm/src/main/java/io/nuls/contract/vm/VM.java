@@ -21,6 +21,7 @@ import io.nuls.contract.vm.instructions.stack.Dup;
 import io.nuls.contract.vm.instructions.stack.Pop;
 import io.nuls.contract.vm.instructions.stack.Swap;
 import io.nuls.contract.vm.instructions.stores.*;
+import io.nuls.contract.vm.natives.io.nuls.contract.sdk.NativeAddress;
 import io.nuls.contract.vm.program.ProgramExecutor;
 import io.nuls.contract.vm.program.ProgramTransfer;
 import io.nuls.contract.vm.program.impl.ProgramContext;
@@ -29,7 +30,6 @@ import io.nuls.contract.vm.util.Log;
 import org.objectweb.asm.tree.LookupSwitchInsnNode;
 import org.objectweb.asm.tree.MultiANewArrayInsnNode;
 import org.objectweb.asm.tree.TableSwitchInsnNode;
-import org.spongycastle.util.encoders.Hex;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -122,8 +122,8 @@ public class VM {
         }
 
         programContext = new ProgramContext();
-        programContext.setAddress(this.heap.newAddress(Hex.toHexString(programInvoke.getAddress())));
-        programContext.setSender(this.heap.newAddress(Hex.toHexString(programInvoke.getSender())));
+        programContext.setAddress(this.heap.newAddress(NativeAddress.toString(programInvoke.getAddress())));
+        programContext.setSender(this.heap.newAddress(NativeAddress.toString(programInvoke.getSender())));
         programContext.setGasPrice(programInvoke.getGasPrice());
         programContext.setGas(programInvoke.getGas());
         programContext.setValue(this.heap.newBigInteger(programInvoke.getValue().toString()));
