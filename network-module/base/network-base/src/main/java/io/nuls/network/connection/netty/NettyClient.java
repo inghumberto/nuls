@@ -75,7 +75,7 @@ public class NettyClient {
                 .option(ChannelOption.SO_SNDBUF, 128*1024)
                 .option(ChannelOption.SO_RCVBUF, 128*1024)
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, CONNETCI_TIME_OUT)
-                .handler(new NulsChannelInitializer<>(new ClientChannelHandler()));
+                .handler(new NulsChannelInitializer<>(new ClientChannelHandler1()));
     }
 
     public void start() {

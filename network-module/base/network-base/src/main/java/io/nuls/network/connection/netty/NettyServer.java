@@ -55,7 +55,7 @@ public class NettyServer {
                 .childOption(ChannelOption.SO_KEEPALIVE, true)
                 .childOption(ChannelOption.SO_SNDBUF, 128 * 1024)
                 .childOption(ChannelOption.SO_RCVBUF, 128 * 1024)
-                .childHandler(new NulsChannelInitializer<>(new ServerChannelHandler()));
+                .childHandler(new NulsChannelInitializer<>(new ServerChannelHandler1()));
     }
 
     public void start() throws InterruptedException {
