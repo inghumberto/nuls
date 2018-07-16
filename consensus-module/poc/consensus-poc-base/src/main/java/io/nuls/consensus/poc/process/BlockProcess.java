@@ -300,7 +300,6 @@ public class BlockProcess {
                                     if(!isCorrectContractTransfer) {
                                         // 清除临时余额
                                         contractService.rollbackContractTempBalance(tx, contractResult);
-
                                         Log.info(result.getMsg());
                                         success = false;
                                         break;
@@ -309,16 +308,14 @@ public class BlockProcess {
                                 }
                             }
                             // 这笔交易的合约执行结果保存在DB中, 另外保存在交易对象中，用于计算退还剩余的Gas/退还合约调用失败后转入的资金 --> method:
-                            if(contractResult != null) {
-                                if(txType == ContractConstant.TX_TYPE_CREATE_CONTRACT) {
-                                    CreateContractTransaction createContractTransaction = (CreateContractTransaction) tx;
-                                    createContractTransaction.setContractResult(contractResult);
-                                    contractService.saveContractExecuteResult(tx.getHash(), contractResult);
-                                } else if(txType == ContractConstant.TX_TYPE_CALL_CONTRACT) {
-                                    CallContractTransaction callContractTransaction = (CallContractTransaction) tx;
-                                    callContractTransaction.setContractResult(contractResult);
-                                    contractService.saveContractExecuteResult(tx.getHash(), contractResult);
-                                }
+                            if(txType == ContractConstant.TX_TYPE_CREATE_CONTRACT) {
+                                CreateContractTransaction createContractTransaction = (CreateContractTransaction) tx;
+                                createContractTransaction.setContractResult(contractResult);
+                                contractService.saveContractExecuteResult(tx.getHash(), contractResult);
+                            } else if(txType == ContractConstant.TX_TYPE_CALL_CONTRACT) {
+                                CallContractTransaction callContractTransaction = (CallContractTransaction) tx;
+                                callContractTransaction.setContractResult(contractResult);
+                                contractService.saveContractExecuteResult(tx.getHash(), contractResult);
                             }
                         }
 

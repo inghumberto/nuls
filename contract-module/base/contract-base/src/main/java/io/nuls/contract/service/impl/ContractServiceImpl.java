@@ -685,10 +685,12 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             return Result.getFailed(KernelErrorCode.PARAMETER_ERROR);
         }
         int txType = tx.getType();
-        // 打包、验证区块，合约只执行一次
-        ContractResult contractExecutedResult = getContractExecuteResult(tx.getHash());
-        if(contractExecutedResult != null) {
-            return Result.getSuccess().setData(contractExecutedResult);
+        if(ContractLedgerUtil.isContractTransaction(tx)) {
+            // 打包、验证区块，合约只执行一次
+            ContractResult contractExecutedResult = getContractExecuteResult(tx.getHash());
+            if(contractExecutedResult != null) {
+                return Result.getSuccess().setData(contractExecutedResult);
+            }
         }
 
         if (txType == ContractConstant.TX_TYPE_CREATE_CONTRACT) {

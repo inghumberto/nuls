@@ -71,8 +71,9 @@ public class ContractExecuteResultStorageServiceImpl implements ContractExecuteR
     public Result saveContractExecuteResult(NulsDigestData hash, ContractResult executeResult) {
         Result result;
         try {
-            result = dbService.putModel(ContractStorageConstant.DB_NAME_CONTRACT_EXECUTE_RESULT, hash.serialize(), executeResult);
-        } catch (IOException e) {
+            Log.info("=========================================save ContractResult: " + executeResult.toString());
+            result = dbService.putModel(ContractStorageConstant.DB_NAME_CONTRACT_EXECUTE_RESULT, hash.getDigestBytes(), executeResult);
+        } catch (Exception e) {
             Log.error("save contract execute result error", e);
             return Result.getFailed();
         }
@@ -82,7 +83,7 @@ public class ContractExecuteResultStorageServiceImpl implements ContractExecuteR
     @Override
     public Result deleteContractExecuteResult(NulsDigestData hash) {
         try {
-            return dbService.delete(ContractStorageConstant.DB_NAME_CONTRACT_EXECUTE_RESULT, hash.serialize());
+            return dbService.delete(ContractStorageConstant.DB_NAME_CONTRACT_EXECUTE_RESULT, hash.getDigestBytes());
         } catch (Exception e) {
             Log.error("delete contract execute result error", e);
             return Result.getFailed();
@@ -96,8 +97,8 @@ public class ContractExecuteResultStorageServiceImpl implements ContractExecuteR
         }
         byte[] contractExecuteResult = new byte[0];
         try {
-            contractExecuteResult = dbService.get(ContractStorageConstant.DB_NAME_CONTRACT_EXECUTE_RESULT, hash.serialize());
-        } catch (IOException e) {
+            contractExecuteResult = dbService.get(ContractStorageConstant.DB_NAME_CONTRACT_EXECUTE_RESULT, hash.getDigestBytes());
+        } catch (Exception e) {
             Log.error("check contract execute result error", e);
             return false;
         }
@@ -113,8 +114,8 @@ public class ContractExecuteResultStorageServiceImpl implements ContractExecuteR
             return null;
         }
         try {
-            return dbService.getModel(ContractStorageConstant.DB_NAME_CONTRACT_EXECUTE_RESULT, hash.serialize(), ContractResult.class);
-        } catch (IOException e) {
+            return dbService.getModel(ContractStorageConstant.DB_NAME_CONTRACT_EXECUTE_RESULT, hash.getDigestBytes(), ContractResult.class);
+        } catch (Exception e) {
             Log.error("get contract execute result error", e);
             return null;
         }

@@ -25,8 +25,12 @@
 
 package io.nuls.contract.dto;
 
+import io.nuls.core.tools.crypto.Hex;
+import io.nuls.kernel.utils.AddressTool;
+
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class ContractResult {
@@ -210,5 +214,25 @@ public class ContractResult {
 
     public void setRemark(String remark) {
         this.remark = remark;
+    }
+
+    @Override
+    public String toString() {
+        return "ContractResult{" +
+                "contractAddress=" + AddressTool.getStringAddressByBytes(contractAddress) +
+                ", result='" + result + '\'' +
+                ", gasUsed=" + gasUsed +
+                ", stateRoot=" + Hex.encode(stateRoot) +
+                ", value=" + value +
+                ", revert=" + revert +
+                ", error=" + error +
+                ", errorMessage='" + errorMessage + '\'' +
+                ", stackTrace='" + stackTrace + '\'' +
+                ", balance=" + balance +
+                ", nonce=" + nonce +
+                ", transfers=" + transfers +
+                ", events=" + events +
+                ", remark='" + remark + '\'' +
+                '}';
     }
 }
