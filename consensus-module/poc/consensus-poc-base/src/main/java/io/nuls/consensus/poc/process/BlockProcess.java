@@ -238,6 +238,14 @@ public class BlockProcess {
                         if (tx.isSystemTx()) {
                             continue;
                         }
+
+                        txType = tx.getType();
+                        // 合约内部转账交易，是打包时才生成的交易，验证区块时同样会生成一条这样的交易，会再那一步再验证交易，所以若是打包时产生的合约内部转账交易，则跳过交易验证
+                        if(txType == ContractConstant.TX_TYPE_CONTRACT_TRANSFER) {
+                            receiveContractTransferTxs.put(tx.getHash().getDigestHex(), (ContractTransferTransaction) tx);
+                            continue;
+                        }
+
                         ValidateResult result = ledgerService.verifyCoinData(tx, toMaps, fromSet);
                         if (result.isFailed()) {
                             Log.info("failed message:" + result.getMsg());
@@ -245,11 +253,6 @@ public class BlockProcess {
                             break;
                         }
 
-                        txType = tx.getType();
-
-                        if(txType == ContractConstant.TX_TYPE_CONTRACT_TRANSFER) {
-                            receiveContractTransferTxs.put(tx.getHash().getDigestHex(), (ContractTransferTransaction) tx);
-                        }
 
                         // 验证区块时发现智能合约交易就调用智能合约
                         callContractResult = contractService.invokeContract(tx, bestHeight, stateRoot);
