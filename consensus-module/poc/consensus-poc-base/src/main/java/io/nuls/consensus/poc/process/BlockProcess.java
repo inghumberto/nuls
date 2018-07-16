@@ -346,6 +346,9 @@ public class BlockProcess {
                                 break;
                             }
                         }
+                        if (!success) {
+                            break;
+                        }
                     }
 
                     // 验证CoinBase交易

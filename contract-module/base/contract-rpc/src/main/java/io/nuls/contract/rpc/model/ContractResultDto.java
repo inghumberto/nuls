@@ -29,6 +29,7 @@ import io.swagger.annotations.ApiModelProperty;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -68,9 +69,9 @@ public class ContractResultDto {
     private BigInteger nonce;
 
     @ApiModelProperty(name = "transfers", value = "合约内部转账")
-    private List<ContractTransfer> transfers = null;
+    private List<ContractTransferDto> transfers = null;
 
-    @ApiModelProperty(name = "hash", value = "交易的hash值")
+    @ApiModelProperty(name = "events", value = "合约事件")
     private List<String> events = null;
 
     @ApiModelProperty(name = "remark", value = "备注")
@@ -156,12 +157,23 @@ public class ContractResultDto {
         this.nonce = nonce;
     }
 
-    public List<ContractTransfer> getTransfers() {
+    public List<ContractTransferDto> getTransfers() {
         return transfers;
     }
 
-    public void setTransfers(List<ContractTransfer> transfers) {
+    public void setTransfers(List<ContractTransferDto> transfers) {
         this.transfers = transfers;
+    }
+
+    public void setOrginTransfers(List<ContractTransfer> transfers) {
+        if(transfers == null || transfers.size() == 0) {
+            return;
+        }
+        List<ContractTransferDto> list = new LinkedList<>();
+        for(ContractTransfer transfer : transfers) {
+            list.add(new ContractTransferDto(transfer));
+        }
+        this.transfers = list;
     }
 
     public List<String> getEvents() {

@@ -21,42 +21,51 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package io.nuls.contract.dto;
+package io.nuls.contract.rpc.model;
 
-import io.nuls.core.tools.crypto.Base58;
-import io.nuls.kernel.model.Na;
+import io.nuls.contract.dto.ContractTransfer;
 import io.nuls.kernel.model.NulsDigestData;
 import io.nuls.kernel.utils.AddressTool;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 
 /**
  * @author: PierreLuo
  */
-public class ContractTransfer {
+@ApiModel(value = "ContractTransferDtoJSON")
+public class ContractTransferDto {
 
-    private byte[] from;
-
-    private byte[] to;
-
+    @ApiModelProperty(name = "from", value = "付款方")
+    private String from;
+    @ApiModelProperty(name = "to", value = "收款方")
+    private String to;
+    @ApiModelProperty(name = "value", value = "转账金额")
     private BigInteger value;
+    @ApiModelProperty(name = "hash", value = "交易hash")
+    private String hash;
 
-    private NulsDigestData hash;
+    public ContractTransferDto(ContractTransfer transfer) {
+        this.from = AddressTool.getStringAddressByBytes(transfer.getFrom());
+        this.to = AddressTool.getStringAddressByBytes(transfer.getTo());
+        this.value = transfer.getValue();
+        this.hash = transfer.getHash();
+    }
 
-    public byte[] getFrom() {
+    public String getFrom() {
         return from;
     }
 
-    public void setFrom(byte[] from) {
+    public void setFrom(String from) {
         this.from = from;
     }
 
-    public byte[] getTo() {
+    public String getTo() {
         return to;
     }
 
-    public void setTo(byte[] to) {
+    public void setTo(String to) {
         this.to = to;
     }
 
@@ -69,20 +78,10 @@ public class ContractTransfer {
     }
 
     public String getHash() {
-        return hash == null ? null : hash.getDigestHex();
+        return hash;
     }
 
-    public void setHash(NulsDigestData hash) {
+    public void setHash(String hash) {
         this.hash = hash;
-    }
-
-    @Override
-    public String toString() {
-        return "ContractTransfer{" +
-                "from=" + AddressTool.getStringAddressByBytes(from) +
-                ", to=" + AddressTool.getStringAddressByBytes(to) +
-                ", value=" + value +
-                ", hash=" + hash == null ? null : hash.getDigestHex() +
-                '}';
     }
 }

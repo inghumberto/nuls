@@ -274,7 +274,7 @@ public class ContractResource implements InitializingBean {
                 contractResultDto.setStackTrace(contractExecuteResult.getStackTrace());
                 contractResultDto.setBalance(contractExecuteResult.getBalance());
                 contractResultDto.setNonce(contractExecuteResult.getNonce());
-                contractResultDto.setTransfers(contractExecuteResult.getTransfers());
+                contractResultDto.setOrginTransfers(contractExecuteResult.getTransfers());
                 contractResultDto.setEvents(contractExecuteResult.getEvents());
                 contractResultDto.setRemark(contractExecuteResult.getRemark());
             }
