@@ -607,14 +607,16 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
             //pierre add contract coin key
             Set<Map.Entry<String, Coin>> entries = toMaps.entrySet();
             Coin toCoin;
+            Coin cloneCoin;
             String key;
             for(Map.Entry<String, Coin> entry : entries) {
                 key = entry.getKey();
                 toCoin = entry.getValue();
                 if (Arrays.equals(toCoin.getOwner(), address)) {
-                    toCoin.setOwner(asBytes(key));
-                    toCoin.setKey(key);
-                    coinList.add(toCoin);
+                    cloneCoin = new Coin(asBytes(key), toCoin.getNa(), toCoin.getLockTime());
+                    cloneCoin.setFrom(toCoin.getFrom());
+                    cloneCoin.setKey(key);
+                    coinList.add(cloneCoin);
                 }
             }
 
