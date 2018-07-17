@@ -24,6 +24,7 @@
  */
 package io.nuls.protocol.model.validator;
 
+import io.nuls.contract.constant.ContractConstant;
 import io.nuls.kernel.constant.KernelErrorCode;
 import io.nuls.kernel.lite.annotation.Component;
 import io.nuls.kernel.model.Block;
@@ -45,7 +46,8 @@ public class BlockMaxSizeValidator implements NulsDataValidator<Block> {
         }
         long length = 0L;
         for (Transaction tx : data.getTxs()) {
-            if (tx.isSystemTx()) {
+            // pierre add 验证区块大小 - 合约内部转账交易不能跳过
+            if (tx.isSystemTx() && tx.getType() != ContractConstant.TX_TYPE_CONTRACT_TRANSFER) {
                 continue;
             }
             length += tx.size();

@@ -42,7 +42,7 @@ public class TxFeeValidator implements NulsDataValidator<Transaction> {
     @Override
     public ValidateResult validate(Transaction tx) {
         int txType = tx.getType();
-        if (tx.isSystemTx() || txType == ContractConstant.TX_TYPE_CONTRACT_TRANSFER) {
+        if (tx.isSystemTx()) {
             return ValidateResult.getSuccessResult();
         }
         CoinData coinData = tx.getCoinData();

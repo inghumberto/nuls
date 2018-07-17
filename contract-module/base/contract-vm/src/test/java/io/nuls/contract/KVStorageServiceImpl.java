@@ -121,7 +121,6 @@ public class KVStorageServiceImpl {
 
     @Override
     public Result clearArea(String area) {
-        //TODO pierre auto-generated method stub
         return null;
     }*/
 

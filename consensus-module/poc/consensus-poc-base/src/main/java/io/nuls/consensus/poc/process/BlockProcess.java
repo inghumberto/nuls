@@ -235,14 +235,15 @@ public class BlockProcess {
                     // 为本次验证区块增加一个合约的临时余额区，用于记录本次合约地址余额的变化
                     contractService.createContractTempBalance();
                     for (Transaction tx : txs) {
-                        if (tx.isSystemTx()) {
-                            continue;
-                        }
 
                         txType = tx.getType();
                         // 合约内部转账交易，是打包时才生成的交易，验证区块时同样会生成一条这样的交易，会再那一步再验证交易，所以若是打包时产生的合约内部转账交易，则跳过交易验证
                         if(txType == ContractConstant.TX_TYPE_CONTRACT_TRANSFER) {
                             receiveContractTransferTxs.put(tx.getHash().getDigestHex(), (ContractTransferTransaction) tx);
+                            continue;
+                        }
+
+                        if (tx.isSystemTx()) {
                             continue;
                         }
 

@@ -58,6 +58,11 @@ public class ContractTransferTransaction extends Transaction {
     }
 
     @Override
+    public boolean isSystemTx() {
+        return true;
+    }
+
+    @Override
     public boolean needVerifySignature() {
         return false;
     }
