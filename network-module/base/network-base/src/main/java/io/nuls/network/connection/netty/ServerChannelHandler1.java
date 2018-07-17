@@ -31,10 +31,15 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.socket.SocketChannel;
 import io.nuls.core.tools.log.Log;
+import io.nuls.kernel.context.NulsContext;
+import io.nuls.network.constant.NetworkConstant;
 import io.nuls.network.constant.NetworkParam;
 import io.nuls.network.manager.BroadcastHandler;
 import io.nuls.network.manager.ConnectionManager;
 import io.nuls.network.manager.NodeManager;
+import io.nuls.network.model.Node;
+import io.nuls.network.protocol.message.HandshakeMessage;
+import io.nuls.network.protocol.message.NetworkMessageBody;
 
 import java.io.IOException;
 
@@ -67,18 +72,29 @@ public class ServerChannelHandler1 extends ChannelInboundHandlerAdapter {
         if (channel == null) {
             channel = ctx.channel();
         }
+
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         super.channelActive(ctx);
         System.out.println("---------------------ServerChannelHandler1 channelActive  ");
+        SocketChannel socketChannel = (SocketChannel) ctx.channel();
+        System.out.println(socketChannel.remoteAddress().getHostString());
         if (this.ctx != null) {
+
             System.out.println("this.ctx == ctx :" + (this.ctx == ctx));
         }
         if (this.channel != null) {
             System.out.println("this.channel == channel :" + (this.channel == ctx.channel()));
         }
+
+        Node node = new Node(socketChannel.remoteAddress().getHostString(), socketChannel.remoteAddress().getPort(), Node.IN);
+        NetworkMessageBody body = new NetworkMessageBody(NetworkConstant.HANDSHAKE_SEVER_TYPE, networkParam.getPort(),
+                NulsContext.getInstance().getBestHeight(), NulsContext.getInstance().getBestBlock().getHeader().getHash(),
+                socketChannel.remoteAddress().getHostString());
+        HandshakeMessage handshakeMessage = new HandshakeMessage(body);
+        broadcastHandler.broadcastToNode(handshakeMessage, node, false);
     }
 
     @Override
@@ -92,6 +108,8 @@ public class ServerChannelHandler1 extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         System.out.println("---------------------ServerChannelHandler1 channelRead  ");
+        SocketChannel socketChannel = (SocketChannel) ctx.channel();
+        System.out.println(socketChannel.remoteAddress().getHostString());
         if (this.ctx != null) {
             System.out.println("this.ctx == ctx :" + (this.ctx == ctx));
         }
@@ -104,6 +122,8 @@ public class ServerChannelHandler1 extends ChannelInboundHandlerAdapter {
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
         super.channelUnregistered(ctx);
         System.out.println("---------------------ServerChannelHandler1 channelUnregistered  ");
+        SocketChannel socketChannel = (SocketChannel) ctx.channel();
+        System.out.println(socketChannel.remoteAddress().getHostString());
         if (this.ctx != null) {
             System.out.println("this.ctx == ctx :" + (this.ctx == ctx));
         }

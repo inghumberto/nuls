@@ -57,6 +57,8 @@ public class ClientChannelHandler1 extends ChannelInboundHandlerAdapter {
     public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
         super.channelRegistered(ctx);
         System.out.println("---------------------ClientChannelHandler1 channelRegistered  ");
+        SocketChannel socketChannel = (SocketChannel) ctx.channel();
+        System.out.println(socketChannel.remoteAddress().getHostString());
         if (this.ctx == null) {
             this.ctx = ctx;
         }
@@ -69,6 +71,8 @@ public class ClientChannelHandler1 extends ChannelInboundHandlerAdapter {
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         super.channelActive(ctx);
         System.out.println("---------------------ClientChannelHandler1 channelActive  ");
+        SocketChannel socketChannel = (SocketChannel) ctx.channel();
+        System.out.println(socketChannel.remoteAddress().getHostString());
         if (this.ctx != null) {
             System.out.println("this.ctx == ctx :" + (this.ctx == ctx));
         }
@@ -82,6 +86,8 @@ public class ClientChannelHandler1 extends ChannelInboundHandlerAdapter {
         super.channelInactive(ctx);
 
         System.out.println("---------------------ClientChannelHandler1 channelInactive  ");
+        SocketChannel socketChannel = (SocketChannel) ctx.channel();
+        System.out.println(socketChannel.remoteAddress().getHostString());
         if (this.ctx != null) {
             System.out.println("this.ctx == ctx :" + (this.ctx == ctx));
         }
@@ -93,6 +99,8 @@ public class ClientChannelHandler1 extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         System.out.println("---------------------ClientChannelHandler1 channelRead  ");
+        SocketChannel socketChannel = (SocketChannel) ctx.channel();
+        System.out.println(socketChannel.remoteAddress().getHostString());
         if (this.ctx != null) {
             System.out.println("this.ctx == ctx :" + (this.ctx == ctx));
         }
@@ -108,6 +116,8 @@ public class ClientChannelHandler1 extends ChannelInboundHandlerAdapter {
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
         System.out.println("---------------------ClientChannelHandler1 channelUnregistered  ");
+        SocketChannel socketChannel = (SocketChannel) ctx.channel();
+        System.out.println(socketChannel.remoteAddress().getHostString());
         if (this.ctx != null) {
             System.out.println("this.ctx == ctx :" + (this.ctx == ctx));
         }
