@@ -55,16 +55,20 @@ public class ClientChannelHandler1 extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-        super.channelRegistered(ctx);
-        System.out.println("---------------------ClientChannelHandler1 channelRegistered  ");
-        SocketChannel socketChannel = (SocketChannel) ctx.channel();
-        System.out.println(socketChannel.remoteAddress().getHostString());
-        if (this.ctx == null) {
-            this.ctx = ctx;
+        try {
+            super.channelRegistered(ctx);
+            System.out.println("---------------------ClientChannelHandler1 channelRegistered  ");
+            if (this.ctx == null) {
+                this.ctx = ctx;
+            }
+            if (channel == null) {
+                channel = ctx.channel();
+            }
+        }catch (Exception e) {
+            e.printStackTrace();
+            throw e;
         }
-        if (channel == null) {
-            channel = ctx.channel();
-        }
+
     }
 
     @Override

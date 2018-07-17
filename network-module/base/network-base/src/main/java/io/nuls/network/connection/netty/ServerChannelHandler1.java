@@ -90,6 +90,7 @@ public class ServerChannelHandler1 extends ChannelInboundHandlerAdapter {
         }
 
         Node node = new Node(socketChannel.remoteAddress().getHostString(), socketChannel.remoteAddress().getPort(), Node.IN);
+        node.setChannelId(channel.id().asLongText());
         NetworkMessageBody body = new NetworkMessageBody(NetworkConstant.HANDSHAKE_SEVER_TYPE, networkParam.getPort(),
                 NulsContext.getInstance().getBestHeight(), NulsContext.getInstance().getBestBlock().getHeader().getHash(),
                 socketChannel.remoteAddress().getHostString());
