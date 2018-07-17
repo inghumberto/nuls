@@ -80,6 +80,7 @@ public class ServerChannelHandler1 extends ChannelInboundHandlerAdapter {
         super.channelActive(ctx);
         System.out.println("---------------------ServerChannelHandler1 channelActive  ");
         SocketChannel socketChannel = (SocketChannel) ctx.channel();
+        NioChannelMap.add(ctx.channel().id().asLongText(), socketChannel);
         System.out.println(socketChannel.remoteAddress().getHostString());
         if (this.ctx != null) {
 
