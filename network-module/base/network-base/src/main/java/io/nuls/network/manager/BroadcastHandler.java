@@ -166,6 +166,9 @@ public class BroadcastHandler {
     }
 
     public BroadcastResult broadcastToANode(BaseMessage message, Node node, boolean asyn) {
+        System.out.println("----------broadcastToANode");
+        System.out.println("----------" + node.getChannelId());
+
         if (!node.isAlive() && node.getChannelId() == null) {
             return new BroadcastResult(false, NetworkErrorCode.NET_NODE_NOT_FOUND);
         }
