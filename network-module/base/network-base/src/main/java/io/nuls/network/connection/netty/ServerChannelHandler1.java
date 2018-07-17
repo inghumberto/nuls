@@ -79,7 +79,7 @@ public class ServerChannelHandler1 extends ChannelInboundHandlerAdapter {
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         super.channelActive(ctx);
         System.out.println("---------------------ServerChannelHandler1 channelActive  ");
-        String channelId = channel.id().asLongText();
+        String channelId = ctx.channel().id().asLongText();
         System.out.println(channelId);
         SocketChannel socketChannel = (SocketChannel) ctx.channel();
         NioChannelMap.add(ctx.channel().id().asLongText(), socketChannel);
