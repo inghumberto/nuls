@@ -139,6 +139,14 @@ public class ProgramResult {
         this.events = events;
     }
 
+    public boolean isGetter() {
+        return getter;
+    }
+
+    public void setGetter(boolean getter) {
+        this.getter = getter;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -149,6 +157,7 @@ public class ProgramResult {
         if (gasUsed != that.gasUsed) return false;
         if (revert != that.revert) return false;
         if (error != that.error) return false;
+        if (getter != that.getter) return false;
         if (result != null ? !result.equals(that.result) : that.result != null) return false;
         if (errorMessage != null ? !errorMessage.equals(that.errorMessage) : that.errorMessage != null) return false;
         if (stackTrace != null ? !stackTrace.equals(that.stackTrace) : that.stackTrace != null) return false;
@@ -168,6 +177,7 @@ public class ProgramResult {
         result1 = 31 * result1 + (stackTrace != null ? stackTrace.hashCode() : 0);
         result1 = 31 * result1 + (balance != null ? balance.hashCode() : 0);
         result1 = 31 * result1 + (nonce != null ? nonce.hashCode() : 0);
+        result1 = 31 * result1 + (getter ? 1 : 0);
         result1 = 31 * result1 + (transfers != null ? transfers.hashCode() : 0);
         result1 = 31 * result1 + (events != null ? events.hashCode() : 0);
         return result1;
@@ -184,6 +194,7 @@ public class ProgramResult {
                 ", stackTrace=" + stackTrace +
                 ", balance=" + balance +
                 ", nonce=" + nonce +
+                ", getter=" + getter +
                 ", transfers=" + transfers +
                 ", events=" + events +
                 '}';
