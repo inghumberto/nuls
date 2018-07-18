@@ -123,7 +123,9 @@ public class VM {
 
         programContext = new ProgramContext();
         programContext.setAddress(this.heap.newAddress(NativeAddress.toString(programInvoke.getAddress())));
-        programContext.setSender(this.heap.newAddress(NativeAddress.toString(programInvoke.getSender())));
+        if (programInvoke.getSender() != null) {
+            programContext.setSender(this.heap.newAddress(NativeAddress.toString(programInvoke.getSender())));
+        }
         programContext.setGasPrice(programInvoke.getGasPrice());
         programContext.setGas(programInvoke.getGas());
         programContext.setValue(this.heap.newBigInteger(programInvoke.getValue().toString()));

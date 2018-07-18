@@ -250,7 +250,7 @@ public class ContractTest {
     public void testGetter() throws IOException {
         ProgramCall programCall = new ProgramCall();
         programCall.setContractAddress(NativeAddress.toBytes(ADDRESS));
-        programCall.setSender(NativeAddress.toBytes(SENDER));
+        //programCall.setSender(NativeAddress.toBytes(SENDER));
         programCall.setPrice(1);
         programCall.setGasLimit(1000000);
         programCall.setNumber(1);
