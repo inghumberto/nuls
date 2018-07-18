@@ -28,6 +28,8 @@ public class ProgramResult {
 
     private BigInteger nonce;
 
+    private boolean getter;
+
     private List<ProgramTransfer> transfers = new ArrayList<>();
 
     private List<String> events = new ArrayList<>();
@@ -45,6 +47,7 @@ public class ProgramResult {
     }
 
     public void getter() {
+        this.getter = true;
         this.transfers = new ArrayList<>();
         this.events = new ArrayList<>();
     }
