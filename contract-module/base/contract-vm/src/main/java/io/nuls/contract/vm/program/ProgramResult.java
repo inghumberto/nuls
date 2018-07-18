@@ -44,6 +44,11 @@ public class ProgramResult {
         return this;
     }
 
+    public void getter() {
+        this.transfers = new ArrayList<>();
+        this.events = new ArrayList<>();
+    }
+
     public ProgramResult() {
     }
 

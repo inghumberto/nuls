@@ -206,6 +206,7 @@ public class ProgramExecutorImpl implements ProgramExecutor {
 
             if (methodCode.isGetter()) {
                 getter = true;
+                programResult.getter();
             }
 
             return programResult;
