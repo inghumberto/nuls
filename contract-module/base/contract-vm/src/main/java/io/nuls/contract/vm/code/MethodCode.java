@@ -371,4 +371,11 @@ public class MethodCode {
         return !isAbstract();
     }
 
+    public boolean isGetter() {
+        if (this.name.startsWith("get")) {
+            return true;
+        }
+        return false;
+    }
+
 }

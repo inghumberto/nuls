@@ -142,6 +142,9 @@ public class NativeAddress {
     }
 
     public static String toString(byte[] bytes) {
+        if (bytes == null) {
+            return null;
+        }
         try {
             return AddressTool.getStringAddressByBytes(bytes);
         } catch (Exception e) {

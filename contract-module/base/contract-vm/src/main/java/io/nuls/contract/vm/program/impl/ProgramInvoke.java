@@ -1,5 +1,7 @@
 package io.nuls.contract.vm.program.impl;
 
+import org.hibernate.validator.constraints.NotEmpty;
+
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import java.math.BigInteger;
@@ -16,7 +18,7 @@ public class ProgramInvoke {
     /**
      * 交易发起者地址
      */
-    @NotNull
+    //@NotNull
     private byte[] sender;
 
     /**
@@ -29,13 +31,13 @@ public class ProgramInvoke {
     /**
      * 交易发起者配置的gas价格
      */
-    @Min(0)
+    @Min(1)
     private long gasPrice;
 
     /**
      * 交易发起者提供的gas
      */
-    @Min(0)
+    @Min(1)
     private long gas;
 
     /**
@@ -83,7 +85,7 @@ public class ProgramInvoke {
     /**
      * 当前块编号
      */
-    @Min(0)
+    @Min(1)
     private long number;
 
     /**
@@ -99,6 +101,7 @@ public class ProgramInvoke {
     /**
      * 调用方法名
      */
+    @NotEmpty
     private String methodName;
 
     /**

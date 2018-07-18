@@ -43,7 +43,7 @@ public class ContractTest {
         ProgramCreate programCreate = new ProgramCreate();
         programCreate.setContractAddress(NativeAddress.toBytes(ADDRESS));
         programCreate.setSender(NativeAddress.toBytes(SENDER));
-        programCreate.setPrice(0);
+        programCreate.setPrice(1);
         programCreate.setGasLimit(1000000);
         programCreate.setNumber(1);
         programCreate.setContractCode(contractCode);
@@ -66,7 +66,7 @@ public class ContractTest {
         ProgramCall programCall = new ProgramCall();
         programCall.setContractAddress(NativeAddress.toBytes(ADDRESS));
         programCall.setSender(NativeAddress.toBytes(SENDER));
-        programCall.setPrice(0);
+        programCall.setPrice(1);
         programCall.setGasLimit(1000000);
         programCall.setNumber(1);
         programCall.setMethodName("mint");
@@ -103,7 +103,7 @@ public class ContractTest {
         ProgramCall programCall = new ProgramCall();
         programCall.setContractAddress(NativeAddress.toBytes(ADDRESS));
         programCall.setSender(NativeAddress.toBytes(SENDER));
-        programCall.setPrice(0);
+        programCall.setPrice(1);
         programCall.setGasLimit(1000000);
         programCall.setNumber(1);
         programCall.setMethodName("_payable");
@@ -158,7 +158,7 @@ public class ContractTest {
         ProgramCall programCall = new ProgramCall();
         programCall.setContractAddress(NativeAddress.toBytes(ADDRESS));
         programCall.setSender(NativeAddress.toBytes(SENDER));
-        programCall.setPrice(0);
+        programCall.setPrice(1);
         programCall.setGasLimit(1000000);
         programCall.setNumber(1);
         programCall.setMethodName("balanceOf");
@@ -181,19 +181,17 @@ public class ContractTest {
 
         byte[] prevStateRoot = Hex.decode("68bbca9dc63dd96bca3bb47f771e1df9a5076412a4c23de3e462e5b0c56c06d4");
 
-        ProgramExecutor track = programExecutor.begin(prevStateRoot);
         for (ProgramCall transaction : transactions) {
-            ProgramExecutor txTrack = track.startTracking();
-            ProgramResult programResult = txTrack.call(transaction);
-            txTrack.commit();
+            ProgramExecutor track = programExecutor.begin(prevStateRoot);
+            ProgramResult programResult = track.call(transaction);
+            track.commit();
 
-            System.out.println(programResult);
+            prevStateRoot = track.getRoot();
+
+            System.out.println("stateRoot: " + Hex.toHexString(track.getRoot()));
             System.out.println();
         }
-        track.commit();
 
-        System.out.println("stateRoot: " + Hex.toHexString(track.getRoot()));
-        System.out.println();
     }
 
     @Test
@@ -216,7 +214,7 @@ public class ContractTest {
         ProgramCall programCall = new ProgramCall();
         programCall.setContractAddress(NativeAddress.toBytes(ADDRESS));
         programCall.setSender(NativeAddress.toBytes(SENDER));
-        programCall.setPrice(0);
+        programCall.setPrice(1);
         programCall.setGasLimit(1000000);
         programCall.setNumber(1);
         programCall.setMethodName("transfer");
@@ -241,6 +239,30 @@ public class ContractTest {
 
         track = programExecutor.begin(track.getRoot());
         programResult = track.call(programCall);
+        track.commit();
+
+        System.out.println(programResult);
+        System.out.println("pierre - stateRoot: " + Hex.toHexString(track.getRoot()));
+        System.out.println();
+    }
+
+    @Test
+    public void testGetter() throws IOException {
+        ProgramCall programCall = new ProgramCall();
+        programCall.setContractAddress(NativeAddress.toBytes(ADDRESS));
+        programCall.setSender(NativeAddress.toBytes(SENDER));
+        programCall.setPrice(1);
+        programCall.setGasLimit(1000000);
+        programCall.setNumber(1);
+        programCall.setMethodName("getName");
+        programCall.setMethodDesc("");
+        programCall.setValue(new BigInteger("0"));
+        System.out.println(programCall);
+
+        byte[] prevStateRoot = Hex.decode("68bbca9dc63dd96bca3bb47f771e1df9a5076412a4c23de3e462e5b0c56c06d4");
+
+        ProgramExecutor track = programExecutor.begin(prevStateRoot);
+        ProgramResult programResult = track.call(programCall);
         track.commit();
 
         System.out.println(programResult);
