@@ -77,8 +77,6 @@ import java.util.Map;
 @Component
 public class ContractTxServiceImpl implements ContractTxService, InitializingBean {
 
-    private static final String GET = "get";
-
     @Autowired
     private AccountService accountService;
     @Autowired
@@ -173,7 +171,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             // 当前区块状态根
             byte[] prevStateRoot = blockHeader.getStateRoot();
             // 执行VM估算Gas消耗
-            ProgramCreate programCreate = new ProgramCreate();
+            /*ProgramCreate programCreate = new ProgramCreate();
             programCreate.setContractAddress(contractAddressBytes);
             programCreate.setSender(senderBytes);
             programCreate.setValue(BigInteger.valueOf(value.getValue()));
@@ -193,7 +191,8 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             }
             long gasUsed = programResult.getGasUsed();
             // 预估1.5倍Gas
-            gasUsed += gasUsed >> 1;
+            gasUsed += gasUsed >> 1;*/
+            long gasUsed = gasLimit.longValue();
             Na imputedNa = Na.valueOf(gasUsed * price);
             // 总花费
             Na totalNa = imputedNa.add(value);
@@ -207,8 +206,6 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             createContractData.setPrice(price);
             createContractData.setCodeLen(contractCode.length);
             createContractData.setCode(contractCode);
-            // 本次交易使用的Gas消耗
-            createContractData.setTxGasUsed(imputedNa.getValue());
             if(args != null) {
                 createContractData.setArgsCount((byte) args.length);
                 if(args.length > 0) {
@@ -227,7 +224,6 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
                 coinData.getTo().add(coinDataResult.getChange());
             }
             tx.setCoinData(coinData);
-
 
 
             tx.setHash(NulsDigestData.calcDigestData(tx.serializeForHash()));
@@ -338,8 +334,9 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             programCall.setMethodDesc(methodDesc);
             programCall.setArgs(args);
 
+            //TODO pierre vm需要做程序调整来支持get函数的任意调用
             // 如果方法名前缀是get，则是不上链的合约调用，同步执行合约代码，不改变状态根，并返回值
-            if(methodName.startsWith(GET)) {
+            if(methodName.startsWith(ContractConstant.GET)) {
                 ProgramExecutor track = programExecutor.begin(prevStateRoot);
                 ProgramResult programResult = track.call(programCall);
                 Result result = null;
@@ -381,7 +378,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             }
 
             // 执行VM估算Gas消耗
-            ProgramExecutor track = programExecutor.begin(prevStateRoot);
+            /*ProgramExecutor track = programExecutor.begin(prevStateRoot);
             ProgramResult programResult = track.call(programCall);
 
             if(!programResult.isSuccess()) {
@@ -391,7 +388,8 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             }
             long gasUsed = programResult.getGasUsed();
             // 预估1.5倍Gas
-            gasUsed += gasUsed >> 1;
+            gasUsed += gasUsed >> 1;*/
+            long gasUsed = gasLimit.longValue();
             Na imputedNa = Na.valueOf(gasUsed * price);
             // 总花费
             Na totalNa = imputedNa.add(value);
@@ -405,8 +403,6 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             callContractData.setGasLimit(gasLimit.longValue());
             callContractData.setMethodName(methodName);
             callContractData.setMethodDesc(methodDesc);
-            // 本次交易使用的Gas消耗
-            callContractData.setTxGasUsed(imputedNa.getValue());
             if(args != null) {
                 callContractData.setArgsCount((byte) args.length);
                 callContractData.setArgs(args);

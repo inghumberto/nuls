@@ -43,14 +43,14 @@ public class ContractTransferDto {
     private String to;
     @ApiModelProperty(name = "value", value = "转账金额")
     private BigInteger value;
-    @ApiModelProperty(name = "hash", value = "交易hash")
-    private String hash;
+    @ApiModelProperty(name = "txHash", value = "交易hash")
+    private String txHash;
 
     public ContractTransferDto(ContractTransfer transfer) {
         this.from = AddressTool.getStringAddressByBytes(transfer.getFrom());
         this.to = AddressTool.getStringAddressByBytes(transfer.getTo());
         this.value = transfer.getValue();
-        this.hash = transfer.getHash();
+        this.txHash = transfer.getHash();
     }
 
     public String getFrom() {
@@ -77,11 +77,11 @@ public class ContractTransferDto {
         this.value = value;
     }
 
-    public String getHash() {
-        return hash;
+    public String getTxHash() {
+        return txHash;
     }
 
-    public void setHash(String hash) {
-        this.hash = hash;
+    public void setTxHash(String txHash) {
+        this.txHash = txHash;
     }
 }

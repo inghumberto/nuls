@@ -23,25 +23,32 @@
  */
 package io.nuls.contract.rpc.resource;
 
+import io.nuls.account.constant.AccountErrorCode;
 import io.nuls.account.ledger.constant.AccountLedgerErrorCode;
+import io.nuls.account.model.Account;
+import io.nuls.account.model.Balance;
+import io.nuls.account.service.AccountService;
+import io.nuls.account.util.AccountTool;
+import io.nuls.contract.constant.ContractConstant;
 import io.nuls.contract.constant.ContractErrorCode;
 import io.nuls.contract.dto.ContractResult;
+import io.nuls.contract.entity.BlockHeaderDto;
 import io.nuls.contract.helper.VMHelper;
-import io.nuls.contract.rpc.form.ContractCall;
-import io.nuls.contract.rpc.form.ContractCreate;
-import io.nuls.contract.rpc.form.ContractDelete;
+import io.nuls.contract.ledger.service.ContractUtxoService;
+import io.nuls.contract.ledger.util.ContractLedgerUtil;
+import io.nuls.contract.rpc.form.*;
 import io.nuls.contract.rpc.model.*;
 import io.nuls.contract.service.ContractService;
 import io.nuls.contract.service.ContractTxService;
 import io.nuls.contract.storage.service.ContractAddressStorageService;
 import io.nuls.contract.storage.service.ContractUtxoStorageService;
 import io.nuls.contract.util.ContractCoinComparator;
-import io.nuls.contract.vm.program.ProgramExecutor;
-import io.nuls.contract.vm.program.ProgramMethod;
-import io.nuls.contract.vm.program.ProgramStatus;
+import io.nuls.contract.util.VMContext;
+import io.nuls.contract.vm.program.*;
 import io.nuls.core.tools.crypto.Hex;
 import io.nuls.core.tools.log.Log;
 import io.nuls.core.tools.map.MapUtil;
+import io.nuls.core.tools.param.AssertUtil;
 import io.nuls.core.tools.str.StringUtils;
 import io.nuls.db.model.Entry;
 import io.nuls.kernel.constant.NulsConstant;
@@ -63,6 +70,8 @@ import io.swagger.annotations.*;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import java.io.IOException;
+import java.math.BigInteger;
 import java.util.*;
 
 /**
@@ -89,7 +98,16 @@ public class ContractResource implements InitializingBean {
     private ContractUtxoStorageService contractUtxoStorageService;
 
     @Autowired
+    private ContractUtxoService contractUtxoService;
+
+    @Autowired
+    private AccountService accountService;
+
+    @Autowired
     private VMHelper vmHelper;
+
+    @Autowired
+    private VMContext vmContext;
 
     private ProgramExecutor programExecutor;
 
@@ -131,6 +149,96 @@ public class ContractResource implements InitializingBean {
     }
 
     @POST
+    @Path("/imputedgas/create")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "估算创建智能合约的Gas消耗")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "success")
+    })
+    public RpcClientResult imputedGasCreateContract(@ApiParam(name = "imputedGasCreateForm", value = "估算创建智能合约的Gas消耗", required = true) ImputedGasContractCreate create) {
+        try {
+            long price = create.getPrice();
+            if (create == null || price <= 0) {
+                return Result.getFailed(ContractErrorCode.PARAMETER_ERROR).toRpcClientResult();
+            }
+
+            String sender = create.getSender();
+            if (!AddressTool.validAddress(sender)) {
+                return Result.getFailed(AccountLedgerErrorCode.ADDRESS_ERROR).toRpcClientResult();
+            }
+
+            String contractCode = create.getContractCode();
+            if(StringUtils.isBlank(contractCode)) {
+                return Result.getFailed(ContractErrorCode.NULL_PARAMETER).toRpcClientResult();
+            }
+
+            Result<Account> accountResult = accountService.getAccount(sender);
+            if (accountResult.isFailed()) {
+                return accountResult.toRpcClientResult();
+            }
+
+            String password = create.getPassword();
+            Account account = accountResult.getData();
+            // 验证账户密码
+            if (accountService.isEncrypted(account).isSuccess() && account.isLocked()) {
+                AssertUtil.canNotEmpty(password, "the password can not be empty");
+                if (!account.validatePassword(password)) {
+                    return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG).toRpcClientResult();
+                }
+            }
+
+            // 获取sender账户余额, 根据余额和合约price计算 账户余额能够消耗的最大Gas
+            Result<Balance> senderBalanceResult = accountService.getBalance(sender);
+            Balance senderBalance = senderBalanceResult.getData();
+            Na usable = senderBalance.getUsable();
+            long maxGasLimit = usable.getValue() / price;
+            Log.debug("=========================================create sender: {}, balance-usable: {}, maxGasLimit: {}", sender, usable.getValue(), maxGasLimit);
+
+            // 生成一个地址作为智能合约地址
+            Address contractAddress = AccountTool.createContractAddress();
+            byte[] contractAddressBytes = contractAddress.getAddressBytes();
+            byte[] senderBytes = AddressTool.getAddress(sender);
+            byte[] contractCodeBytes = Hex.decode(contractCode);
+            String[] args = create.getArgs();
+
+            // 当前区块高度
+            BlockHeaderDto blockHeader = vmContext.getBlockHeader();
+            long blockHeight = blockHeader.getHeight();
+            // 当前区块状态根
+            byte[] prevStateRoot = blockHeader.getStateRoot();
+            // 执行VM估算Gas消耗
+            ProgramCreate programCreate = new ProgramCreate();
+            programCreate.setContractAddress(contractAddressBytes);
+            programCreate.setSender(senderBytes);
+            programCreate.setValue(BigInteger.valueOf(0L));
+            programCreate.setPrice(price);
+            programCreate.setGasLimit(maxGasLimit);
+            programCreate.setNumber(blockHeight);
+            programCreate.setContractCode(contractCodeBytes);
+            if(args != null) {
+                programCreate.setArgs(args);
+            }
+            ProgramExecutor track = programExecutor.begin(prevStateRoot);
+            ProgramResult programResult = track.create(programCreate);
+            if(!programResult.isSuccess()) {
+                Result result = Result.getFailed(ContractErrorCode.DATA_ERROR);
+                result.setMsg(programResult.getErrorMessage());
+                return result.toRpcClientResult();
+            }
+            long gasUsed = programResult.getGasUsed();
+            // 预估1.5倍Gas
+            gasUsed += gasUsed >> 1;
+            Map<String, Object> resultMap = MapUtil.createHashMap(1);
+            resultMap.put("gasLimit", gasUsed);
+            return Result.getSuccess().setData(resultMap).toRpcClientResult();
+        } catch (NulsException e) {
+            return Result.getFailed().setData(e.getMessage()).toRpcClientResult();
+        } catch (IOException e) {
+            return Result.getFailed().setData(e.getMessage()).toRpcClientResult();
+        }
+    }
+
+    @POST
     @Path("/call")
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "调用智能合约")
@@ -160,6 +268,103 @@ public class ContractResource implements InitializingBean {
                 call.getArgs(),
                 call.getPassword(),
                 call.getRemark()).toRpcClientResult();
+    }
+
+    @POST
+    @Path("/imputedgas/call")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "估算调用智能合约的Gas消耗")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "success")
+    })
+    public RpcClientResult imputedGasCallContract(@ApiParam(name = "imputedGasCallForm", value = "估算调用智能合约的Gas消耗", required = true) ImputedGasContractCall call) {
+        try {
+            String methodName = call.getMethodName();
+            // 如果方法名前缀是get，不消耗gas，直接返回0
+            if(methodName.startsWith(ContractConstant.GET)) {
+                Map<String, Object> resultMap = MapUtil.createHashMap(1);
+                resultMap.put("gasLimit", 0L);
+                return Result.getSuccess().setData(resultMap).toRpcClientResult();
+            }
+
+            String contractAddress = call.getContractAddress();
+            byte[] contractAddressBytes = AddressTool.getAddress(contractAddress);
+            if (!AddressTool.validAddress(contractAddress)) {
+                return Result.getFailed(AccountLedgerErrorCode.ADDRESS_ERROR).toRpcClientResult();
+            }
+
+            // 当前区块高度
+            BlockHeaderDto blockHeader = vmContext.getBlockHeader();
+            long blockHeight = blockHeader.getHeight();
+            // 当前区块状态根
+            byte[] prevStateRoot = blockHeader.getStateRoot();
+
+
+            long price = call.getPrice();
+            if (call == null || call.getValue() < 0 || call.getPrice() <= 0) {
+                return Result.getFailed(ContractErrorCode.PARAMETER_ERROR).toRpcClientResult();
+            }
+
+            String sender = call.getSender();
+            if (!AddressTool.validAddress(sender)) {
+                return Result.getFailed(AccountLedgerErrorCode.ADDRESS_ERROR).toRpcClientResult();
+            }
+
+            Result<Account> accountResult = accountService.getAccount(sender);
+            if (accountResult.isFailed()) {
+                return accountResult.toRpcClientResult();
+            }
+
+            String password = call.getPassword();
+            Account account = accountResult.getData();
+            // 验证账户密码
+            if (accountService.isEncrypted(account).isSuccess() && account.isLocked()) {
+                AssertUtil.canNotEmpty(password, "the password can not be empty");
+                if (!account.validatePassword(password)) {
+                    return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG).toRpcClientResult();
+                }
+            }
+
+            // 获取sender账户余额, 根据余额和合约price计算 账户余额能够消耗的最大Gas
+            Result<Balance> senderBalanceResult = accountService.getBalance(sender);
+            Balance senderBalance = senderBalanceResult.getData();
+            Na usable = senderBalance.getUsable();
+            long maxGasLimit = usable.getValue() / price;
+            Log.debug("=========================================call sender: {}, balance-usable: {}, maxGasLimit: {}", sender, usable.getValue(), maxGasLimit);
+
+            byte[] senderBytes = AddressTool.getAddress(sender);
+            String[] args = call.getArgs();
+
+            // 执行VM估算Gas消耗
+            ProgramCall programCall = new ProgramCall();
+            programCall.setContractAddress(contractAddressBytes);
+            programCall.setSender(senderBytes);
+            programCall.setValue(BigInteger.valueOf(call.getValue()));
+            programCall.setPrice(price);
+            programCall.setGasLimit(maxGasLimit);
+            programCall.setNumber(blockHeight);
+            programCall.setMethodName(call.getMethodName());
+            programCall.setMethodDesc(call.getMethodDesc());
+            programCall.setArgs(args);
+
+            ProgramExecutor track = programExecutor.begin(prevStateRoot);
+            ProgramResult programResult = track.call(programCall);
+            if(!programResult.isSuccess()) {
+                Result result = Result.getFailed(ContractErrorCode.DATA_ERROR);
+                result.setMsg(programResult.getErrorMessage());
+                return result.toRpcClientResult();
+            }
+            long gasUsed = programResult.getGasUsed();
+            // 预估1.5倍Gas
+            gasUsed += gasUsed >> 1;
+            Map<String, Object> resultMap = MapUtil.createHashMap(1);
+            resultMap.put("gasLimit", gasUsed);
+            return Result.getSuccess().setData(resultMap).toRpcClientResult();
+        } catch (NulsException e) {
+            return Result.getFailed().setData(e.getMessage()).toRpcClientResult();
+        } catch (IOException e) {
+            return Result.getFailed().setData(e.getMessage()).toRpcClientResult();
+        }
     }
 
     @POST
@@ -235,11 +440,35 @@ public class ContractResource implements InitializingBean {
         ProgramStatus status = track.status(contractAddressBytes);
         List<ProgramMethod> methods = track.method(contractAddressBytes);
 
-        Map<String, Object> resultMap = MapUtil.createHashMap(3);
+        Map<String, Object> resultMap = new LinkedHashMap<>(3);
         resultMap.put("address", contractAddress);
         resultMap.put("status", status.name());
         resultMap.put("method", methods);
 
+        return Result.getSuccess().setData(resultMap).toRpcClientResult();
+    }
+
+    @GET
+    @Path("/balance/{address}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "获取智能合约余额")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "success")
+    })
+    public RpcClientResult getContractBalance(@ApiParam(name = "address", value = "合约地址", required = true) @PathParam("address") String contractAddress) {
+        if (contractAddress == null) {
+            return Result.getFailed(ContractErrorCode.PARAMETER_ERROR).toRpcClientResult();
+        }
+
+        if (!AddressTool.validAddress(contractAddress)) {
+            return Result.getFailed(AccountLedgerErrorCode.ADDRESS_ERROR).toRpcClientResult();
+        }
+
+        byte[] contractAddressBytes = AddressTool.getAddress(contractAddress);
+        Result<BigInteger> result = contractUtxoService.getBalance(contractAddressBytes);
+        Map<String, Object> resultMap = MapUtil.createHashMap(2);
+        resultMap.put("address", contractAddress);
+        resultMap.put("balance", result.getData());
         return Result.getSuccess().setData(resultMap).toRpcClientResult();
     }
 
@@ -306,6 +535,9 @@ public class ContractResource implements InitializingBean {
             if (tx == null) {
                 result = Result.getFailed(LedgerErrorCode.DATA_NOT_FOUND);
             } else {
+                if(!ContractLedgerUtil.isContractTransaction(tx)) {
+                    return Result.getFailed(ContractErrorCode.NON_CONTRACTUAL_TRANSACTION).toRpcClientResult();
+                }
                 tx.setStatus(TxStatusEnum.CONFIRMED);
                 ContractTransactionDto txDto = null;
                 CoinData coinData = tx.getCoinData();

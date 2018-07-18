@@ -45,7 +45,6 @@ public class CallContractData extends TransactionLogicData {
     private long price;
     private String methodName;
     private String methodDesc;
-    private long txGasUsed;
     private byte argsCount;
     private String[] args;
 
@@ -59,7 +58,6 @@ public class CallContractData extends TransactionLogicData {
         size += SerializeUtils.sizeOfVarInt(price);
         size += SerializeUtils.sizeOfString(methodName);
         size += SerializeUtils.sizeOfString(methodDesc);
-        size += SerializeUtils.sizeOfVarInt(txGasUsed);
         size += 1;
         if(args != null) {
             for(String arg : args) {
@@ -78,7 +76,6 @@ public class CallContractData extends TransactionLogicData {
         stream.writeVarInt(price);
         stream.writeString(methodName);
         stream.writeString(methodDesc);
-        stream.writeVarInt(txGasUsed);
         stream.write(argsCount);
         if(args != null) {
             for(String arg : args) {
@@ -96,7 +93,6 @@ public class CallContractData extends TransactionLogicData {
         this.price = byteBuffer.readVarInt();
         this.methodName = byteBuffer.readString();
         this.methodDesc = byteBuffer.readString();
-        this.txGasUsed = byteBuffer.readVarInt();
         this.argsCount = byteBuffer.readByte();
         int length = this.argsCount;
         this.args = new String[length];
@@ -159,14 +155,6 @@ public class CallContractData extends TransactionLogicData {
 
     public void setMethodDesc(String methodDesc) {
         this.methodDesc = methodDesc;
-    }
-
-    public long getTxGasUsed() {
-        return txGasUsed;
-    }
-
-    public void setTxGasUsed(long txGasUsed) {
-        this.txGasUsed = txGasUsed;
     }
 
     public byte getArgsCount() {

@@ -39,7 +39,6 @@ public class CallContractDataDto {
     private long price;
     private String methodName;
     private String methodDesc;
-    private long txGasUsed;
     private byte argsCount;
     private String[] args;
 
@@ -51,7 +50,6 @@ public class CallContractDataDto {
         this.price = call.getPrice();
         this.methodName = call.getMethodName();
         this.methodDesc = call.getMethodDesc();
-        this.txGasUsed = call.getTxGasUsed();
         this.argsCount = call.getArgsCount();
         this.args = call.getArgs();
     }
@@ -110,14 +108,6 @@ public class CallContractDataDto {
 
     public void setMethodDesc(String methodDesc) {
         this.methodDesc = methodDesc;
-    }
-
-    public long getTxGasUsed() {
-        return txGasUsed;
-    }
-
-    public void setTxGasUsed(long txGasUsed) {
-        this.txGasUsed = txGasUsed;
     }
 
     public byte getArgsCount() {
