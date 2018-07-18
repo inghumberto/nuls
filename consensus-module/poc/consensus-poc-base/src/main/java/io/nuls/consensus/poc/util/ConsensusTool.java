@@ -199,7 +199,7 @@ public class ConsensusTool {
                     CreateContractData createContractData = createContractTx.getTxData();
                     // 减差额作为退还Gas
                     long realGasUsed = contractResult.getGasUsed();
-                    long txGasUsed = createContractData.getTxGasUsed();
+                    long txGasUsed = createContractData.getGasLimit();
                     long returnGas = 0;
                     if(txGasUsed > realGasUsed) {
                         returnGas = txGasUsed - realGasUsed;
@@ -227,7 +227,7 @@ public class ConsensusTool {
                     CallContractData callContractData = callContractTx.getTxData();
                     // 减差额作为退还Gas
                     long realGasUsed = contractResult.getGasUsed();
-                    long txGasUsed = callContractData.getTxGasUsed();
+                    long txGasUsed = callContractData.getGasLimit();
                     long returnGas = 0;
                     ByteArrayWrapper sender = new ByteArrayWrapper(callContractData.getSender());
                     if(txGasUsed > realGasUsed) {

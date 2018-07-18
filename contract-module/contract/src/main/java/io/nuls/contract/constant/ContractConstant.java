@@ -48,4 +48,6 @@ public interface ContractConstant extends NulsConstant {
     String CREATE = "create";
     String DELETE = "delete";
 
+    String GET = "get";
+
 }

@@ -37,7 +37,6 @@ public class CreateContractDataDto {
     private String hexCode;
     private long gasLimit;
     private long price;
-    private long txGasUsed;
     private byte argsCount;
     private String[] args;
 
@@ -48,7 +47,6 @@ public class CreateContractDataDto {
         this.hexCode = Hex.encode(create.getCode());
         this.gasLimit = create.getGasLimit();
         this.price = create.getPrice();
-        this.txGasUsed = create.getTxGasUsed();
         this.argsCount = create.getArgsCount();
         this.args = create.getArgs();
     }
@@ -99,14 +97,6 @@ public class CreateContractDataDto {
 
     public void setPrice(long price) {
         this.price = price;
-    }
-
-    public long getTxGasUsed() {
-        return txGasUsed;
-    }
-
-    public void setTxGasUsed(long txGasUsed) {
-        this.txGasUsed = txGasUsed;
     }
 
     public byte getArgsCount() {

@@ -11,7 +11,7 @@ import io.swagger.annotations.ApiModelProperty;
 @ApiModel(value = "创建智能合约表单数据")
 public class ContractCreate extends ContractBase {
 
-    @ApiModelProperty(name = "contractCode", value = "智能合约代码(字节码的Base64编码字符串)", required = true)
+    @ApiModelProperty(name = "contractCode", value = "智能合约代码(字节码的Hex编码字符串)", required = true)
     private String contractCode;
     @ApiModelProperty(name = "args", value = "参数列表", required = false)
     private String[] args;

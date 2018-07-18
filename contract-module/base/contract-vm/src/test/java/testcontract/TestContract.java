@@ -23,8 +23,11 @@
  */
 package testcontract;
 
+import io.nuls.contract.sdk.Address;
 import io.nuls.contract.sdk.Contract;
 import io.nuls.contract.sdk.Msg;
+
+import java.math.BigInteger;
 
 /**
  * @desription:
@@ -50,6 +53,12 @@ public class TestContract implements Contract {
 
     public String balance() {
         return Msg.address().balance().toString();
+    }
+
+    public String transfer() {
+        Address address = new Address("NsdtgQGAxXPh53oZxAWjVpnHnK7mu4wY");
+        address.transfer(BigInteger.valueOf(10000000));
+        return "AW158U";
     }
 
     public TestContract() {
