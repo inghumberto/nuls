@@ -46,6 +46,7 @@ import io.nuls.contract.vm.program.ProgramCall;
 import io.nuls.contract.vm.program.ProgramCreate;
 import io.nuls.contract.vm.program.ProgramExecutor;
 import io.nuls.contract.vm.program.ProgramResult;
+import io.nuls.core.tools.calc.LongUtils;
 import io.nuls.core.tools.log.Log;
 import io.nuls.core.tools.map.MapUtil;
 import io.nuls.core.tools.param.AssertUtil;
@@ -55,7 +56,6 @@ import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.func.TimeService;
 import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Component;
-import io.nuls.kernel.lite.annotation.Service;
 import io.nuls.kernel.lite.core.bean.InitializingBean;
 import io.nuls.kernel.model.*;
 import io.nuls.kernel.script.P2PKHScriptSig;
@@ -66,7 +66,6 @@ import io.nuls.protocol.service.TransactionService;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -170,8 +169,8 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             long blockHeight = blockHeader.getHeight();
             // 当前区块状态根
             byte[] prevStateRoot = blockHeader.getStateRoot();
-            // 执行VM估算Gas消耗
-            /*ProgramCreate programCreate = new ProgramCreate();
+            // 执行VM验证合法性
+            ProgramCreate programCreate = new ProgramCreate();
             programCreate.setContractAddress(contractAddressBytes);
             programCreate.setSender(senderBytes);
             programCreate.setValue(BigInteger.valueOf(value.getValue()));
@@ -184,16 +183,16 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             }
             ProgramExecutor track = programExecutor.begin(prevStateRoot);
             ProgramResult programResult = track.create(programCreate);
-            if(!programResult.isSuccess()) {
+            if(!programResult.isSuccess() && programResult.isRevert()) {
                 Result result = Result.getFailed(ContractErrorCode.DATA_ERROR);
                 result.setMsg(programResult.getErrorMessage());
                 return result;
             }
-            long gasUsed = programResult.getGasUsed();
+            /*long gasUsed = programResult.getGasUsed();
             // 预估1.5倍Gas
             gasUsed += gasUsed >> 1;*/
             long gasUsed = gasLimit.longValue();
-            Na imputedNa = Na.valueOf(gasUsed * price);
+            Na imputedNa = Na.valueOf(LongUtils.mul(gasUsed, price));
             // 总花费
             Na totalNa = imputedNa.add(value);
 
@@ -377,20 +376,20 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
                 coinData.getTo().add(toCoin);
             }
 
-            // 执行VM估算Gas消耗
-            /*ProgramExecutor track = programExecutor.begin(prevStateRoot);
+            // 执行VM验证合法性
+            ProgramExecutor track = programExecutor.begin(prevStateRoot);
             ProgramResult programResult = track.call(programCall);
 
-            if(!programResult.isSuccess()) {
+            if(!programResult.isSuccess() && programResult.isRevert()) {
                 Result result = Result.getFailed(ContractErrorCode.DATA_ERROR);
                 result.setMsg(programResult.getErrorMessage());
                 return result;
             }
-            long gasUsed = programResult.getGasUsed();
+            /*long gasUsed = programResult.getGasUsed();
             // 预估1.5倍Gas
             gasUsed += gasUsed >> 1;*/
             long gasUsed = gasLimit.longValue();
-            Na imputedNa = Na.valueOf(gasUsed * price);
+            Na imputedNa = Na.valueOf(LongUtils.mul(gasUsed, price));
             // 总花费
             Na totalNa = imputedNa.add(value);
 

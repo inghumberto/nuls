@@ -35,7 +35,7 @@ import io.nuls.kernel.utils.NulsByteBuffer;
  * @Author: PierreLuo
  * @Date: 2018/4/20
  */
-public class CallContractTransaction extends Transaction<CallContractData> {
+public class CallContractTransaction extends Transaction<CallContractData> implements ContractTransaction{
 
     private ContractResult contractResult;
 
@@ -54,11 +54,15 @@ public class CallContractTransaction extends Transaction<CallContractData> {
         return null;
     }
 
+    @Override
     public ContractResult getContractResult() {
         return contractResult;
     }
 
+    @Override
     public void setContractResult(ContractResult contractResult) {
         this.contractResult = contractResult;
     }
+
+
 }

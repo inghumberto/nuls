@@ -25,7 +25,7 @@ package io.nuls.core.tools.map;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -49,6 +49,11 @@ public class MapUtil{
     public static HashMap createHashMap(int cap) {
         int capacity = tableSizeFor(cap) << 1;
         return new HashMap<>(capacity);
+    }
+
+    public static LinkedHashMap createLinkedHashMap(int cap) {
+        int capacity = tableSizeFor(cap) << 1;
+        return new LinkedHashMap<>(capacity);
     }
 
     public static ConcurrentHashMap createConcurrentHashMap(int cap) {

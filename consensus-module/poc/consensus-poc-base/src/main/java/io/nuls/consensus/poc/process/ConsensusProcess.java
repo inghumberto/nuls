@@ -47,9 +47,11 @@ import io.nuls.contract.constant.ContractConstant;
 import io.nuls.contract.dto.ContractResult;
 import io.nuls.contract.dto.ContractTransfer;
 import io.nuls.contract.entity.tx.CallContractTransaction;
+import io.nuls.contract.entity.tx.ContractTransaction;
 import io.nuls.contract.entity.tx.ContractTransferTransaction;
-import io.nuls.contract.entity.tx.CreateContractTransaction;
+import io.nuls.contract.entity.txdata.CallContractData;
 import io.nuls.contract.service.ContractService;
+import io.nuls.core.tools.calc.LongUtils;
 import io.nuls.core.tools.crypto.Hex;
 import io.nuls.core.tools.date.DateUtil;
 import io.nuls.core.tools.log.Log;
@@ -415,83 +417,91 @@ public class ConsensusProcess {
             contractResult = callContractResult.getData();
             if(contractResult != null) {
                 stateRoot = contractResult.getStateRoot();
+                transfers = contractResult.getTransfers();
                 Log.info("=========================================doPacking result StateRoot: " + Hex.encode(stateRoot));
-                if(callContractResult.isSuccess()) {
-                    transfers = contractResult.getTransfers();
+                // 合约调用失败，且调用者存在资金转入合约地址，创建一笔合约内部转账，退回这笔资金
+                if(!contractResult.isSuccess() && contractResult.getValue() > 0 && tx instanceof CallContractTransaction) {
+                    CallContractTransaction callContractTx = (CallContractTransaction) tx;
+                    CallContractData data = callContractTx.getTxData();
+                    long price = data.getPrice();
+                    Na transferFee = Na.valueOf(LongUtils.mul(ContractConstant.CONTRACT_TRANSFER_GAS_COST, price));
+                    Na sendBack = Na.valueOf(contractResult.getValue());
+
+                    if(sendBack.compareTo(transferFee) <= 0) {
+                        transferFee = sendBack;
+                    }
+                    ContractTransfer transfer = new ContractTransfer(data.getContractAddress(), data.getSender(), sendBack, transferFee, true);
+                    transfers.add(transfer);
+                }
+                // 创建合约转账交易
+                if(transfers != null && transfers.size() > 0) {
+                    // 合约转账使用的交易时间为区块时间
+                    successContractTransferTxs = new HashMap<>();
+                    Result<ContractTransferTransaction> contractTransferResult;
+                    ContractTransferTransaction contractTransferTx;
+                    for(ContractTransfer transfer : transfers) {
+                        contractTransferResult = contractService.createContractTransferTx(transfer, bd.getTime(), toMaps, contractUsedCoinMap);
+                        if(contractTransferResult.isFailed()) {
+                            contractService.rollbackContractTransferTxs(successContractTransferTxs, toMaps, fromSet, contractUsedCoinMap);
+                            isCorrectContractTransfer = false;
+                            break;
+                        }
+
+                        contractTransferTx = contractTransferResult.getData();
+                        result = contractService.verifyContractTransferCoinData(contractTransferTx, toMaps, fromSet);
+                        if(result.isFailed()) {
+                            // 如果转账出现错误，跳过整笔合约交易
+                            // 回滚内部转账交易
+                            contractService.rollbackContractTransferTx(contractTransferTx, toMaps, fromSet, contractUsedCoinMap);
+                            contractService.rollbackContractTransferTxs(successContractTransferTxs, toMaps, fromSet, contractUsedCoinMap);
+                            isCorrectContractTransfer = false;
+                            break;
+                        } else {
+                            // 保存内部转账交易hash和外部合约交易hash
+                            transfer.setHash(contractTransferTx.getHash());
+                            transfer.setOrginHash(tx.getHash());
+                            successContractTransferTxs.put(contractTransferTx.getHash().getDigestHex(), contractTransferTx);
+                            contractTransferTxTotalSize += contractTransferTx.size();
+                        }
+
+                    }
+
+                    // 如果合约内部转账出现错误，跳过整笔合约交易
+                    if(!isCorrectContractTransfer) {
+                        // 回滚临时余额
+                        contractService.rollbackContractTempBalance(tx, contractResult);
+                        // 清除toMaps和fromSet的这条交易的记录
+                        contractService.rollbackVerifyData(tx, toMaps, fromSet);
+                        Log.warn(result.getMsg());
+                        continue;
+                    }
+
+                    // 整笔合约交易的大小 = 合约交易的大小 + 合约内部产生的转账交易的大小
+                    if ((totalSize + contractTransferTxTotalSize + txSize) > ProtocolConstant.MAX_BLOCK_SIZE) {
+                        // 回滚整笔交易的临时余额
+                        contractService.rollbackContractTempBalance(tx, contractResult);
+
+                        // 回滚内部转账交易
+                        contractService.rollbackContractTransferTxs(successContractTransferTxs, toMaps, fromSet, contractUsedCoinMap);
+                        txMemoryPool.addInFirst(tx, false);
+                        break;
+                    }
+                    totalSize += contractTransferTxTotalSize;
+
+                    packingTxList.addAll(successContractTransferTxs.values());
+                }
+                if(contractResult.isSuccess()) {
                     contractEvents = contractResult.getEvents();
                     if(contractEvents != null && contractEvents.size() > 0) {
                         //TODO pierre 发送合约事件
                     }
-                    // 创建合约转账交易
-                    if(transfers != null && transfers.size() > 0) {
-                        // 合约转账使用的交易时间为区块时间
-                        successContractTransferTxs = new HashMap<>();
-                        Result<ContractTransferTransaction> contractTransferResult;
-                        ContractTransferTransaction contractTransferTx;
-                        for(ContractTransfer transfer : transfers) {
-                            contractTransferResult = contractService.createContractTransferTx(transfer, bd.getTime(), toMaps, contractUsedCoinMap);
-                            if(contractTransferResult.isFailed()) {
-                                contractService.rollbackContractTransferTxs(successContractTransferTxs, toMaps, fromSet, contractUsedCoinMap);
-                                isCorrectContractTransfer = false;
-                                break;
-                            }
-
-                            contractTransferTx = contractTransferResult.getData();
-                            result = contractService.verifyContractTransferCoinData(contractTransferTx, toMaps, fromSet);
-                            if(result.isFailed()) {
-                                // 如果转账出现错误，跳过整笔合约交易
-                                // 回滚内部转账交易
-                                contractService.rollbackContractTransferTx(contractTransferTx, toMaps, fromSet, contractUsedCoinMap);
-                                contractService.rollbackContractTransferTxs(successContractTransferTxs, toMaps, fromSet, contractUsedCoinMap);
-                                isCorrectContractTransfer = false;
-                                break;
-                            } else {
-                                // 保存内部转账交易hash
-                                contractTransferTx.getTransfer().setHash(contractTransferTx.getHash());
-                                successContractTransferTxs.put(contractTransferTx.getHash().getDigestHex(), contractTransferTx);
-                                contractTransferTxTotalSize += contractTransferTx.size();
-                            }
-
-                        }
-
-                        // 如果合约内部转账出现错误，跳过整笔合约交易
-                        if(!isCorrectContractTransfer) {
-                            // 回滚临时余额
-                            contractService.rollbackContractTempBalance(tx, contractResult);
-                            Log.warn(result.getMsg());
-                            continue;
-                        }
-
-                        // 整笔合约交易的大小 = 合约交易的大小 + 合约内部产生的转账交易的大小
-                        if ((totalSize + contractTransferTxTotalSize + txSize) > ProtocolConstant.MAX_BLOCK_SIZE) {
-                            // 回滚整笔交易的临时余额
-                            contractService.rollbackContractTempBalance(tx, contractResult);
-
-                            // 回滚内部转账交易
-                            contractService.rollbackContractTransferTxs(successContractTransferTxs, toMaps, fromSet, contractUsedCoinMap);
-                            txMemoryPool.addInFirst(tx, false);
-                            break;
-                        }
-                        totalSize += contractTransferTxTotalSize;
-
-                        packingTxList.addAll(successContractTransferTxs.values());
-                    }
-                } else {
-                    // 清除toMaps和fromSet的这条交易的记录
-                    contractService.rollbackVerifyData(tx, toMaps, fromSet);
                 }
                 // 更新世界状态根
                 bd.setStateRoot(stateRoot);
                 // 这笔交易的合约执行结果保存在DB中, 另外保存在交易对象中，用于计算退还剩余的Gas --> method: addConsensusTx
-                if(txType == ContractConstant.TX_TYPE_CREATE_CONTRACT) {
-                    CreateContractTransaction createContractTransaction = (CreateContractTransaction) tx;
-                    createContractTransaction.setContractResult(contractResult);
-                    contractService.saveContractExecuteResult(tx.getHash(), contractResult);
-                } else if(txType == ContractConstant.TX_TYPE_CALL_CONTRACT) {
-                    CallContractTransaction callContractTransaction = (CallContractTransaction) tx;
-                    callContractTransaction.setContractResult(contractResult);
-                    contractService.saveContractExecuteResult(tx.getHash(), contractResult);
-                }
+                ContractTransaction contractTx = (ContractTransaction) tx;
+                contractTx.setContractResult(contractResult);
+                contractService.saveContractExecuteResult(tx.getHash(), contractResult);
             }
 
             tx.setBlockHeight(bd.getHeight());

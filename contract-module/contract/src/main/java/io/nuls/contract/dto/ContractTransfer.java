@@ -23,13 +23,9 @@
  */
 package io.nuls.contract.dto;
 
-import io.nuls.core.tools.crypto.Base58;
 import io.nuls.kernel.model.Na;
 import io.nuls.kernel.model.NulsDigestData;
 import io.nuls.kernel.utils.AddressTool;
-
-import java.math.BigInteger;
-import java.util.Arrays;
 
 /**
  * @author: PierreLuo
@@ -40,9 +36,41 @@ public class ContractTransfer {
 
     private byte[] to;
 
-    private BigInteger value;
+    private Na value;
 
+    private Na fee;
+
+    private boolean isSendBack;
+
+    /**
+     *  智能合约交易hash
+     */
+    private NulsDigestData orginHash;
+
+    /**
+     *  合约内部转账交易hash
+     */
     private NulsDigestData hash;
+
+    public ContractTransfer(){
+
+    }
+
+    public ContractTransfer(byte[] from, byte[] to, Na value, Na fee) {
+        this.from = from;
+        this.to = to;
+        this.value = value;
+        this.fee = fee;
+        this.isSendBack = false;
+    }
+
+    public ContractTransfer(byte[] from, byte[] to, Na value, Na fee, boolean isSendBack) {
+        this.from = from;
+        this.to = to;
+        this.value = value;
+        this.fee = fee;
+        this.isSendBack = isSendBack;
+    }
 
     public byte[] getFrom() {
         return from;
@@ -60,12 +88,36 @@ public class ContractTransfer {
         this.to = to;
     }
 
-    public BigInteger getValue() {
+    public Na getValue() {
         return value;
     }
 
-    public void setValue(BigInteger value) {
+    public void setValue(Na value) {
         this.value = value;
+    }
+
+    public Na getFee() {
+        return fee;
+    }
+
+    public void setFee(Na fee) {
+        this.fee = fee;
+    }
+
+    public boolean isSendBack() {
+        return isSendBack;
+    }
+
+    public void setSendBack(boolean sendBack) {
+        isSendBack = sendBack;
+    }
+
+    public String getOrginHash() {
+        return orginHash == null ? null : orginHash.getDigestHex();
+    }
+
+    public void setOrginHash(NulsDigestData orginHash) {
+        this.orginHash = orginHash;
     }
 
     public String getHash() {
@@ -82,6 +134,7 @@ public class ContractTransfer {
                 "from=" + AddressTool.getStringAddressByBytes(from) +
                 ", to=" + AddressTool.getStringAddressByBytes(to) +
                 ", value=" + value +
+                ", orginHash=" + orginHash == null ? null : orginHash.getDigestHex() +
                 ", hash=" + hash == null ? null : hash.getDigestHex() +
                 '}';
     }

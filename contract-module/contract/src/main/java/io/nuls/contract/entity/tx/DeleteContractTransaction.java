@@ -24,22 +24,22 @@
 package io.nuls.contract.entity.tx;
 
 import io.nuls.contract.constant.ContractConstant;
+import io.nuls.contract.dto.ContractResult;
 import io.nuls.contract.entity.txdata.DeleteContractData;
-import io.nuls.db.model.Entry;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.model.Transaction;
 import io.nuls.kernel.utils.NulsByteBuffer;
-
-import java.util.List;
 
 /**
  * @Desription:
  * @Author: PierreLuo
  * @Date: 2018/4/20
  */
-public class DeleteContractTransaction extends Transaction<DeleteContractData> {
+public class DeleteContractTransaction extends Transaction<DeleteContractData> implements ContractTransaction{
 
-    private List<Entry<byte[], byte[]>> deleteList;
+    private ContractResult contractResult;
+
+    //private List<Entry<byte[], byte[]>> deleteList;
 
     public DeleteContractTransaction() {
         super(ContractConstant.TX_TYPE_DELETE_CONTRACT);
@@ -56,11 +56,20 @@ public class DeleteContractTransaction extends Transaction<DeleteContractData> {
         return null;
     }
 
-    public List<Entry<byte[], byte[]>> getDeleteList() {
-        return deleteList;
+    @Override
+    public ContractResult getContractResult() {
+        return contractResult;
     }
 
+    @Override
+    public void setContractResult(ContractResult contractResult) {
+        this.contractResult = contractResult;
+    }
+
+    /*public List<Entry<byte[], byte[]>> getDeleteList() {
+        return deleteList;
+    }
     public void setDeleteList(List<Entry<byte[], byte[]>> deleteList) {
         this.deleteList = deleteList;
-    }
+    }*/
 }

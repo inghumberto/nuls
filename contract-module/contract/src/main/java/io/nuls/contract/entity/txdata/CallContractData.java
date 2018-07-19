@@ -36,7 +36,7 @@ import java.util.Set;
 /**
  * @Author: PierreLuo
  */
-public class CallContractData extends TransactionLogicData {
+public class CallContractData extends TransactionLogicData implements ContractData{
 
     private byte[] sender;
     private byte[] contractAddress;

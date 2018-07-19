@@ -28,7 +28,6 @@ import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.model.TransactionLogicData;
 import io.nuls.kernel.utils.NulsByteBuffer;
 import io.nuls.kernel.utils.NulsOutputStreamBuffer;
-import io.nuls.kernel.utils.SerializeUtils;
 
 import java.io.IOException;
 import java.util.Set;
@@ -36,61 +35,47 @@ import java.util.Set;
 /**
  * @Author: PierreLuo
  */
-public class DeleteContractData extends TransactionLogicData implements ContractData{
+public class ContractTransferData extends TransactionLogicData{
 
-    private byte[] sender;
-    private byte[] contractAddress;
+    //TODO pierre 增加更多成员变量，丰富数据完整性，带来的弊端是增加了网络流量
+
+    private byte success;
+
+    public ContractTransferData(){
+
+    }
+
+    public ContractTransferData(byte success) {
+        this.success = success;
+    }
 
     @Override
     public int size() {
         int size = 0;
-        size += SerializeUtils.sizeOfBytes(sender);
-        size += SerializeUtils.sizeOfBytes(contractAddress);
+        size += 1;
         return size;
     }
 
     @Override
     protected void serializeToStream(NulsOutputStreamBuffer stream) throws IOException {
-        stream.writeBytesWithLength(sender);
-        stream.writeBytesWithLength(contractAddress);
+        stream.write(success);
     }
 
     @Override
     public void parse(NulsByteBuffer byteBuffer) throws NulsException {
-        this.sender = byteBuffer.readByLengthByte();
-        this.contractAddress = byteBuffer.readByLengthByte();
-    }
-
-    @Override
-    public long getGasLimit() {
-        return 0L;
-    }
-
-    @Override
-    public byte[] getSender() {
-        return sender;
-    }
-
-    @Override
-    public long getPrice() {
-        return 0L;
-    }
-
-    public void setSender(byte[] sender) {
-        this.sender = sender;
-    }
-
-    public byte[] getContractAddress() {
-        return contractAddress;
-    }
-
-    public void setContractAddress(byte[] contractAddress) {
-        this.contractAddress = contractAddress;
+        this.success = byteBuffer.readByte();
     }
 
     @Override
     public Set<byte[]> getAddresses() {
-        //TODO auto-generated method stub
         return null;
+    }
+
+    public byte getSuccess() {
+        return success;
+    }
+
+    public void setSuccess(byte success) {
+        this.success = success;
     }
 }

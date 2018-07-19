@@ -27,6 +27,7 @@ package io.nuls.contract.rpc.model;
 
 import io.nuls.contract.constant.ContractConstant;
 import io.nuls.contract.entity.txdata.CallContractData;
+import io.nuls.contract.entity.txdata.ContractTransferData;
 import io.nuls.contract.entity.txdata.CreateContractData;
 import io.nuls.contract.entity.txdata.DeleteContractData;
 import io.nuls.core.tools.crypto.Hex;
@@ -149,6 +150,9 @@ public class ContractTransactionDto {
         } else if(type == ContractConstant.TX_TYPE_DELETE_CONTRACT) {
             DeleteContractData delete = (DeleteContractData) txData;
             result.put("delete", new DeleteContractDataDto(delete));
+        } else if(type == ContractConstant.TX_TYPE_CONTRACT_TRANSFER) {
+            ContractTransferData transfer = (ContractTransferData) txData;
+            result.put("transfer", new ContractTransferDataDto(transfer));
         }
         return result;
     }
