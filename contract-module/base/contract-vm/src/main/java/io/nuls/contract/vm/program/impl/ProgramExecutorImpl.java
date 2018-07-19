@@ -12,6 +12,7 @@ import io.nuls.contract.vm.program.*;
 import io.nuls.contract.vm.util.Validators;
 import io.nuls.db.service.DBService;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.db.RepositoryRoot;
@@ -212,7 +213,9 @@ public class ProgramExecutorImpl implements ProgramExecutor {
             return programResult;
         } catch (Exception e) {
             log.error("", e);
-            return revert(e.getMessage());
+            ProgramResult programResult = revert(e.getMessage());
+            programResult.setStackTrace(ExceptionUtils.getStackTrace(e));
+            return programResult;
         }
     }
 
