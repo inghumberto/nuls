@@ -218,6 +218,8 @@ public class ContractResource implements InitializingBean {
             if(args != null) {
                 programCreate.setArgs(args);
             }
+            programCreate.setEstimateGas(true);
+
             ProgramExecutor track = programExecutor.begin(prevStateRoot);
             ProgramResult programResult = track.create(programCreate);
             if(!programResult.isSuccess()) {
@@ -346,6 +348,7 @@ public class ContractResource implements InitializingBean {
             programCall.setMethodName(call.getMethodName());
             programCall.setMethodDesc(call.getMethodDesc());
             programCall.setArgs(args);
+            programCall.setEstimateGas(true);
 
             ProgramExecutor track = programExecutor.begin(prevStateRoot);
             ProgramResult programResult = track.call(programCall);
