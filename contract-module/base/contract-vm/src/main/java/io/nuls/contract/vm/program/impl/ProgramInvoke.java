@@ -114,6 +114,11 @@ public class ProgramInvoke {
      */
     private String[] args;
 
+    /**
+     * 是否估计Gas
+     */
+    private boolean estimateGas;
+
     public void args(String... args) {
         this.args = args;
     }
@@ -196,6 +201,14 @@ public class ProgramInvoke {
 
     public void setArgs(String[] args) {
         this.args = args;
+    }
+
+    public boolean isEstimateGas() {
+        return estimateGas;
+    }
+
+    public void setEstimateGas(boolean estimateGas) {
+        this.estimateGas = estimateGas;
     }
 
 }

@@ -28,6 +28,7 @@ public class ProgramContext {
 
     //private ObjectRef data;
 
+    private boolean estimateGas;
 
     public ObjectRef getAddress() {
         return address;
@@ -91,6 +92,14 @@ public class ProgramContext {
 
     public void setNumber(long number) {
         this.number = number;
+    }
+
+    public boolean isEstimateGas() {
+        return estimateGas;
+    }
+
+    public void setEstimateGas(boolean estimateGas) {
+        this.estimateGas = estimateGas;
     }
 
 }

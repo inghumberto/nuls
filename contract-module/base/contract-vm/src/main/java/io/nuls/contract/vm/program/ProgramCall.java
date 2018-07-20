@@ -50,6 +50,11 @@ public class ProgramCall {
      */
     private String[] args;
 
+    /**
+     * 是否估计Gas
+     */
+    private boolean estimateGas;
+
     public void args(String... args) {
         this.args = args;
     }
@@ -129,6 +134,14 @@ public class ProgramCall {
         this.args = args;
     }
 
+    public boolean isEstimateGas() {
+        return estimateGas;
+    }
+
+    public void setEstimateGas(boolean estimateGas) {
+        this.estimateGas = estimateGas;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -139,6 +152,7 @@ public class ProgramCall {
         if (number != that.number) return false;
         if (gasLimit != that.gasLimit) return false;
         if (price != that.price) return false;
+        if (estimateGas != that.estimateGas) return false;
         if (!Arrays.equals(sender, that.sender)) return false;
         if (value != null ? !value.equals(that.value) : that.value != null) return false;
         if (!Arrays.equals(contractAddress, that.contractAddress)) return false;
@@ -159,6 +173,7 @@ public class ProgramCall {
         result = 31 * result + (methodName != null ? methodName.hashCode() : 0);
         result = 31 * result + (methodDesc != null ? methodDesc.hashCode() : 0);
         result = 31 * result + Arrays.hashCode(args);
+        result = 31 * result + (estimateGas ? 1 : 0);
         return result;
     }
 
@@ -174,6 +189,7 @@ public class ProgramCall {
                 ", methodName=" + methodName +
                 ", methodDesc=" + methodDesc +
                 ", args=" + Arrays.toString(args) +
+                ", estimateGas=" + estimateGas +
                 '}';
     }
 

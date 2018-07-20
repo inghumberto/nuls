@@ -69,7 +69,11 @@ public class NativeAddress {
         }
         BigInteger balance = balance(from, frame);
         if (balance.compareTo(value) < 0) {
-            throw new RuntimeException("Not enough balance");
+            if (frame.getVm().getProgramContext().isEstimateGas()) {
+                balance = value;
+            } else {
+                throw new RuntimeException("Not enough balance");
+            }
         }
 
         ProgramTransfer programTransfer = new ProgramTransfer(from, to, value);
@@ -103,6 +107,7 @@ public class NativeAddress {
         programCall.setMethodName(methodName);
         programCall.setMethodDesc(methodDesc);
         programCall.setArgs(args);
+        programCall.setEstimateGas(programInvoke.isEstimateGas());
 
         ProgramResult programResult = frame.getVm().getProgramExecutor().call(programCall);
 

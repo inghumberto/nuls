@@ -132,6 +132,7 @@ public class VM {
         programContext.setCoinbase(coinbase);
         programContext.setTimestamp(timestamp);
         programContext.setNumber(programInvoke.getNumber());
+        programContext.setEstimateGas(programInvoke.isEstimateGas());
     }
 
     public void run(MethodCode methodCode, Object[] args) {

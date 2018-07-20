@@ -88,6 +88,7 @@ public class ProgramExecutorImpl implements ProgramExecutor {
         programInvoke.setData(programCreate.getContractCode());
         programInvoke.setMethodName("<init>");
         programInvoke.args(programCreate.getArgs() != null ? programCreate.getArgs() : new String[0]);
+        programInvoke.setEstimateGas(programCreate.isEstimateGas());
         return execute(programInvoke);
     }
 
@@ -103,6 +104,7 @@ public class ProgramExecutorImpl implements ProgramExecutor {
         programInvoke.setMethodName(programCall.getMethodName());
         programInvoke.setMethodDesc(programCall.getMethodDesc());
         programInvoke.args(programCall.getArgs() != null ? programCall.getArgs() : new String[0]);
+        programInvoke.setEstimateGas(programCall.isEstimateGas());
         return execute(programInvoke);
     }
 
