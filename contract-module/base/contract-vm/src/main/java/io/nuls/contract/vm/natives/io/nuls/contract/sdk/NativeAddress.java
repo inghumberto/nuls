@@ -65,7 +65,7 @@ public class NativeAddress {
         byte[] from = frame.getVm().getProgramInvoke().getAddress();
         byte[] to = NativeAddress.toBytes(address);
         if (frame.getHeap().existContract(to)) {
-            throw new RuntimeException("Cannot transfer to contract");
+            throw new RuntimeException(String.format("Cannot transfer from contract(%s) to contract (%s)", NativeAddress.toString(from), address));
         }
         BigInteger balance = balance(from, frame);
         if (balance.compareTo(value) < 0) {
