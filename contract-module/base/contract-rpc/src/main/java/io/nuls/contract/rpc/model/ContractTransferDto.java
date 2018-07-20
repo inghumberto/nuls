@@ -24,12 +24,9 @@
 package io.nuls.contract.rpc.model;
 
 import io.nuls.contract.dto.ContractTransfer;
-import io.nuls.kernel.model.NulsDigestData;
 import io.nuls.kernel.utils.AddressTool;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
-import java.math.BigInteger;
 
 /**
  * @author: PierreLuo
@@ -42,15 +39,24 @@ public class ContractTransferDto {
     @ApiModelProperty(name = "to", value = "收款方")
     private String to;
     @ApiModelProperty(name = "value", value = "转账金额")
-    private BigInteger value;
+    private long value;
+    @ApiModelProperty(name = "fee", value = "转账交易手续费")
+    private long fee;
+    @ApiModelProperty(name = "isSendBack", value = "是否为回退交易")
+    private boolean isSendBack;
     @ApiModelProperty(name = "txHash", value = "交易hash")
     private String txHash;
+    @ApiModelProperty(name = "orginTxHash", value = "外部合约交易hash")
+    private String orginTxHash;
 
     public ContractTransferDto(ContractTransfer transfer) {
         this.from = AddressTool.getStringAddressByBytes(transfer.getFrom());
         this.to = AddressTool.getStringAddressByBytes(transfer.getTo());
-        this.value = transfer.getValue();
+        this.value = transfer.getValue().getValue();
+        this.fee = transfer.getFee().getValue();
+        this.isSendBack = transfer.isSendBack();
         this.txHash = transfer.getHash();
+        this.orginTxHash = transfer.getOrginHash();
     }
 
     public String getFrom() {
@@ -69,12 +75,28 @@ public class ContractTransferDto {
         this.to = to;
     }
 
-    public BigInteger getValue() {
+    public long getValue() {
         return value;
     }
 
-    public void setValue(BigInteger value) {
+    public void setValue(long value) {
         this.value = value;
+    }
+
+    public long getFee() {
+        return fee;
+    }
+
+    public void setFee(long fee) {
+        this.fee = fee;
+    }
+
+    public boolean isSendBack() {
+        return isSendBack;
+    }
+
+    public void setSendBack(boolean sendBack) {
+        isSendBack = sendBack;
     }
 
     public String getTxHash() {
@@ -83,5 +105,13 @@ public class ContractTransferDto {
 
     public void setTxHash(String txHash) {
         this.txHash = txHash;
+    }
+
+    public String getOrginTxHash() {
+        return orginTxHash;
+    }
+
+    public void setOrginTxHash(String orginTxHash) {
+        this.orginTxHash = orginTxHash;
     }
 }

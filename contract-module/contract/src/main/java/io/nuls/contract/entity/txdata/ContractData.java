@@ -21,36 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package io.nuls.contract.constant;
+package io.nuls.contract.entity.txdata;
 
-import io.nuls.kernel.constant.NulsConstant;
+/**
+ * @desription:
+ * @author: PierreLuo
+ * @date: 2018/7/19
+ */
+public interface ContractData {
 
-public interface ContractConstant extends NulsConstant {
+    long getGasLimit();
 
-    short MODULE_ID_CONTRACT = 10;
+    byte[] getSender();
 
-    /**
-     * CONTRACT
-     */
-    int TX_TYPE_CREATE_CONTRACT = 100;
-    int TX_TYPE_CALL_CONTRACT = 101;
-    int TX_TYPE_DELETE_CONTRACT = 102;
-
-    /**
-     * contract transfer
-     */
-    int TX_TYPE_CONTRACT_TRANSFER = 103;
-    long CONTRACT_TRANSFER_GAS_COST = 1000;
-
-    String BALANCE_TRIGGER_METHOD_NAME = "_payable";
-    String BALANCE_TRIGGER_METHOD_DESC = "()V";
-
-    String CALL = "call";
-    String CREATE = "create";
-    String DELETE = "delete";
-
-    String GET = "get";
-
-    String SEND_BACK_REMARK = "Contract execution failed, return funds.";
-
+    long getPrice();
 }

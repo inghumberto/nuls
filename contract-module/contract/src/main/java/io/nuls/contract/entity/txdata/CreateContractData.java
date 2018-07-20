@@ -36,7 +36,7 @@ import java.util.Set;
 /**
  * @Author: PierreLuo
  */
-public class CreateContractData extends TransactionLogicData {
+public class CreateContractData extends TransactionLogicData implements ContractData{
 
     private byte[] sender;
     private byte[] contractAddress;
@@ -109,6 +109,7 @@ public class CreateContractData extends TransactionLogicData {
         this.value = value;
     }
 
+    @Override
     public byte[] getSender() {
         return sender;
     }
@@ -141,6 +142,7 @@ public class CreateContractData extends TransactionLogicData {
         this.code = code;
     }
 
+    @Override
     public long getGasLimit() {
         return gasLimit;
     }
@@ -149,6 +151,7 @@ public class CreateContractData extends TransactionLogicData {
         this.gasLimit = gasLimit;
     }
 
+    @Override
     public long getPrice() {
         return price;
     }

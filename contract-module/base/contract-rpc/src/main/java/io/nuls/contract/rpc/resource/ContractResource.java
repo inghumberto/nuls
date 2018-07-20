@@ -440,7 +440,7 @@ public class ContractResource implements InitializingBean {
         ProgramStatus status = track.status(contractAddressBytes);
         List<ProgramMethod> methods = track.method(contractAddressBytes);
 
-        Map<String, Object> resultMap = new LinkedHashMap<>(3);
+        Map<String, Object> resultMap = MapUtil.createLinkedHashMap(3);
         resultMap.put("address", contractAddress);
         resultMap.put("status", status.name());
         resultMap.put("method", methods);
@@ -466,9 +466,10 @@ public class ContractResource implements InitializingBean {
 
         byte[] contractAddressBytes = AddressTool.getAddress(contractAddress);
         Result<BigInteger> result = contractUtxoService.getBalance(contractAddressBytes);
-        Map<String, Object> resultMap = MapUtil.createHashMap(2);
+        BigInteger balance = (BigInteger) result.getData();
+        Map<String, Object> resultMap = MapUtil.createLinkedHashMap(2);
         resultMap.put("address", contractAddress);
-        resultMap.put("balance", result.getData());
+        resultMap.put("balance", balance == null ? BigInteger.ZERO : balance);
         return Result.getSuccess().setData(resultMap).toRpcClientResult();
     }
 

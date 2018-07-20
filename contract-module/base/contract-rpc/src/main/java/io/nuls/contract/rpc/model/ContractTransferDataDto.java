@@ -21,46 +21,31 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package io.nuls.contract.entity.tx;
+package io.nuls.contract.rpc.model;
 
-import io.nuls.contract.constant.ContractConstant;
-import io.nuls.contract.dto.ContractResult;
-import io.nuls.contract.entity.txdata.CreateContractData;
-import io.nuls.kernel.exception.NulsException;
-import io.nuls.kernel.model.Transaction;
-import io.nuls.kernel.utils.NulsByteBuffer;
+
+import io.nuls.contract.entity.txdata.ContractTransferData;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 /**
- * @Desription:
  * @Author: PierreLuo
- * @Date: 2018/4/20
  */
-public class CreateContractTransaction extends Transaction<CreateContractData> implements ContractTransaction{
+@ApiModel(value = "ContractTransferDataDtoJSON")
+public class ContractTransferDataDto{
 
-    private ContractResult contractResult;
+    @ApiModelProperty(name = "success", value = "调用合约成功与否, 0-失败, 1-成功")
+    private byte success;
 
-    public CreateContractTransaction() {
-        super(ContractConstant.TX_TYPE_CREATE_CONTRACT);
+    public ContractTransferDataDto(ContractTransferData transferData) {
+        this.success = transferData.getSuccess();
     }
 
-    @Override
-    protected CreateContractData parseTxData(NulsByteBuffer byteBuffer) throws NulsException {
-        return byteBuffer.readNulsData(new CreateContractData());
+    public byte getSuccess() {
+        return success;
     }
 
-    @Override
-    public String getInfo(byte[] address) {
-        //TODO auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public ContractResult getContractResult() {
-        return contractResult;
-    }
-
-    @Override
-    public void setContractResult(ContractResult contractResult) {
-        this.contractResult = contractResult;
+    public void setSuccess(byte success) {
+        this.success = success;
     }
 }

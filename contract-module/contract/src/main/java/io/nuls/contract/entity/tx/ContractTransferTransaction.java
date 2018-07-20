@@ -25,11 +25,10 @@ package io.nuls.contract.entity.tx;
 
 import io.nuls.contract.constant.ContractConstant;
 import io.nuls.contract.dto.ContractTransfer;
-import io.nuls.contract.entity.txdata.CreateContractData;
-import io.nuls.kernel.constant.NulsConstant;
+import io.nuls.contract.entity.txdata.ContractTransferData;
 import io.nuls.kernel.exception.NulsException;
+import io.nuls.kernel.model.Na;
 import io.nuls.kernel.model.Transaction;
-import io.nuls.kernel.model.TransactionLogicData;
 import io.nuls.kernel.utils.NulsByteBuffer;
 
 /**
@@ -37,7 +36,7 @@ import io.nuls.kernel.utils.NulsByteBuffer;
  * @author: PierreLuo
  * @date: 2018/6/7
  */
-public class ContractTransferTransaction extends Transaction {
+public class ContractTransferTransaction extends Transaction<ContractTransferData> {
 
     private ContractTransfer transfer;
 
@@ -46,9 +45,8 @@ public class ContractTransferTransaction extends Transaction {
     }
 
     @Override
-    protected CreateContractData parseTxData(NulsByteBuffer byteBuffer) throws NulsException {
-        byteBuffer.readBytes(NulsConstant.PLACE_HOLDER.length);
-        return null;
+    protected ContractTransferData parseTxData(NulsByteBuffer byteBuffer) throws NulsException {
+        return byteBuffer.readNulsData(new ContractTransferData());
     }
 
     @Override
@@ -74,5 +72,21 @@ public class ContractTransferTransaction extends Transaction {
     public ContractTransferTransaction setTransfer(ContractTransfer transfer) {
         this.transfer = transfer;
         return this;
+    }
+
+    @Override
+    public Na getFee() {
+        ContractTransferData data = this.txData;
+        byte success = data.getSuccess();
+        // 合约执行成功的内部转账，手续费已从Gas中扣除，此处不在收取手续费
+        if(success == 1) {
+            return Na.ZERO;
+        }
+        // 合约执行失败，退回调用者向合约地址转入的资金，需要额外收取手续费
+        Na fee = Na.ZERO;
+        if (null != coinData) {
+            fee = coinData.getFee();
+        }
+        return fee;
     }
 }

@@ -31,7 +31,6 @@ import io.nuls.kernel.model.Address;
 import io.nuls.kernel.model.BaseNulsData;
 import io.nuls.kernel.model.NulsDigestData;
 import io.nuls.kernel.model.Transaction;
-import io.nuls.kernel.utils.AddressTool;
 import io.nuls.kernel.utils.NulsByteBuffer;
 import io.nuls.kernel.utils.NulsOutputStreamBuffer;
 import io.nuls.kernel.utils.SerializeUtils;
@@ -82,7 +81,6 @@ public class TransactionInfoPo extends BaseNulsData {
         if (txInfo == null) {
             return;
         }
-        //todo  check weather need to clone the object
         this.txHash = txInfo.getTxHash();
         this.blockHeight = txInfo.getBlockHeight();
         this.time = txInfo.getTime();
@@ -92,7 +90,6 @@ public class TransactionInfoPo extends BaseNulsData {
     }
 
     public TransactionInfo toTransactionInfo() {
-        //todo  check weather need to clone the object
         TransactionInfo txInfo = new TransactionInfo();
         txInfo.setTxHash(this.txHash);
         txInfo.setBlockHeight(this.blockHeight);
@@ -130,10 +127,12 @@ public class TransactionInfoPo extends BaseNulsData {
     public int size() {
         int size = 0;
         size += SerializeUtils.sizeOfNulsData(txHash);
-        size += SerializeUtils.sizeOfUint32(); // blockHeight
+        // blockHeight
+        size += SerializeUtils.sizeOfUint32();
         size += SerializeUtils.sizeOfUint48();
         size += SerializeUtils.sizeOfBytes(addresses);
-        size += SerializeUtils.sizeOfUint16(); // txType
+        // txType
+        size += SerializeUtils.sizeOfUint16();
         size += 1;
         return size;
     }
