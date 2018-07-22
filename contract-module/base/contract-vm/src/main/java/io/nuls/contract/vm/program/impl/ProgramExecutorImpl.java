@@ -163,7 +163,7 @@ public class ProgramExecutorImpl implements ProgramExecutor {
             vm.run(objectRef, methodCode, vmContext, programInvoke);
 
             if (vm.isRevert()) {
-                return revert(vm.getErrorMessage());
+                return revert(vm.getErrorMessage(), vm.getStackTrace());
             }
 
             vm.getHeap().contractState();
@@ -172,22 +172,27 @@ public class ProgramExecutorImpl implements ProgramExecutor {
 
             ProgramResult programResult = new ProgramResult();
             programResult.setGasUsed(vm.getGasUsed());
-            programResult.setTransfers(vm.getTransfers());
-            programResult.setEvents(vm.getEvents());
             programResult.setNonce(repository.getNonce(programInvoke.getAddress()));
+
+            if (vm.isError()) {
+                programResult.setStackTrace(vm.getStackTrace());
+                return programResult.error(vm.getErrorMessage());
+            }
+
             if (!vm.getResult().isError() && !vm.getResult().isException()) {
+                programResult.setTransfers(vm.getTransfers());
+                programResult.setEvents(vm.getEvents());
                 if (programInvoke.getValue() != null && programInvoke.getValue().compareTo(BigInteger.ZERO) > 0) {
                     repository.addBalance(programInvoke.getAddress(), programInvoke.getValue());
                 }
                 for (ProgramTransfer programTransfer : vm.getTransfers()) {
-                    repository.addBalance(programTransfer.getFrom(), programTransfer.getValue().negate());
+                    if (!programTransfer.isChangeContractBalance()) {
+                        programTransfer.setChangeContractBalance(true);
+                        repository.addBalance(programTransfer.getFrom(), programTransfer.getValue().negate());
+                    }
                 }
             }
             programResult.setBalance(repository.getBalance(programInvoke.getAddress()));
-
-            if (vm.isError()) {
-                return programResult.error(vm.getErrorMessage());
-            }
 
             Object resultValue = vm.getResult().getValue();
             if (resultValue != null) {
@@ -222,7 +227,12 @@ public class ProgramExecutorImpl implements ProgramExecutor {
     }
 
     private ProgramResult revert(String errorMessage) {
+        return revert(errorMessage, null);
+    }
+
+    private ProgramResult revert(String errorMessage, String stackTrace) {
         ProgramResult programResult = new ProgramResult();
+        programResult.setStackTrace(stackTrace);
         this.revert = true;
         return programResult.revert(errorMessage);
     }

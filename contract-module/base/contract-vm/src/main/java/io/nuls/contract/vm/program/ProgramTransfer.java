@@ -2,6 +2,7 @@ package io.nuls.contract.vm.program;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.Objects;
 
 public class ProgramTransfer {
 
@@ -10,6 +11,8 @@ public class ProgramTransfer {
     private byte[] to;
 
     private BigInteger value;
+
+    private boolean changeContractBalance;
 
     public ProgramTransfer(byte[] from, byte[] to, BigInteger value) {
         this.from = from;
@@ -29,23 +32,31 @@ public class ProgramTransfer {
         return value;
     }
 
+    public boolean isChangeContractBalance() {
+        return changeContractBalance;
+    }
+
+    public void setChangeContractBalance(boolean changeContractBalance) {
+        this.changeContractBalance = changeContractBalance;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
         ProgramTransfer that = (ProgramTransfer) o;
-
-        if (!Arrays.equals(from, that.from)) return false;
-        if (!Arrays.equals(to, that.to)) return false;
-        return value != null ? value.equals(that.value) : that.value == null;
+        return changeContractBalance == that.changeContractBalance &&
+                Arrays.equals(from, that.from) &&
+                Arrays.equals(to, that.to) &&
+                Objects.equals(value, that.value);
     }
 
     @Override
     public int hashCode() {
-        int result = Arrays.hashCode(from);
+
+        int result = Objects.hash(value, changeContractBalance);
+        result = 31 * result + Arrays.hashCode(from);
         result = 31 * result + Arrays.hashCode(to);
-        result = 31 * result + (value != null ? value.hashCode() : 0);
         return result;
     }
 
@@ -55,6 +66,7 @@ public class ProgramTransfer {
                 "from=" + Arrays.toString(from) +
                 ", to=" + Arrays.toString(to) +
                 ", value=" + value +
+                ", changeContractBalance=" + changeContractBalance +
                 '}';
     }
 

@@ -27,12 +27,14 @@ public class Result {
     }
 
     public void exception(ObjectRef exception) {
+        //java.lang.Exception
         this.value(exception);
         this.variableType = exception.getVariableType();
         this.exception = true;
     }
 
     public void error(ObjectRef error) {
+        //java.lang.Error
         this.value(error);
         this.variableType = error.getVariableType();
         this.error = true;

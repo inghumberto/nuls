@@ -72,6 +72,8 @@ public class VM {
 
     private String errorMessage;
 
+    private String stackTrace;
+
     private List<ProgramTransfer> transfers = new ArrayList<>();
 
     private List<String> events = new ArrayList<>();
@@ -1038,13 +1040,23 @@ public class VM {
     }
 
     public void revert(String errorMessage) {
+        revert(errorMessage, null);
+    }
+
+    public void revert(String errorMessage, String stackTrace) {
         this.revert = true;
         this.errorMessage = errorMessage;
+        this.stackTrace = stackTrace;
     }
 
     public void error(String errorMessage) {
+        error(errorMessage, null);
+    }
+
+    public void error(String errorMessage, String stackTrace) {
         this.error = true;
         this.errorMessage = errorMessage;
+        this.stackTrace = stackTrace;
     }
 
     public boolean isRevert() {
@@ -1057,6 +1069,10 @@ public class VM {
 
     public String getErrorMessage() {
         return errorMessage;
+    }
+
+    public String getStackTrace() {
+        return stackTrace;
     }
 
 }
