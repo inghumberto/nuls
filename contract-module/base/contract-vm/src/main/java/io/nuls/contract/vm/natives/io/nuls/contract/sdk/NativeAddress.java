@@ -112,7 +112,7 @@ public class NativeAddress {
         ProgramResult programResult = frame.getVm().getProgramExecutor().call(programCall);
 
         frame.getVm().setGasUsed(frame.getVm().getGasUsed() + programResult.getGasUsed());
-        if (!programResult.isError()) {
+        if (programResult.isSuccess()) {
             if (programCall.getValue().compareTo(BigInteger.ZERO) > 0) {
                 ProgramTransfer programTransfer = new ProgramTransfer(programInvoke.getAddress(), NativeAddress.toBytes(address), programCall.getValue());
                 frame.getVm().getTransfers().add(programTransfer);
