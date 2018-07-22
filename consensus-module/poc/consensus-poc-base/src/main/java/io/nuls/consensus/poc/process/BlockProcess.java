@@ -269,17 +269,20 @@ public class BlockProcess {
                             Log.info("=========================================verifyBlock result StateRoot: " + Hex.encode(stateRoot));
                             // 合约调用失败，且调用者存在资金转入合约地址，创建一笔合约内部转账，退回这笔资金
                             if(!contractResult.isSuccess() && contractResult.getValue() > 0 && tx instanceof CallContractTransaction) {
-                                CallContractTransaction callContractTx = (CallContractTransaction) tx;
-                                CallContractData data = callContractTx.getTxData();
-                                long price = data.getPrice();
-                                Na transferFee = Na.valueOf(LongUtils.mul(ContractConstant.CONTRACT_TRANSFER_GAS_COST, price));
-                                Na sendBack = Na.valueOf(contractResult.getValue());
+                                // 智能合约在打包节点上只执行一次(打包区块和验证区块), 打包节点在打包时已处理过contractResult, 不重复处理
+                                if(transfers.size() == 0) {
+                                    CallContractTransaction callContractTx = (CallContractTransaction) tx;
+                                    CallContractData data = callContractTx.getTxData();
+                                    long price = data.getPrice();
+                                    Na transferFee = Na.valueOf(LongUtils.mul(ContractConstant.CONTRACT_TRANSFER_GAS_COST, price));
+                                    Na sendBack = Na.valueOf(contractResult.getValue());
 
-                                if(sendBack.compareTo(transferFee) <= 0) {
-                                    transferFee = sendBack;
+                                    if(sendBack.compareTo(transferFee) <= 0) {
+                                        transferFee = sendBack;
+                                    }
+                                    ContractTransfer transfer = new ContractTransfer(data.getContractAddress(), data.getSender(), sendBack, transferFee, true);
+                                    transfers.add(transfer);
                                 }
-                                ContractTransfer transfer = new ContractTransfer(data.getContractAddress(), data.getSender(), sendBack, transferFee, true);
-                                transfers.add(transfer);
                             }
                             // 创建合约转账交易
                             if(transfers != null && transfers.size() >0) {
@@ -290,7 +293,7 @@ public class BlockProcess {
                                     if(contractTransferResult.isFailed()) {
                                         contractService.rollbackContractTransferTxs(successContractTransferTxs, toMaps, fromSet, contractUsedCoinMap);
                                         isCorrectContractTransfer = false;
-                                        Log.error("create contract transfer tx failed, {}", result.getMsg());
+                                        Log.error("create contract transfer tx failed, {}", result);
                                         break;
                                     }
 
@@ -302,7 +305,7 @@ public class BlockProcess {
                                         contractService.rollbackContractTransferTx(contractTransferTx, toMaps, fromSet, contractUsedCoinMap);
                                         contractService.rollbackContractTransferTxs(successContractTransferTxs, toMaps, fromSet, contractUsedCoinMap);
                                         isCorrectContractTransfer = false;
-                                        Log.error("verify contract transfer tx failed, {}", result.getMsg());
+                                        Log.error("verify contract transfer tx failed, {}", result);
                                         break;
                                     } else {
                                         // 保存内部转账交易hash和外部合约交易hash
