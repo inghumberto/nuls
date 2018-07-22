@@ -166,14 +166,14 @@ public class ContractResultDto {
     }
 
     public void setOrginTransfers(List<ContractTransfer> transfers) {
+        List<ContractTransferDto> list = new LinkedList<>();
+        this.transfers = list;
         if(transfers == null || transfers.size() == 0) {
             return;
         }
-        List<ContractTransferDto> list = new LinkedList<>();
         for(ContractTransfer transfer : transfers) {
             list.add(new ContractTransferDto(transfer));
         }
-        this.transfers = list;
     }
 
     public List<String> getEvents() {

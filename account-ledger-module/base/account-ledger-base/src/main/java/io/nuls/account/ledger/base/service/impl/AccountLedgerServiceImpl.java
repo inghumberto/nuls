@@ -519,13 +519,15 @@ public class AccountLedgerServiceImpl implements AccountLedgerService, Initializ
                     return Result.getFailed(AccountErrorCode.PASSWORD_IS_WRONG);
                 }
             }
+
+            //TODO pierre 普通转账不能向合约地址转账，若转入的地址是合约地址，则触发合约规则，需要提供GasLimit和Price
             // 检查to是否为合约地址，如果是合约地址，则转为合约交易
             if(contractService.isContractAddress(to)) {
                 return contractService.contractCallTx(from,
                         values,
-                        //TODO pierre 需要一个gasLimit
+                        //TODO pierre 需要一个gasLimit和price
                         10000L,
-                        price.getValue(),
+                        20L,
                         to,
                         ContractConstant.BALANCE_TRIGGER_METHOD_NAME,
                         ContractConstant.BALANCE_TRIGGER_METHOD_DESC,

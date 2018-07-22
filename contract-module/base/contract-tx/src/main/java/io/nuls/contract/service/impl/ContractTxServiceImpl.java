@@ -308,7 +308,7 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             if(ContractConstant.BALANCE_TRIGGER_METHOD_NAME.equals(methodName)
                     && ContractConstant.BALANCE_TRIGGER_METHOD_DESC.equals(methodDesc)){
                 if(gasLimit == null) {
-                    //TODO pierre NaLimit设置一个默认值, 执行预估合约需要NaLimit为参数，而设置一个默认的NaLimit又需要执行预估合约来做参考
+                    //TODO pierre GasLimit设置一个默认值, 执行预估合约需要GasLimit为参数，而设置一个默认的GasLimit又需要执行预估合约来做参考
                 }
             }
 
@@ -333,7 +333,6 @@ public class ContractTxServiceImpl implements ContractTxService, InitializingBea
             programCall.setMethodDesc(methodDesc);
             programCall.setArgs(args);
 
-            //TODO pierre vm需要做程序调整来支持get函数的任意调用
             // 如果方法名前缀是get，则是不上链的合约调用，同步执行合约代码，不改变状态根，并返回值
             if(methodName.startsWith(ContractConstant.GET)) {
                 ProgramExecutor track = programExecutor.begin(prevStateRoot);

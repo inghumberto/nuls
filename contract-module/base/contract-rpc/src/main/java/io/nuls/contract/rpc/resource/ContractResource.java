@@ -45,6 +45,7 @@ import io.nuls.contract.storage.service.ContractUtxoStorageService;
 import io.nuls.contract.util.ContractCoinComparator;
 import io.nuls.contract.util.VMContext;
 import io.nuls.contract.vm.program.*;
+import io.nuls.core.tools.calc.LongUtils;
 import io.nuls.core.tools.crypto.Hex;
 import io.nuls.core.tools.log.Log;
 import io.nuls.core.tools.map.MapUtil;
@@ -191,7 +192,7 @@ public class ContractResource implements InitializingBean {
             Result<Balance> senderBalanceResult = accountService.getBalance(sender);
             Balance senderBalance = senderBalanceResult.getData();
             Na usable = senderBalance.getUsable();
-            long maxGasLimit = usable.getValue() / price;
+            long maxGasLimit = LongUtils.div(usable.getValue(), price);
             Log.debug("=========================================create sender: {}, balance-usable: {}, maxGasLimit: {}", sender, usable.getValue(), maxGasLimit);
 
             // 生成一个地址作为智能合约地址
@@ -273,6 +274,67 @@ public class ContractResource implements InitializingBean {
     }
 
     @POST
+    @Path("/constant")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "调用不上链的智能合约函数")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "success")
+    })
+    public RpcClientResult callConstantContract(
+            @ApiParam(name = "constantCallForm", value = "调用不上链的智能合约函数表单数据", required = true) ContractConstantCall constantCall) {
+        try {
+            String contractAddress = constantCall.getContractAddress();
+            String methodName = constantCall.getMethodName();
+            if (StringUtils.isBlank(contractAddress) || StringUtils.isBlank(methodName)) {
+                return Result.getFailed(ContractErrorCode.NULL_PARAMETER).toRpcClientResult();
+            }
+
+            if (!AddressTool.validAddress(contractAddress)) {
+                return Result.getFailed(AccountLedgerErrorCode.ADDRESS_ERROR).toRpcClientResult();
+            }
+
+            byte[] contractAddressBytes = AddressTool.getAddress(contractAddress);
+
+            // 如果方法名前缀是get，则是不上链的合约调用，同步执行合约代码，不改变状态根，并返回值
+            if(methodName.startsWith(ContractConstant.GET)) {
+                // 当前区块高度
+                BlockHeaderDto blockHeader = vmContext.getBlockHeader();
+                long blockHeight = blockHeader.getHeight();
+                // 当前区块状态根
+                byte[] prevStateRoot = blockHeader.getStateRoot();
+
+                // 组装VM执行数据
+                ProgramCall programCall = new ProgramCall();
+                programCall.setContractAddress(contractAddressBytes);
+                programCall.setValue(BigInteger.ZERO);
+                //TODO pierre 需要规定一个最大的GasLimit
+                programCall.setGasLimit(10000L);
+                programCall.setPrice(0L);
+                programCall.setNumber(blockHeight);
+                programCall.setMethodName(methodName);
+                programCall.setMethodDesc(constantCall.getMethodDesc());
+                programCall.setArgs(constantCall.getArgs());
+
+                ProgramExecutor track = programExecutor.begin(prevStateRoot);
+                ProgramResult programResult = track.call(programCall);
+                Result result = null;
+                if(!programResult.isSuccess()) {
+                    result = Result.getFailed(ContractErrorCode.DATA_ERROR);
+                    result.setMsg(programResult.getErrorMessage());
+                } else {
+                    result = Result.getSuccess();
+                    result.setData(programResult.getResult());
+                }
+                return result.toRpcClientResult();
+            } else {
+                return Result.getFailed().setData("Non-constant method.").toRpcClientResult();
+            }
+        } catch (IOException e) {
+            return Result.getFailed().setData(e.getMessage()).toRpcClientResult();
+        }
+    }
+
+    @POST
     @Path("/imputedgas/call")
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "估算调用智能合约的Gas消耗")
@@ -331,7 +393,7 @@ public class ContractResource implements InitializingBean {
             Result<Balance> senderBalanceResult = accountService.getBalance(sender);
             Balance senderBalance = senderBalanceResult.getData();
             Na usable = senderBalance.getUsable();
-            long maxGasLimit = usable.getValue() / price;
+            long maxGasLimit = LongUtils.div(usable.getValue(), price);
             Log.debug("=========================================call sender: {}, balance-usable: {}, maxGasLimit: {}", sender, usable.getValue(), maxGasLimit);
 
             byte[] senderBytes = AddressTool.getAddress(sender);
