@@ -53,4 +53,7 @@ public interface ContractConstant extends NulsConstant {
 
     String SEND_BACK_REMARK = "Contract execution failed, return funds.";
 
+    long CONTRACT_CONSTANT_GASLIMIT = 3000;
+    long CONTRACT_CONSTANT_PRICE = 0;
+
 }

@@ -308,8 +308,8 @@ public class ContractResource implements InitializingBean {
                 programCall.setContractAddress(contractAddressBytes);
                 programCall.setValue(BigInteger.ZERO);
                 //TODO pierre 需要规定一个最大的GasLimit
-                programCall.setGasLimit(10000L);
-                programCall.setPrice(0L);
+                programCall.setGasLimit(ContractConstant.CONTRACT_CONSTANT_GASLIMIT);
+                programCall.setPrice(ContractConstant.CONTRACT_CONSTANT_PRICE);
                 programCall.setNumber(blockHeight);
                 programCall.setMethodName(methodName);
                 programCall.setMethodDesc(constantCall.getMethodDesc());
