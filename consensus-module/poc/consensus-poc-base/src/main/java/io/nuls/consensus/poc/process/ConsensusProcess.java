@@ -351,6 +351,7 @@ public class ConsensusProcess {
         contractService.createContractTempBalance();
         while (true) {
             isCorrectContractTransfer = true;
+            successContractTransferTxs = null;
 
             if ((self.getPackEndTime() - TimeService.currentTimeMillis()) <= 500L) {
                 break;
@@ -488,7 +489,6 @@ public class ConsensusProcess {
                     }
                     totalSize += contractTransferTxTotalSize;
 
-                    packingTxList.addAll(successContractTransferTxs.values());
                 }
                 if(contractResult.isSuccess()) {
                     contractEvents = contractResult.getEvents();
@@ -507,6 +507,10 @@ public class ConsensusProcess {
             tx.setBlockHeight(bd.getHeight());
             start = System.nanoTime();
             packingTxList.add(tx);
+            // 增加合约内部转账交易到打包交易列表中
+            if(successContractTransferTxs != null && successContractTransferTxs.size() > 0) {
+                packingTxList.addAll(successContractTransferTxs.values());
+            }
             addTime += (System.nanoTime() - start);
 
             totalSize += txSize;
