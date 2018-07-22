@@ -437,7 +437,7 @@ public class ConsensusProcess {
                 // 创建合约转账交易
                 if(transfers != null && transfers.size() > 0) {
                     // 合约转账使用的交易时间为区块时间
-                    successContractTransferTxs = new HashMap<>();
+                    successContractTransferTxs = new LinkedHashMap<>();
                     Result<ContractTransferTransaction> contractTransferResult;
                     ContractTransferTransaction contractTransferTx;
                     for(ContractTransfer transfer : transfers) {

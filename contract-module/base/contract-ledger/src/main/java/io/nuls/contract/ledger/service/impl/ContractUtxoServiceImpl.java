@@ -146,7 +146,11 @@ public class ContractUtxoServiceImpl implements ContractUtxoService {
             List<Coin> tos = coinData.getTo();
             List<Entry<byte[], byte[]>> toList = new ArrayList<>();
             byte[] txHashBytes = null;
-            txHashBytes = tx.getHash().getDigestBytes();
+            try {
+                txHashBytes = tx.getHash().serialize();
+            } catch (IOException e) {
+                throw new NulsRuntimeException(e);
+            }
             Coin to;
             byte[] toAddress;
             byte[] outKey;
