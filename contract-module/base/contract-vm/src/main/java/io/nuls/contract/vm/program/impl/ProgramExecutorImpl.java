@@ -151,6 +151,12 @@ public class ProgramExecutorImpl implements ProgramExecutor {
                 return revert("method args error");
             }
 
+            BigInteger accountBalance = getAccountBalance(programInvoke.getAddress());
+            BigInteger vmBalance = repository.getBalance(programInvoke.getAddress());
+            if (vmBalance.compareTo(accountBalance) != 0) {
+                return revert(String.format("balance error: accountBalance=%s, vmBalance=%s", accountBalance, vmBalance));
+            }
+
             ObjectRef objectRef;
             if (newContract) {
                 objectRef = vm.getHeap().newContract(programInvoke.getAddress(), contractClassCode, repository);
@@ -323,6 +329,14 @@ public class ProgramExecutorImpl implements ProgramExecutor {
                     .ifPresent(code -> {
                         contractMethods(methodCodes, classCodes, code);
                     });
+        }
+    }
+
+    private BigInteger getAccountBalance(byte[] address) {
+        if (vmContext == null) {
+            return BigInteger.ZERO;
+        } else {
+            return vmContext.getBalance(address);
         }
     }
 
