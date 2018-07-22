@@ -290,6 +290,7 @@ public class BlockProcess {
                                     if(contractTransferResult.isFailed()) {
                                         contractService.rollbackContractTransferTxs(successContractTransferTxs, toMaps, fromSet, contractUsedCoinMap);
                                         isCorrectContractTransfer = false;
+                                        Log.error("create contract transfer tx failed, {}", result.getMsg());
                                         break;
                                     }
 
@@ -301,6 +302,7 @@ public class BlockProcess {
                                         contractService.rollbackContractTransferTx(contractTransferTx, toMaps, fromSet, contractUsedCoinMap);
                                         contractService.rollbackContractTransferTxs(successContractTransferTxs, toMaps, fromSet, contractUsedCoinMap);
                                         isCorrectContractTransfer = false;
+                                        Log.error("verify contract transfer tx failed, {}", result.getMsg());
                                         break;
                                     } else {
                                         // 保存内部转账交易hash和外部合约交易hash
@@ -315,7 +317,6 @@ public class BlockProcess {
                                 if(!isCorrectContractTransfer) {
                                     // 清除临时余额
                                     contractService.rollbackContractTempBalance(tx, contractResult);
-                                    Log.info(result.getMsg());
                                     success = false;
                                     break;
                                 }

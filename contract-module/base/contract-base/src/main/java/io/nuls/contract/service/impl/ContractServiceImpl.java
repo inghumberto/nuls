@@ -825,7 +825,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
         if(result.isSuccess()) {
             result.getData().setTransfer(transfer);
         } else {
-            Log.warn("contract transfer failed. Info: " + transfer);
+            Log.error("contract transfer failed. Reason: " + result);
         }
         return result;
     }

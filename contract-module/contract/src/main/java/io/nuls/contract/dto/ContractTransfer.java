@@ -128,14 +128,4 @@ public class ContractTransfer {
         this.hash = hash;
     }
 
-    @Override
-    public String toString() {
-        return "ContractTransfer{" +
-                "from=" + AddressTool.getStringAddressByBytes(from) +
-                ", to=" + AddressTool.getStringAddressByBytes(to) +
-                ", value=" + value +
-                ", orginHash=" + orginHash == null ? null : orginHash.getDigestHex() +
-                ", hash=" + hash == null ? null : hash.getDigestHex() +
-                '}';
-    }
 }
