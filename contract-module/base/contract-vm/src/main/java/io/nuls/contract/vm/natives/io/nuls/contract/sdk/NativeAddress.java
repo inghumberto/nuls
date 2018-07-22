@@ -119,9 +119,13 @@ public class NativeAddress {
             }
             frame.getVm().getTransfers().addAll(programResult.getTransfers());
             frame.getVm().getEvents().addAll(programResult.getEvents());
-        } else {
+        } else if (programResult.isError()) {
             ObjectRef errorRef = frame.getHeap().newString(programResult.getErrorMessage());
             frame.getVm().getResult().error(errorRef);
+        } else if (programResult.isRevert()) {
+            frame.getVm().revert(programResult.getErrorMessage());
+        } else {
+            throw new RuntimeException("error contract status");
         }
 
         Result result = NativeMethod.result(methodCode, null, frame);
