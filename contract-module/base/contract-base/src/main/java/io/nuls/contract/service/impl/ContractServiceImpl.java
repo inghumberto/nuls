@@ -593,7 +593,7 @@ public class ContractServiceImpl implements ContractService, InitializingBean {
                 successByte = 1;
             }
             tx.setRemark(remark);
-            tx.setTxData(new ContractTransferData(successByte));
+            tx.setTxData(new ContractTransferData(from, successByte));
             tx.setHash(NulsDigestData.calcDigestData(tx.serializeForHash()));
 
             // 合约转账交易不需要签名
