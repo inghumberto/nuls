@@ -34,12 +34,14 @@ import io.nuls.contract.constant.ContractErrorCode;
 import io.nuls.contract.dto.ContractResult;
 import io.nuls.contract.entity.BlockHeaderDto;
 import io.nuls.contract.helper.VMHelper;
+import io.nuls.contract.ledger.service.ContractTransactionInfoService;
 import io.nuls.contract.ledger.service.ContractUtxoService;
 import io.nuls.contract.ledger.util.ContractLedgerUtil;
 import io.nuls.contract.rpc.form.*;
 import io.nuls.contract.rpc.model.*;
 import io.nuls.contract.service.ContractService;
 import io.nuls.contract.service.ContractTxService;
+import io.nuls.contract.storage.po.TransactionInfo;
 import io.nuls.contract.storage.service.ContractAddressStorageService;
 import io.nuls.contract.storage.service.ContractUtxoStorageService;
 import io.nuls.contract.util.ContractCoinComparator;
@@ -97,6 +99,9 @@ public class ContractResource implements InitializingBean {
 
     @Autowired
     private ContractUtxoStorageService contractUtxoStorageService;
+
+    @Autowired
+    private ContractTransactionInfoService contractTransactionInfoService;
 
     @Autowired
     private ContractUtxoService contractUtxoService;
@@ -839,6 +844,38 @@ public class ContractResource implements InitializingBean {
         }
         Collections.sort(coinList, ContractCoinComparator.getInstance());
         return coinList;
+    }
+
+    @GET
+    @Path("/tx/list/{address}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "根据address和limit查询合约UTXO")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "success")
+    })
+    public RpcClientResult getTxList(
+            @ApiParam(name="address", value="地址", required = true) @PathParam("address") String address) {
+        try {
+            if (StringUtils.isBlank(address)) {
+                return Result.getFailed(LedgerErrorCode.NULL_PARAMETER).toRpcClientResult();
+            }
+            if (!AddressTool.validAddress(address)) {
+                return Result.getFailed(LedgerErrorCode.PARAMETER_ERROR).toRpcClientResult();
+            }
+
+            byte[] addressBytes = AddressTool.getAddress(address);
+
+            if(!ContractLedgerUtil.isContractAddress(addressBytes)) {
+                return Result.getFailed(ContractErrorCode.CONTRACT_ADDRESS_NOT_EXIST).toRpcClientResult();
+            }
+
+            Result<List<TransactionInfo>> result = contractTransactionInfoService.getTxInfoList(addressBytes);
+            return result.toRpcClientResult();
+        } catch (Exception e) {
+            Log.error(e);
+            Result result = Result.getFailed(LedgerErrorCode.SYS_UNKOWN_EXCEPTION);
+            return result.toRpcClientResult();
+        }
     }
 
 }

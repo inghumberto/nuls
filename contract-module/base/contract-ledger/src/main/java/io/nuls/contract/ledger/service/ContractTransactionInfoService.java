@@ -25,7 +25,7 @@
 
 package io.nuls.contract.ledger.service;
 
-import io.nuls.account.ledger.model.TransactionInfo;
+import io.nuls.contract.storage.po.TransactionInfo;
 import io.nuls.contract.storage.po.TransactionInfoPo;
 import io.nuls.kernel.model.Result;
 

@@ -25,8 +25,8 @@
 package io.nuls.contract.ledger.service.impl;
 
 import io.nuls.account.ledger.constant.AccountLedgerErrorCode;
-import io.nuls.account.ledger.model.TransactionInfo;
 import io.nuls.contract.ledger.service.ContractTransactionInfoService;
+import io.nuls.contract.storage.po.TransactionInfo;
 import io.nuls.contract.storage.po.TransactionInfoPo;
 import io.nuls.contract.storage.service.ContractTransactionInfoStorageService;
 import io.nuls.core.tools.array.ArraysTool;

@@ -25,7 +25,6 @@
 
 package io.nuls.contract.storage.po;
 
-import io.nuls.account.ledger.model.TransactionInfo;
 import io.nuls.kernel.exception.NulsException;
 import io.nuls.kernel.model.Address;
 import io.nuls.kernel.model.BaseNulsData;
@@ -39,8 +38,8 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * @author Facjas
- * @date 2018/5/10.
+ * @author: PierreLuo
+ * @date: 2018/7/23
  */
 public class TransactionInfoPo extends BaseNulsData {
 
