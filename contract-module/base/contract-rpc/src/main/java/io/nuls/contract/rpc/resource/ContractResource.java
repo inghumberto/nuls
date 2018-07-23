@@ -850,7 +850,7 @@ public class ContractResource implements InitializingBean {
     @GET
     @Path("/tx/list/{address}")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "获取合约地址的交易列表")
+    @ApiOperation(value = "获取智能合约的交易列表")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "success", response = ContractTransactionInfoDto.class)
     })
