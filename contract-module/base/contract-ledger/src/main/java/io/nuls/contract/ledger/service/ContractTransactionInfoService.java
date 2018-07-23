@@ -25,7 +25,6 @@
 
 package io.nuls.contract.ledger.service;
 
-import io.nuls.contract.storage.po.TransactionInfo;
 import io.nuls.contract.storage.po.TransactionInfoPo;
 import io.nuls.kernel.model.Result;
 
@@ -38,7 +37,7 @@ import java.util.List;
  */
 public interface ContractTransactionInfoService {
 
-    Result<List<TransactionInfo>> getTxInfoList(byte[] address);
+    Result<List<TransactionInfoPo>> getTxInfoList(byte[] address);
 
     Result<Integer> saveTransactionInfo(TransactionInfoPo infoPo, List<byte[]> addresses);
 

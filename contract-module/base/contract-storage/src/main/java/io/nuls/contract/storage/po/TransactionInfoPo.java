@@ -76,7 +76,7 @@ public class TransactionInfoPo extends BaseNulsData {
         this.txType = tx.getType();
     }
 
-    public TransactionInfoPo(TransactionInfo txInfo) {
+    /*public TransactionInfoPo(TransactionInfo txInfo) {
         if (txInfo == null) {
             return;
         }
@@ -97,7 +97,7 @@ public class TransactionInfoPo extends BaseNulsData {
         txInfo.setTxType(this.txType);
         txInfo.setStatus(this.status);
         return txInfo;
-    }
+    }*/
 
     /**
      * serialize important field

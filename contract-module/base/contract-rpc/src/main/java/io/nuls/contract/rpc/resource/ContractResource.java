@@ -41,7 +41,8 @@ import io.nuls.contract.rpc.form.*;
 import io.nuls.contract.rpc.model.*;
 import io.nuls.contract.service.ContractService;
 import io.nuls.contract.service.ContractTxService;
-import io.nuls.contract.storage.po.TransactionInfo;
+import io.nuls.contract.rpc.model.ContractTransactionInfoDto;
+import io.nuls.contract.storage.po.TransactionInfoPo;
 import io.nuls.contract.storage.service.ContractAddressStorageService;
 import io.nuls.contract.storage.service.ContractUtxoStorageService;
 import io.nuls.contract.util.ContractCoinComparator;
@@ -849,9 +850,9 @@ public class ContractResource implements InitializingBean {
     @GET
     @Path("/tx/list/{address}")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "根据address和limit查询合约UTXO")
+    @ApiOperation(value = "获取合约地址的交易列表")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "success")
+            @ApiResponse(code = 200, message = "success", response = ContractTransactionInfoDto.class)
     })
     public RpcClientResult getTxList(
             @ApiParam(name="address", value="地址", required = true) @PathParam("address") String address) {
@@ -869,8 +870,22 @@ public class ContractResource implements InitializingBean {
                 return Result.getFailed(ContractErrorCode.CONTRACT_ADDRESS_NOT_EXIST).toRpcClientResult();
             }
 
-            Result<List<TransactionInfo>> result = contractTransactionInfoService.getTxInfoList(addressBytes);
-            return result.toRpcClientResult();
+            Result<List<TransactionInfoPo>> txInfoPoListResult = contractTransactionInfoService.getTxInfoList(addressBytes);
+            List<TransactionInfoPo> txInfoPoList = txInfoPoListResult.getData();
+            List<ContractTransactionInfoDto> resultList = new ArrayList<>();
+            if(txInfoPoList != null && txInfoPoList.size() > 0) {
+                for(TransactionInfoPo po : txInfoPoList) {
+                    resultList.add(new ContractTransactionInfoDto(po));
+                }
+            }
+            resultList.sort(new Comparator<ContractTransactionInfoDto>() {
+                @Override
+                public int compare(ContractTransactionInfoDto o1, ContractTransactionInfoDto o2) {
+                    return o1.compareTo(o2.getBlockHeight());
+                }
+            });
+
+            return Result.getSuccess().setData(resultList).toRpcClientResult();
         } catch (Exception e) {
             Log.error(e);
             Result result = Result.getFailed(LedgerErrorCode.SYS_UNKOWN_EXCEPTION);

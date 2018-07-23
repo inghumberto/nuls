@@ -26,7 +26,6 @@ package io.nuls.contract.ledger.service.impl;
 
 import io.nuls.account.ledger.constant.AccountLedgerErrorCode;
 import io.nuls.contract.ledger.service.ContractTransactionInfoService;
-import io.nuls.contract.storage.po.TransactionInfo;
 import io.nuls.contract.storage.po.TransactionInfoPo;
 import io.nuls.contract.storage.service.ContractTransactionInfoStorageService;
 import io.nuls.core.tools.array.ArraysTool;
@@ -37,7 +36,6 @@ import io.nuls.kernel.lite.annotation.Autowired;
 import io.nuls.kernel.lite.annotation.Service;
 import io.nuls.kernel.model.Address;
 import io.nuls.kernel.model.Result;
-import io.nuls.kernel.utils.AddressTool;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -55,14 +53,10 @@ public class ContractTransactionInfoServiceImpl implements ContractTransactionIn
     private ContractTransactionInfoStorageService contractTransactionInfoStorageService;
 
     @Override
-    public Result<List<TransactionInfo>> getTxInfoList(byte[] address) {
+    public Result<List<TransactionInfoPo>> getTxInfoList(byte[] address) {
         try {
             List<TransactionInfoPo> infoPoList = contractTransactionInfoStorageService.getTransactionInfoListByAddress(address);
-            List<TransactionInfo> infoList = new ArrayList<>();
-            for (TransactionInfoPo po : infoPoList) {
-                infoList.add(po.toTransactionInfo());
-            }
-            return Result.getSuccess().setData(infoList);
+            return Result.getSuccess().setData(infoPoList);
         } catch (NulsException e) {
             Log.error(e);
             return Result.getFailed(e.getErrorCode());
