@@ -31,6 +31,7 @@ import io.nuls.kernel.utils.NulsOutputStreamBuffer;
 import io.nuls.kernel.utils.SerializeUtils;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -179,6 +180,8 @@ public class CallContractData extends TransactionLogicData implements ContractDa
 
     @Override
     public Set<byte[]> getAddresses() {
-        return null;
+        Set<byte[]> addressSet = new HashSet<>();
+        addressSet.add(contractAddress);
+        return addressSet;
     }
 }
