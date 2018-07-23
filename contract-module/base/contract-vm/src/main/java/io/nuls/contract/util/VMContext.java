@@ -88,7 +88,7 @@ public class VMContext {
             Log.info("=====*************============contract - " + AddressTool.getStringAddressByBytes(address) + ", balance: " + result.getData().toString());
             return result.getData();
         }
-        Log.info("=====*************============contract - " + AddressTool.getStringAddressByBytes(address) + ", balance: null");
-        return null;
+        Log.info("=====*************============contract - " + AddressTool.getStringAddressByBytes(address) + ", balance: 0");
+        return BigInteger.ZERO;
     }
 }
