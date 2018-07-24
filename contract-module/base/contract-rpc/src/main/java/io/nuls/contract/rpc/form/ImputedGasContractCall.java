@@ -23,7 +23,7 @@ public class ImputedGasContractCall {
     private String methodDesc;
     @ApiModelProperty(name = "price", value = "执行合约单价", required = true)
     private long price;
-    @ApiModelProperty(name = "password", value = "账户密码", required = true)
+    @ApiModelProperty(name = "password", value = "交易创建者账户密码", required = true)
     private String password;
     @ApiModelProperty(name = "args", value = "参数列表", required = false)
     private String[] args;

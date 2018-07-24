@@ -15,7 +15,7 @@ public class ImputedGasContractCreate {
     private String sender;
     @ApiModelProperty(name = "price", value = "执行合约单价", required = true)
     private long price;
-    @ApiModelProperty(name = "password", value = "账户密码", required = true)
+    @ApiModelProperty(name = "password", value = "交易创建者账户密码", required = true)
     private String password;
     @ApiModelProperty(name = "contractCode", value = "智能合约代码(字节码的Hex编码字符串)", required = true)
     private String contractCode;

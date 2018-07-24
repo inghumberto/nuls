@@ -10,7 +10,7 @@ public class ContractDelete {
     private String sender;
     @ApiModelProperty(name = "contractAddress", value = "智能合约地址", required = true)
     private String contractAddress;
-    @ApiModelProperty(name = "password", value = "账户密码", required = true)
+    @ApiModelProperty(name = "password", value = "交易创建者账户密码", required = true)
     private String password;
     @ApiModelProperty(name = "remark", value = "备注", required = false)
     private String remark;
